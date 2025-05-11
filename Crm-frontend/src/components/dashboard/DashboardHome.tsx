@@ -9,7 +9,7 @@ import CustomerSection from "./CustomerSection";
 import TaskSection from "./TaskSection";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
-import CustomersList from "./CustomersList";
+import CustomersList from "./CustomerTopSpending";
 
 const DashboardHome: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
