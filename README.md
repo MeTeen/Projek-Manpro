@@ -9,12 +9,13 @@ cd crm_backend :
 
 
 cd crm_frontend : 
- npm install date-fns react-icons
+npm install
+npm install date-fns react-icons
 
 
 
 
- kalau error instal ulang nodenya
+
 
 
 
