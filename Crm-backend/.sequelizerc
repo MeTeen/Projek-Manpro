@@ -1,0 +1,11 @@
+const path = require('path');
+
+// This will make sequelize-cli use TypeScript files
+require('ts-node/register');
+
+module.exports = {
+  'config': path.resolve('config', 'database.ts'),
+  'models-path': path.resolve('src', 'models'),
+  'seeders-path': path.resolve('src', 'seeders'),
+  'migrations-path': path.resolve('src', 'migrations')
+}; 

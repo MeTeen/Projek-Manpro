@@ -1,0 +1,53 @@
+{
+  "name": "crm-backend",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build": "tsc",
+    "migrate": "npx sequelize-cli db:migrate",
+    "migrate:ts": "ts-node scripts/migrate-ts.ts up",
+    "migrate:ts:down": "ts-node scripts/migrate-ts.ts down",
+    "migrate:ts:pending": "ts-node scripts/migrate-ts.ts pending",
+    "migrate:ts:executed": "ts-node scripts/migrate-ts.ts executed",
+    "migrate:run": "ts-node src/scripts/runMigration.ts",
+    "migrate:custom": "ts-node scripts/migrate.ts",
+    "migrate:debug": "ts-node src/scripts/runMigrationFix.ts",
+    "migrate:direct": "ts-node src/scripts/directMigration.ts",
+    "migrate:runner": "ts-node runMigrations.ts",
+    "seed": "npx sequelize-cli db:seed:all",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.14.0",
+    "passport": "^0.7.0",
+    "passport-oauth2": "^1.8.0",
+    "sequelize": "^6.37.7",
+    "umzug": "^3.8.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.15.14",
+    "@types/passport": "^1.0.17",
+    "@types/passport-oauth2": "^1.4.17",
+    "nodemon": "^3.1.10",
+    "sequelize-cli": "^6.6.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
