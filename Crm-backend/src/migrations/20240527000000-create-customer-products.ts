@@ -15,8 +15,8 @@ module.exports = {
           model: 'customers',
           key: 'id'
         },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onUpdate: 'RESTRICT', // atau 'NO ACTION' 
+        onDelete: 'RESTRICT'  // atau 'NO ACTION'
       },
       product_id: {
         type: DataTypes.INTEGER.UNSIGNED,
@@ -25,8 +25,8 @@ module.exports = {
           model: 'products',
           key: 'id'
         },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onUpdate: 'RESTRICT', // atau 'NO ACTION' 
+        onDelete: 'RESTRICT'  // atau 'NO ACTION'
       },
       quantity: {
         type: DataTypes.INTEGER,
@@ -53,12 +53,6 @@ module.exports = {
         allowNull: false,
         defaultValue: DataTypes.NOW
       }
-    });
-
-    // Add an index for faster lookups, explicitly set as non-unique
-    await queryInterface.addIndex('customer_products', ['customer_id', 'product_id'], {
-      name: 'customer_product_idx',
-      unique: false
     });
   },
 
