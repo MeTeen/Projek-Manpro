@@ -9,6 +9,8 @@ import TransactionPage from './components/pages/TransactionPage';
 import ProductPage from './components/pages/ProductPage';
 import TaskSectionPage from './components/pages/TaskSectionPage';
 import ApiDebugger from './components/ApiDebugger';
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
 
 // Set to true to show the API debugger
 const SHOW_API_DEBUGGER = true;
@@ -16,6 +18,7 @@ const SHOW_API_DEBUGGER = true;
 function App() {
   return (
     <AuthProvider>
+      <ToastContainer position="top-right" autoClose={3000} />
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />

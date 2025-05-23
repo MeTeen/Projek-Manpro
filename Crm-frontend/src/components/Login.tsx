@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import {
   Box,
   Button,
@@ -57,15 +58,19 @@ const Login: React.FC = () => {
     try {
       debugLog('Login', 'Attempting login...');
       await login(email, password);
-      debugLog('Login', 'Login successful');
+      toast.success('Login Successfull!')
     } catch (error) {
       debugError('Login', 'Login error:', error);
       const loginError = error as LoginError;
       
       if (loginError.code === 'ECONNREFUSED' || loginError.code === 'ECONNABORTED') {
-        setError('Cannot connect to the server. Please check your network or server status.');
+        const message = 'Cannot connect to the server. Please check your network or server status.';
+        setError(message);
+        toast.error(message);
       } else {
-        setError(loginError.response?.data?.message || loginError.message || 'Invalid email or password');
+        const message = loginError.response?.data?.message || loginError.message || 'Invalid email or password';
+        setError(message);
+        toast.error(message);
       }
     } finally {
       setIsLoading(false);

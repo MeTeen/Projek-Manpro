@@ -11,7 +11,6 @@ import {
   MdChevronRight,
   MdPointOfSale,
   MdLocalOffer
-,
 } from 'react-icons/md';
 
 interface SidebarProps {
@@ -24,46 +23,15 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
   const currentPath = location.pathname;
 
   const navItems = [
-    { 
-      path: '/dashboard', 
-      icon: <MdDashboard size={20} />, 
-      label: 'Dashboard' 
-    },
-    { 
-      path: '/customers', 
-      icon: <MdPerson size={20} />, 
-      label: 'Customers' 
-    },
-    { 
-      path: '/products', 
-      icon: <MdShoppingBag size={20} />, 
-      label: 'Products' 
-    },
-    { 
-      path: '/transaksi', 
-      icon: <MdPointOfSale size={20} />, 
-      label: 'Transaksi' 
-    },
-    { 
-      path: '/promo', 
-      icon: <MdLocalOffer size={20} />, 
-      label: 'Promo' 
-    },
-    { 
-      path: '/analytics', 
-      icon: <MdBarChart size={20} />, 
-      label: 'Analytics' 
-    },
-    { 
-      path: '/tasksection', 
-      icon: <MdChecklist size={20} />, 
-      label: 'Task To Do' 
-    },
-    { 
-      path: '/settings', 
-      icon: <MdSettings size={20} />, 
-      label: 'Settings' 
-    }
+    { path: '/dashboard', icon: <MdDashboard size={20} />, label: 'Dashboard' },
+    { path: '/customers', icon: <MdPerson size={20} />, label: 'Customers' },
+    { path: '/products', icon: <MdShoppingBag size={20} />, label: 'Products' },
+    { path: '/transaksi', icon: <MdPointOfSale size={20} />, label: 'Transaksi' },
+    { path: '/promo', icon: <MdLocalOffer size={20} />, label: 'Promo' },
+    { path: '/analytics', icon: <MdBarChart size={20} />, label: 'Analytics' },
+    { path: '/tasksection', icon: <MdChecklist size={20} />, label: 'Task To Do' },
+    { path: '/settings', icon: <MdSettings size={20} />, label: 'Settings' },
+    { path: '/about', icon: <MdSettings size={20} />, label: 'Tentang' } // ✅ Tambahan menu baru
   ];
 
   const isActiveRoute = (path: string) => {
@@ -87,7 +55,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
         position: 'relative'
       }}
     >
-      {/* Toggle Button */}
       {onToggle && (
         <button
           onClick={onToggle}
@@ -112,7 +79,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
         </button>
       )}
       
-      {/* Logo/Brand */}
       <div style={{ 
         padding: '20px', 
         display: 'flex', 
@@ -144,7 +110,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
         )}
       </div>
 
-      {/* Navigation Menu */}
       <nav style={{ flex: 1 }}>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {navItems.map((item) => (
@@ -191,4 +156,4 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
