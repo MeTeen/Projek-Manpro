@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import Header from '../dashboard/Header';
 import Sidebar from '../dashboard/Sidebar';
+import { EditModal } from '../common/EditModal';
 import productService, { Product, ProductInput } from '../../services/productService';
 import { MdEdit, MdDelete, MdAdd } from 'react-icons/md';
 
@@ -324,146 +325,75 @@ const ProductPage: React.FC = () => {
       </div>
       
       {/* Edit Product Modal */}
-      {isEditModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            padding: '24px',
-            width: '500px',
-            maxWidth: '90%',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }}>
-            <h2 style={{ marginTop: 0, fontSize: '20px', fontWeight: '600' }}>Edit Product</h2>
-            <form onSubmit={handleEditSubmit}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name || ''}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Stock
-                </label>
-                <input
-                  type="number"
-                  name="stock"
-                  value={formData.stock || 0}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Price (IDR)
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price || 0}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Dimensions
-                </label>
-                <input
-                  type="text"
-                  name="dimensions"
-                  value={formData.dimensions || ''}
-                  onChange={handleInputChange}
-                  placeholder="e.g. 10x20x30 cm"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  style={{
-                    padding: '10px 16px',
-                    backgroundColor: '#f3f4f6',
-                    color: '#374151',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    padding: '10px 16px',
-                    backgroundColor: '#5E5CEB',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </div>
+      <EditModal
+        isOpen={isEditModalOpen}
+        title="Edit Product"
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditSubmit}
+        width="500px"
+      >
+        {/* Product Name */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Product Name
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name || ''}
+            onChange={handleInputChange}
+            required
+            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+          />
         </div>
-      )}
+
+        {/* Stock */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Stock
+          </label>
+          <input
+            type="number"
+            name="stock"
+            value={formData.stock ?? 0}
+            onChange={handleInputChange}
+            required
+            min={0}
+            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+          />
+        </div>
+
+        {/* Price */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Price (IDR)
+          </label>
+          <input
+            type="number"
+            name="price"
+            value={formData.price ?? 0}
+            onChange={handleInputChange}
+            required
+            min={0}
+            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+          />
+        </div>
+
+        {/* Dimensions */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Dimensions
+          </label>
+          <input
+            type="text"
+            name="dimensions"
+            value={formData.dimensions || ''}
+            onChange={handleInputChange}
+            placeholder="e.g. 10x20x30 cm"
+            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+          />
+        </div>
+      </EditModal>
       
       {/* Add Product Modal */}
       {isAddModalOpen && (

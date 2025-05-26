@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 
 import Header from '../dashboard/Header';
 import Sidebar from '../dashboard/Sidebar';
+import { EditModal } from '../common/EditModal';
 import customerService, { Customer } from '../../services/customerService';
 import { MdEdit, MdDelete, MdPersonAdd, MdPhotoCamera } from 'react-icons/md';
 
@@ -480,271 +481,228 @@ const CustomersPage: React.FC = () => {
       </div>
       
       {/* Edit Customer Modal */}
-      {isEditModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            padding: '24px',
-            width: '500px',
-            maxWidth: '90%',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }}>
-            <h2 style={{ marginTop: 0, fontSize: '20px', fontWeight: '600' }}>Edit Customer</h2>
-            <form onSubmit={handleEditSubmit}>
-              {/* Avatar Section */}
-              <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <input 
-                  type="file" 
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                />
-                <div 
-                  onClick={handleAvatarClick}
-                  style={{
-                    width: '100px',
-                    height: '100px',
-                    borderRadius: '50%',
-                    backgroundColor: '#f3f4f6',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundImage: avatarPreview ? `url(${avatarPreview})` : 'none',
-                    border: '2px dashed #d1d5db',
-                    marginBottom: '12px',
-                    position: 'relative'
-                  }}
-                >
-                  {!avatarPreview && (
-                    <MdPhotoCamera size={32} color="#6b7280" />
-                  )}
-                  
-                  {/* Camera icon overlay */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '0',
-                    right: '0',
-                    backgroundColor: '#5E5CEB',
-                    borderRadius: '50%',
-                    width: '28px',
-                    height: '28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                  }}>
-                    <MdPhotoCamera size={16} color="white" />
-                  </div>
-                </div>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '0' }}>
-                  Click to upload profile picture
-                </p>
-              </div>
-              
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName || ''}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName || ''}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email || ''}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Phone
-                </label>
-                <input
-                  type="text"
-                  name="phone"
-                  value={formData.phone || ''}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Address
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address || ''}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city || ''}
-                    onChange={handleInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={formData.state || ''}
-                    onChange={handleInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                    Zip Code
-                  </label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={formData.zipCode || ''}
-                    onChange={handleInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  style={{
-                    padding: '10px 16px',
-                    backgroundColor: '#f3f4f6',
-                    color: '#374151',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    padding: '10px 16px',
-                    backgroundColor: '#5E5CEB',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
+      <EditModal
+      isOpen={isEditModalOpen}
+      title="Edit Customer"
+      onClose={() => setIsEditModalOpen(false)}
+      onSubmit={handleEditSubmit}
+    >
+      {/* Avatar Section */}
+      <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* hidden file input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          accept="image/*"
+          onChange={handleAvatarChange}
+        />
+
+        {/* avatar preview / placeholder */}
+        <div
+          onClick={handleAvatarClick}
+          style={{
+            width: '100px',
+            height: '100px',
+            borderRadius: '50%',
+            backgroundColor: '#f3f4f6',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundImage: avatarPreview ? `url(${avatarPreview})` : 'none',
+            border: '2px dashed #d1d5db',
+            marginBottom: '12px',
+            position: 'relative'
+          }}
+        >
+          {!avatarPreview && <MdPhotoCamera size={32} color="#6b7280" />}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              backgroundColor: '#5E5CEB',
+              borderRadius: '50%',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            <MdPhotoCamera size={16} color="white" />
           </div>
         </div>
-      )}
+        <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+          Click to upload profile picture
+        </p>
+      </div>
+
+      {/* First Name */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
+          First Name
+        </label>
+        <input
+          type="text"
+          name="firstName"
+          value={formData.firstName || ''}
+          onChange={handleInputChange}
+          required
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}
+        />
+      </div>
+
+      {/* Last Name */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
+          Last Name
+        </label>
+        <input
+          type="text"
+          name="lastName"
+          value={formData.lastName || ''}
+          onChange={handleInputChange}
+          required
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}
+        />
+      </div>
+
+      {/* Email */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
+          Email
+        </label>
+        <input
+          type="email"
+          name="email"
+          value={formData.email || ''}
+          onChange={handleInputChange}
+          required
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}
+        />
+      </div>
+
+      {/* Phone */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
+          Phone
+        </label>
+        <input
+          type="text"
+          name="phone"
+          value={formData.phone || ''}
+          onChange={handleInputChange}
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}
+        />
+      </div>
+
+      {/* Address */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
+          Address
+        </label>
+        <input
+          type="text"
+          name="address"
+          value={formData.address || ''}
+          onChange={handleInputChange}
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}
+        />
+      </div>
+
+      {/* City, State, Zip */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
+            City
+          </label>
+          <input
+            type="text"
+            name="city"
+            value={formData.city || ''}
+            onChange={handleInputChange}
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
+            State
+          </label>
+          <input
+            type="text"
+            name="state"
+            value={formData.state || ''}
+            onChange={handleInputChange}
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
+            Zip Code
+          </label>
+          <input
+            type="text"
+            name="zipCode"
+            value={formData.zipCode || ''}
+            onChange={handleInputChange}
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          />
+        </div>
+      </div>
+    </EditModal>
       
       {/* Add Customer Modal */}
       {isAddModalOpen && (
