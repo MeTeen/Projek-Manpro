@@ -4,6 +4,7 @@ import customerRoutes from './customer.routes';
 import taskRoutes from './taskRoutes';
 import productRoutes from './product.routes';
 import purchaseRoutes from './purchase.routes';
+import promoRoutes from './promo.routes';
 
 const router = Router();
 
@@ -21,5 +22,8 @@ router.use('/products', productRoutes);
 
 // Purchase routes
 router.use('/purchases', purchaseRoutes);
+
+// Promo routes
+router.use('/promos', promoRoutes);
 
 export default router; 

@@ -13,6 +13,8 @@ export interface CustomerProductAttributes {
   purchaseDate: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  promoId?: number | null; // ID promo yang digunakan
+  discountAmount?: number; // Jumlah diskon yang diberikan
 }
 
 export interface CustomerProductInput {
@@ -21,6 +23,8 @@ export interface CustomerProductInput {
   quantity: number;
   price: number;
   purchaseDate?: Date;
+  promoId?: number | null;
+  discountAmount?: number;
 }
 
 class CustomerProduct extends Model {
@@ -33,6 +37,8 @@ class CustomerProduct extends Model {
   declare purchaseDate: Date;
   declare readonly createdAt: CreationOptional<Date>;
   declare readonly updatedAt: CreationOptional<Date>;
+  declare promoId: number | null;
+  declare discountAmount: number | null;
 
   // Class method for model initialization
   public static initialize(sequelize: Sequelize): typeof CustomerProduct {
@@ -76,6 +82,22 @@ class CustomerProduct extends Model {
           allowNull: false,
           defaultValue: DataTypes.NOW,
           field: 'purchase_date'
+        },
+
+        promoId: { // [TAMBAHKAN INI]
+          type: DataTypes.INTEGER.UNSIGNED,
+          allowNull: true,
+          references: {
+            model: 'promos', // Nama tabel promo
+            key: 'id'
+          },
+          field: 'promo_id'
+        },
+        discountAmount: { // [TAMBAHKAN INI]
+          type: DataTypes.DECIMAL(10, 2),
+          allowNull: true,
+          defaultValue: 0,
+          field: 'discount_amount'
         },
         createdAt: {
           type: DataTypes.DATE,

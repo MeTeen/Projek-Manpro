@@ -26,6 +26,8 @@ import Customer from './customer.model';
 import Task from './task.model';
 import Product from './product.model';
 import CustomerProduct from './customerProduct.model';
+import Promo from './promo.model';
+import CustomerPromo from './customerPromo.model';
 
 // Initialize models
 Admin.initialize(sequelize);
@@ -33,6 +35,8 @@ Customer.initialize(sequelize);
 Task.initialize(sequelize);
 Product.initialize(sequelize);
 CustomerProduct.initialize(sequelize);
+Promo.initialize(sequelize);
+CustomerPromo.initialize(sequelize);
 
 // Define model associations
 Customer.belongsToMany(Product, { 
@@ -58,6 +62,21 @@ CustomerProduct.belongsTo(Product, {
   as: 'product'
 });
 
+// Asosiasi untuk Promo dan Customer (Many-to-Many)
+Customer.belongsToMany(Promo, {
+  through: CustomerPromo,
+  foreignKey: 'customerId', // Pastikan ini cocok dengan field di CustomerPromo
+  otherKey: 'promoId',    // Pastikan ini cocok dengan field di CustomerPromo
+  as: 'availablePromos' // Customer bisa melihat promo yang tersedia untuknya
+});
+
+Promo.belongsToMany(Customer, {
+  through: CustomerPromo,
+  foreignKey: 'promoId',
+  otherKey: 'customerId',
+  as: 'eligibleCustomers' // Promo bisa melihat pelanggan mana saja yang berhak
+});
+
 // Inverse associations
 Customer.hasMany(CustomerProduct, {
   foreignKey: 'customerId',
@@ -69,11 +88,33 @@ Product.hasMany(CustomerProduct, {
   as: 'purchases'
 });
 
+CustomerPromo.belongsTo(Customer, { foreignKey: 'customerId', as: 'customerDetails' });
+CustomerPromo.belongsTo(Promo, { foreignKey: 'promoId', as: 'promoDetails' });
+CustomerPromo.belongsTo(Admin, { foreignKey: 'assignedBy', as: 'assignerAdmin' });
+Admin.hasMany(CustomerPromo, { foreignKey: 'assignedBy', as: 'promoAssignmentsMade' });
+
+
+// Asosiasi untuk Promo yang digunakan dalam Pembelian (CustomerProduct)
+CustomerProduct.belongsTo(Promo, {
+  foreignKey: 'promoId',
+  as: 'appliedPromoDetails' // Untuk mendapatkan detail promo dari sebuah transaksi
+});
+
+Promo.hasMany(CustomerProduct, {
+  foreignKey: 'promoId',
+  as: 'purchaseTransactions' // Untuk melihat transaksi mana saja yang menggunakan promo ini
+});
+
+Promo.belongsTo(Admin, { foreignKey: 'createdBy', as: 'creatorAdmin' });
+Admin.hasMany(Promo, { foreignKey: 'createdBy', as: 'createdPromos' });
+
 export {
   sequelize,
   Admin,
   Customer,
   Task,
   Product,
-  CustomerProduct
-}; 
+  CustomerProduct,
+  Promo, // Export model baru
+  CustomerPromo // Export model baru
+};

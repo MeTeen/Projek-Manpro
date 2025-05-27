@@ -1,5 +1,7 @@
+
 import axios from 'axios';
 import authService from './authService';
+import type { Promo } from './promoService';
 
 // API URL
 const API_URL = 'http://localhost:3000/api';
@@ -24,6 +26,7 @@ export interface Purchase {
     price: number;
     stock: number;
   };
+  appliedPromoDetails?: Promo | null; 
 }
 
 export interface PurchaseInput {
@@ -265,170 +268,6 @@ class PurchaseService {
     }
   }
 
-  /**
-   * Create a purchase directly without relying on associations
-   * This is a fallback method that can be used when there are issues with the main API endpoints
-   */
-  async createPurchaseWithoutValidation(purchaseData: PurchaseInput): Promise<Purchase> {
-    try {
-      // Ensure auth is initialized before each API call
-      authService.initializeAuth();
-      
-      // Get authentication token
-      const token = getAuthToken();
-      
-      if (!token) {
-        throw new Error('Authentication required. Please log in again.');
-      }
-
-      // Convert camelCase to snake_case for database compatibility
-      const validatedData = {
-        customer_id: Number(purchaseData.customerId),
-        product_id: Number(purchaseData.productId),
-        quantity: Number(purchaseData.quantity) || 1,
-        purchase_date: new Date().toISOString() // Add current date
-      };
-      
-      console.log('Creating purchase with snake_case data:', validatedData);
-      
-      // Use a direct POST request to the API
-      const response = await axios.post(`${API_URL}${this.baseUrl}`, validatedData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      console.log('Purchase created successfully (direct):', response.data);
-      return response.data.data;
-    } catch (error) {
-      // If direct method fails, try the regular endpoint as fallback with camelCase
-      if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 500)) {
-        console.log('Direct purchase with snake_case failed, trying camelCase...');
-        try {
-          // Get token again to ensure it's in scope
-          const tokenForRetry = getAuthToken();
-          
-          if (!tokenForRetry) {
-            throw new Error('Authentication required. Please log in again.');
-          }
-          
-          // Try with camelCase properties
-          const camelCaseData = {
-            customerId: Number(purchaseData.customerId), 
-            productId: Number(purchaseData.productId),
-            quantity: Number(purchaseData.quantity) || 1
-          };
-          
-          console.log('Trying with camelCase data:', camelCaseData);
-          
-          const response = await axios.post(`${API_URL}${this.baseUrl}`, camelCaseData, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${tokenForRetry}`
-            }
-          });
-          
-          console.log('Purchase created successfully with camelCase:', response.data);
-          return response.data.data;
-        } catch (secondError) {
-          console.error('Both snake_case and camelCase attempts failed:', secondError);
-          throw secondError;
-        }
-      }
-      
-      console.error('Error creating purchase with direct method:', error);
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(`API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Create a purchase with direct mapping to database fields
-   * This special method formats the data to match the exact database column names
-   */
-  async createPurchaseDirectSql(purchaseData: PurchaseInput): Promise<Purchase> {
-    try {
-      console.log('Starting direct SQL purchase creation with data:', purchaseData);
-      
-      // Ensure auth is initialized
-      authService.initializeAuth();
-      
-      // Get authentication token
-      const token = getAuthToken();
-      
-      if (!token) {
-        throw new Error('Authentication required. Please log in again.');
-      }
-
-      // Create data with correct field names for database compatibility
-      const dbFormat = {
-        // Use snake_case for database column names
-        customer_id: Number(purchaseData.customerId),
-        product_id: Number(purchaseData.productId),
-        quantity: Number(purchaseData.quantity) || 1,
-        purchase_date: new Date().toISOString(),
-        // Add timestamps as expected by the database
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      console.log('Formatted data for direct database insert:', dbFormat);
-      
-      // Make a raw API request to the custom purchases endpoint
-      const response = await axios.post(`${API_URL}/purchases/direct-sql`, dbFormat, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      console.log('Purchase created with direct SQL:', response.data);
-      return response.data.data;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        console.error('Direct SQL endpoint not found, attempting fallback...');
-        try {
-          // Fallback: Try using raw axios call with snake_case
-          const rawDbFormat = {
-            customer_id: Number(purchaseData.customerId),
-            product_id: Number(purchaseData.productId),
-            quantity: Number(purchaseData.quantity) || 1
-          };
-          
-          const token = getAuthToken();
-          
-          if (!token) {
-            throw new Error('Authentication token required');
-          }
-          
-          const url = `${API_URL}/purchases`;
-          console.log(`Attempting fallback direct post to ${url} with:`, rawDbFormat);
-          
-          const response = await axios.post(url, rawDbFormat, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          console.log('Fallback purchase creation successful:', response.data);
-          return response.data.data;
-        } catch (fallbackError) {
-          console.error('Fallback method also failed:', fallbackError);
-          throw fallbackError;
-        }
-      }
-      
-      console.error('Error creating purchase with direct SQL:', error);
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(`API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-      }
-      throw error;
-    }
-  }
 }
 
 const purchaseService = new PurchaseService();

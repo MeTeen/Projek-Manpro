@@ -1,182 +1,304 @@
 import { Request, Response } from 'express';
-import { sequelize, Customer, Product, CustomerProduct } from '../models';
+import { sequelize, Customer, Product, CustomerProduct, Promo } from '../models'; // Pastikan Promo diimpor
 import { Transaction, Op } from 'sequelize';
 
-// Create a purchase (add a product to a customer's purchases)
+// --- Fungsi Helper untuk Validasi dan Kalkulasi Promo (Opsional, bisa diletakkan di sini atau di utils) ---
+interface PromoValidationResult {
+  isValid: boolean;
+  appliedPromo: Promo | null;
+  discountAmount: number;
+  message?: string;
+}
+
+async function validateAndCalculatePromo(
+  promoId: number | null,
+  customerId: number,
+  basePrice: number // Harga total sebelum diskon (misal: product.price * quantity)
+): Promise<PromoValidationResult> {
+  if (!promoId) {
+    return { isValid: true, appliedPromo: null, discountAmount: 0 }; // Tidak ada promo, valid untuk lanjut
+  }
+
+  const promo = await Promo.findOne({
+    where: {
+      id: promoId,
+      isActive: true,
+      [Op.or]: [ // Promo valid jika tidak ada tanggal atau berada dalam rentang tanggal
+        { startDate: null, endDate: null },
+        { startDate: { [Op.lte]: new Date() }, endDate: null },
+        { startDate: null, endDate: { [Op.gte]: new Date() } },
+        { startDate: { [Op.lte]: new Date() }, endDate: { [Op.gte]: new Date() } }
+      ]
+    },
+    include: [{
+        model: Customer,
+        as: 'eligibleCustomers', // Pastikan alias ini sesuai dengan definisi di model
+        where: { id: customerId },
+        attributes: [], // Tidak perlu atribut customer di sini, hanya untuk validasi join
+        required: true // Pastikan join berhasil (promo ter-assign ke customer ini)
+    }]
+  });
+
+  if (!promo) {
+    return {
+      isValid: false,
+      appliedPromo: null,
+      discountAmount: 0,
+      message: `Promo with ID ${promoId} is not valid, not active, expired, or not assigned for this customer.`
+    };
+  }
+
+  let discount = 0;
+  if (promo.type === 'percentage') {
+    discount = basePrice * (promo.value / 100);
+  } else if (promo.type === 'fixed_amount') {
+    discount = promo.value;
+  }
+
+  // Pastikan diskon tidak melebihi harga dasar
+  discount = Math.min(discount, basePrice);
+
+  return { isValid: true, appliedPromo: promo, discountAmount: discount };
+}
+// --- Akhir Fungsi Helper ---
+
+/**
+ * Create a purchase (add a product to a customer's purchases)
+ * @route POST /api/purchases
+ */
 export const createPurchase = async (req: Request, res: Response) => {
   const t: Transaction = await sequelize.transaction();
-  
+  let transactionCompleted = false;
+
   try {
-    const { customerId, productId, quantity = 1 } = req.body;
-    
-    // Extra logging to help debug
+    const { customerId, productId, quantity = 1, promoId } = req.body; // Ambil promoId dari body
+
     console.log('Purchase request received:', req.body);
-    
-    // Validate input - ensure they are valid numbers
+
     const customerIdNum = parseInt(customerId, 10);
     const productIdNum = parseInt(productId, 10);
     const quantityNum = parseInt(quantity, 10);
-    
+
     if (isNaN(customerIdNum) || customerIdNum <= 0) {
       await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid Customer ID: must be a positive number'
-      });
+      transactionCompleted = true;
+      return res.status(400).json({ success: false, message: 'Invalid Customer ID' });
     }
-    
     if (isNaN(productIdNum) || productIdNum <= 0) {
       await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid Product ID: must be a positive number'
-      });
+      transactionCompleted = true;
+      return res.status(400).json({ success: false, message: 'Invalid Product ID' });
     }
-    
     if (isNaN(quantityNum) || quantityNum <= 0) {
       await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid quantity: must be a positive number'
-      });
+      transactionCompleted = true;
+      return res.status(400).json({ success: false, message: 'Invalid quantity' });
     }
-    
-    // Find the customer and product
-    const customer = await Customer.findByPk(customerIdNum);
-    const product = await Product.findByPk(productIdNum);
-    
+
+    const customer = await Customer.findByPk(customerIdNum, { transaction: t });
+    const product = await Product.findByPk(productIdNum, { transaction: t });
+
     if (!customer) {
       await t.rollback();
-      return res.status(404).json({
-        success: false,
-        message: `Customer with ID ${customerIdNum} not found`
-      });
+      transactionCompleted = true;
+      return res.status(404).json({ success: false, message: `Customer with ID ${customerIdNum} not found` });
     }
-    
     if (!product) {
       await t.rollback();
-      return res.status(404).json({
-        success: false,
-        message: `Product with ID ${productIdNum} not found`
-      });
+      transactionCompleted = true;
+      return res.status(404).json({ success: false, message: `Product with ID ${productIdNum} not found` });
     }
-    
-    // Check if we have enough stock
     if (product.stock < quantityNum) {
       await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: `Not enough stock available. Requested: ${quantityNum}, Available: ${product.stock}`
-      });
+      transactionCompleted = true;
+      return res.status(400).json({ success: false, message: `Not enough stock. Requested: ${quantityNum}, Available: ${product.stock}` });
     }
-    
-    // Safely get the product price
-    let productPrice = 0;
-    try {
-      productPrice = parseFloat(product.price?.toString() || '0');
-      if (isNaN(productPrice)) productPrice = 0;
-    } catch (e) {
-      console.warn('Error parsing product price:', e);
-      productPrice = 0;
+
+    const productPrice = parseFloat(product.price?.toString() || '0');
+    const basePurchaseTotal = productPrice * quantityNum;
+
+    // Validasi dan kalkulasi promo
+    const promoDetails = await validateAndCalculatePromo(promoId ? parseInt(promoId, 10) : null, customerIdNum, basePurchaseTotal);
+
+    if (!promoDetails.isValid) {
+      await t.rollback();
+      transactionCompleted = true;
+      return res.status(400).json({ success: false, message: promoDetails.message });
     }
-    
-    // Calculate the total for this purchase
-    const purchaseTotal = productPrice * quantityNum;
-    
-    // Create the purchase record with price - with explicit field values
-    try {
-      const purchase = await CustomerProduct.create({
-        customerId: customerIdNum,
-        productId: productIdNum,
-        quantity: quantityNum,
-        price: productPrice,
-        purchaseDate: new Date()
-      }, { transaction: t });
-      
-      console.log('Purchase record created:', purchase);
-      
-      // Update product stock
-      await product.update({
-        stock: Math.max(0, product.stock - quantityNum)
-      }, { transaction: t });
-      
-      // Safely update customer's totalSpent and purchaseCount
-      let currentTotalSpent = 0;
-      let currentPurchaseCount = 0;
-      
-      try {
-        if (customer.totalSpent !== null && customer.totalSpent !== undefined) {
-          currentTotalSpent = parseFloat(customer.totalSpent.toString());
-          if (isNaN(currentTotalSpent)) currentTotalSpent = 0;
-        }
-        
-        if (customer.purchaseCount !== null && customer.purchaseCount !== undefined) {
-          currentPurchaseCount = parseInt(customer.purchaseCount.toString(), 10);
-          if (isNaN(currentPurchaseCount)) currentPurchaseCount = 0;
-        }
-      } catch (e) {
-        console.warn('Error parsing customer stats:', e);
+
+    const finalPurchaseTotal = basePurchaseTotal - promoDetails.discountAmount;
+
+    const purchase = await CustomerProduct.create({
+      customerId: customerIdNum,
+      productId: productIdNum,
+      quantity: quantityNum,
+      price: productPrice, // Harga asli produk per unit
+      purchaseDate: new Date(),
+      promoId: promoDetails.appliedPromo ? promoDetails.appliedPromo.id : null,
+      discountAmount: promoDetails.discountAmount,
+    }, { transaction: t });
+
+    console.log('Purchase record created:', purchase);
+
+    await product.update({
+      stock: Math.max(0, product.stock - quantityNum)
+    }, { transaction: t });
+
+    let currentTotalSpent = parseFloat(customer.totalSpent?.toString() || '0');
+    let currentPurchaseCount = parseInt(customer.purchaseCount?.toString() || '0', 10);
+
+    await customer.update({
+      totalSpent: currentTotalSpent + finalPurchaseTotal, // totalSpent adalah setelah diskon
+      purchaseCount: currentPurchaseCount + 1
+    }, { transaction: t });
+
+    await t.commit();
+    transactionCompleted = true;
+
+    return res.status(201).json({
+      success: true,
+      message: 'Purchase completed successfully',
+      data: {
+        purchase,
+        customer: {
+          id: customer.id,
+          totalSpent: customer.totalSpent, // Ambil dari instance customer yang sudah di-update
+          purchaseCount: customer.purchaseCount
+        },
+        product: {
+          id: product.id,
+          name: product.name,
+          stock: product.stock // Ambil dari instance product yang sudah di-update
+        },
+        appliedPromo: promoDetails.appliedPromo ? {
+            id: promoDetails.appliedPromo.id,
+            name: promoDetails.appliedPromo.name,
+            discountApplied: promoDetails.discountAmount
+        } : null
       }
-      
-      await customer.update({
-        totalSpent: currentTotalSpent + purchaseTotal,
-        purchaseCount: currentPurchaseCount + 1
-      }, { transaction: t });
-      
-      await t.commit();
-      
-      return res.status(201).json({
-        success: true,
-        message: 'Purchase completed successfully',
-        data: {
-          purchase,
-          customer: {
-            id: customer.id,
-            totalSpent: currentTotalSpent + purchaseTotal,
-            purchaseCount: currentPurchaseCount + 1
-          },
-          product: {
-            id: product.id,
-            name: product.name,
-            stock: product.stock - quantityNum
-          }
-        }
-      });
-    } catch (createError) {
-      await t.rollback();
-      console.error('Error creating purchase record:', createError);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to create purchase record',
-        error: (createError as Error).message
-      });
-    }
-  } catch (error) {
-    try {
-      await t.rollback();
-    } catch (rollbackError) {
-      console.error('Error rolling back transaction:', rollbackError);
-    }
-    
-    console.error('Error creating purchase:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to create purchase',
-      error: (error as Error).message
     });
+
+  } catch (error) {
+    if (!transactionCompleted) { // Cek apakah transaksi belum di-commit atau di-rollback
+        try {
+            await t.rollback();
+        } catch (rollbackError) {
+            console.error('Error rolling back transaction:', rollbackError);
+        }
+    }
+    console.error('Error creating purchase:', error);
+    return res.status(500).json({ success: false, message: 'Failed to create purchase', error: (error as Error).message });
   }
 };
 
-// Get all purchases
+/**
+ * Add product to customer from dropdown selection (mirip createPurchase)
+ * @route POST /api/purchases/add-to-customer
+ */
+export const addProductToCustomer = async (req: Request, res: Response) => {
+  const t: Transaction = await sequelize.transaction();
+  let transactionCompleted = false;
+  try {
+    const { customerId, productId, quantity = 1, promoId } = req.body; // Ambil promoId
+
+    const customerIdNum = parseInt(customerId.toString(), 10);
+    const productIdNum = parseInt(productId.toString(), 10);
+    const quantityNum = parseInt(quantity.toString(), 10);
+
+    // ... (Validasi input seperti di createPurchase) ...
+    if (isNaN(customerIdNum) || customerIdNum <= 0) { /* ... */ await t.rollback(); transactionCompleted = true; return res.status(400).json({/*...*/}); }
+    if (isNaN(productIdNum) || productIdNum <= 0) { /* ... */ await t.rollback(); transactionCompleted = true; return res.status(400).json({/*...*/}); }
+    if (isNaN(quantityNum) || quantityNum <= 0) { /* ... */ await t.rollback(); transactionCompleted = true; return res.status(400).json({/*...*/}); }
+
+
+    const customer = await Customer.findByPk(customerIdNum, { transaction: t });
+    const product = await Product.findByPk(productIdNum, { transaction: t });
+
+    if (!customer) { /* ... */ await t.rollback(); transactionCompleted = true; return res.status(404).json({/*...*/}); }
+    if (!product) { /* ... */ await t.rollback(); transactionCompleted = true; return res.status(404).json({/*...*/}); }
+    if (product.stock < quantityNum) { /* ... */ await t.rollback(); transactionCompleted = true; return res.status(400).json({/*...*/}); }
+
+    const productPrice = parseFloat(product.price?.toString() || '0');
+    const basePurchaseTotal = productPrice * quantityNum;
+
+    // Validasi dan kalkulasi promo
+    const promoDetails = await validateAndCalculatePromo(promoId ? parseInt(promoId, 10) : null, customerIdNum, basePurchaseTotal);
+
+    if (!promoDetails.isValid) {
+      await t.rollback();
+      transactionCompleted = true;
+      return res.status(400).json({ success: false, message: promoDetails.message });
+    }
+
+    const finalPurchaseTotal = basePurchaseTotal - promoDetails.discountAmount;
+
+    const purchase = await CustomerProduct.create({
+      customerId: customerIdNum,
+      productId: productIdNum,
+      quantity: quantityNum,
+      price: productPrice,
+      purchaseDate: new Date(),
+      promoId: promoDetails.appliedPromo ? promoDetails.appliedPromo.id : null,
+      discountAmount: promoDetails.discountAmount,
+    }, { transaction: t });
+
+    const newStock = Math.max(0, product.stock - quantityNum);
+    await product.update({ stock: newStock }, { transaction: t });
+
+    let currentTotalSpent = parseFloat(customer.totalSpent?.toString() || '0');
+    let currentPurchaseCount = parseInt(customer.purchaseCount?.toString() || '0', 10);
+
+    await customer.update({
+      totalSpent: currentTotalSpent + finalPurchaseTotal,
+      purchaseCount: currentPurchaseCount + 1
+    }, { transaction: t });
+
+    await t.commit();
+    transactionCompleted = true;
+
+    return res.status(201).json({
+      success: true,
+      message: 'Product added to customer successfully',
+      data: {
+        purchase,
+        customer: {
+          id: customer.id,
+          totalSpent: customer.totalSpent,
+          purchaseCount: customer.purchaseCount
+        },
+        product: {
+          id: product.id,
+          name: product.name,
+          stock: newStock
+        },
+        appliedPromo: promoDetails.appliedPromo ? {
+            id: promoDetails.appliedPromo.id,
+            name: promoDetails.appliedPromo.name,
+            discountApplied: promoDetails.discountAmount
+        } : null
+      }
+    });
+  } catch (error) {
+    if (!transactionCompleted) {
+        try { await t.rollback(); } catch (rbError) { console.error('Rollback error:', rbError); }
+    }
+    console.error('Error adding product to customer:', error);
+    return res.status(500).json({ success: false, message: 'Failed to add product to customer', error: (error as Error).message });
+  }
+};
+
+// Get all purchases (mungkin perlu join dengan Promo jika ingin menampilkan promo yang digunakan)
 export const getAllPurchases = async (req: Request, res: Response) => {
   try {
     const purchases = await CustomerProduct.findAll({
       include: [
-        { model: Customer, as: 'customer' },
-        { model: Product, as: 'product' }
-      ]
+        { model: Customer, as: 'customer', attributes: ['id', 'firstName', 'lastName', 'email'] },
+        { model: Product, as: 'product', attributes: ['id', 'name'] },
+        { model: Promo, as: 'appliedPromoDetails', attributes: ['id', 'name', 'type', 'value'] } // Tambahkan ini
+      ],
+      order: [['purchaseDate', 'DESC']]
     });
-    
+
     return res.status(200).json({
       success: true,
       count: purchases.length,
@@ -184,11 +306,7 @@ export const getAllPurchases = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching purchases:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch purchases',
-      error: (error as Error).message
-    });
+    return res.status(500).json({ success: false, message: 'Failed to fetch purchases', error: (error as Error).message });
   }
 };
 
@@ -196,21 +314,26 @@ export const getAllPurchases = async (req: Request, res: Response) => {
 export const getCustomerPurchases = async (req: Request, res: Response) => {
   try {
     const { customerId } = req.params;
-    
-    const customer = await Customer.findByPk(customerId);
-    
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Customer not found'
-      });
+    const customerIdNum = parseInt(customerId, 10);
+
+    if (isNaN(customerIdNum)) {
+        return res.status(400).json({ success: false, message: 'Invalid Customer ID' });
     }
-    
+
+    const customer = await Customer.findByPk(customerIdNum);
+    if (!customer) {
+      return res.status(404).json({ success: false, message: 'Customer not found' });
+    }
+
     const purchases = await CustomerProduct.findAll({
-      where: { customerId },
-      include: [{ model: Product, as: 'product' }]
+      where: { customerId: customerIdNum },
+      include: [
+        { model: Product, as: 'product', attributes: ['id', 'name'] },
+        { model: Promo, as: 'appliedPromoDetails', attributes: ['id', 'name', 'type', 'value'] } // Tambahkan ini
+      ],
+      order: [['purchaseDate', 'DESC']]
     });
-    
+
     return res.status(200).json({
       success: true,
       count: purchases.length,
@@ -227,11 +350,7 @@ export const getCustomerPurchases = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching customer purchases:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch customer purchases',
-      error: (error as Error).message
-    });
+    return res.status(500).json({ success: false, message: 'Failed to fetch customer purchases', error: (error as Error).message });
   }
 };
 
@@ -239,21 +358,26 @@ export const getCustomerPurchases = async (req: Request, res: Response) => {
 export const getProductPurchaseHistory = async (req: Request, res: Response) => {
   try {
     const { productId } = req.params;
-    
-    const product = await Product.findByPk(productId);
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
+    const productIdNum = parseInt(productId, 10);
+
+    if (isNaN(productIdNum)) {
+        return res.status(400).json({ success: false, message: 'Invalid Product ID' });
     }
-    
+
+    const product = await Product.findByPk(productIdNum);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
     const purchases = await CustomerProduct.findAll({
-      where: { productId },
-      include: [{ model: Customer, as: 'customer' }]
+      where: { productId: productIdNum },
+      include: [
+        { model: Customer, as: 'customer', attributes: ['id', 'firstName', 'lastName', 'email'] },
+        { model: Promo, as: 'appliedPromoDetails', attributes: ['id', 'name', 'type', 'value'] } // Tambahkan ini
+      ],
+      order: [['purchaseDate', 'DESC']]
     });
-    
+
     return res.status(200).json({
       success: true,
       count: purchases.length,
@@ -269,335 +393,6 @@ export const getProductPurchaseHistory = async (req: Request, res: Response) => 
     });
   } catch (error) {
     console.error('Error fetching product purchase history:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch product purchase history',
-      error: (error as Error).message
-    });
-  }
-};
-
-// Add product to customer from dropdown selection
-export const addProductToCustomer = async (req: Request, res: Response) => {
-  const t: Transaction = await sequelize.transaction();
-  
-  try {
-    const { customerId, productId, quantity = 1 } = req.body;
-    
-    // Validate input - convert to numbers
-    const customerIdNum = parseInt(customerId.toString(), 10);
-    const productIdNum = parseInt(productId.toString(), 10);
-    const quantityNum = parseInt(quantity.toString(), 10);
-    
-    if (isNaN(customerIdNum) || customerIdNum <= 0) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid Customer ID: must be a positive number'
-      });
-    }
-    
-    if (isNaN(productIdNum) || productIdNum <= 0) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid Product ID: must be a positive number'
-      });
-    }
-    
-    if (isNaN(quantityNum) || quantityNum <= 0) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid quantity: must be a positive number'
-      });
-    }
-    
-    // Find the customer and product
-    const customer = await Customer.findByPk(customerIdNum);
-    const product = await Product.findByPk(productIdNum);
-    
-    if (!customer) {
-      await t.rollback();
-      return res.status(404).json({
-        success: false,
-        message: `Customer with ID ${customerIdNum} not found`
-      });
-    }
-    
-    if (!product) {
-      await t.rollback();
-      return res.status(404).json({
-        success: false,
-        message: `Product with ID ${productIdNum} not found`
-      });
-    }
-    
-    // Check if we have enough stock
-    if (product.stock < quantityNum) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: `Not enough stock available. Requested: ${quantityNum}, Available: ${product.stock}`
-      });
-    }
-    
-    // Safely get the product price
-    let productPrice = 0;
-    try {
-      productPrice = parseFloat(product.price?.toString() || '0');
-      if (isNaN(productPrice)) productPrice = 0;
-    } catch (e) {
-      console.warn('Error parsing product price:', e);
-      productPrice = 0;
-    }
-    
-    const purchaseTotal = productPrice * quantityNum;
-    
-    // IMPORTANT CHANGE: Always create a new purchase record
-    // This allows multiple purchases of the same product by the same customer
-    const purchase = await CustomerProduct.create({
-      customerId: customerIdNum,
-      productId: productIdNum,
-      quantity: quantityNum,
-      price: productPrice,
-      purchaseDate: new Date()
-    }, { transaction: t });
-    
-    console.log('New purchase record created:', purchase);
-    
-    // Update product stock
-    const newStock = Math.max(0, product.stock - quantityNum);
-    await product.update({
-      stock: newStock
-    }, { transaction: t });
-    
-    // Safely update customer's totalSpent and purchaseCount
-    let currentTotalSpent = 0;
-    let currentPurchaseCount = 0;
-    
-    try {
-      if (customer.totalSpent !== null && customer.totalSpent !== undefined) {
-        currentTotalSpent = parseFloat(customer.totalSpent.toString());
-        if (isNaN(currentTotalSpent)) currentTotalSpent = 0;
-      }
-      
-      if (customer.purchaseCount !== null && customer.purchaseCount !== undefined) {
-        currentPurchaseCount = parseInt(customer.purchaseCount.toString(), 10);
-        if (isNaN(currentPurchaseCount)) currentPurchaseCount = 0;
-      }
-    } catch (e) {
-      console.warn('Error parsing customer stats:', e);
-    }
-    
-    await customer.update({
-      totalSpent: currentTotalSpent + purchaseTotal,
-      purchaseCount: currentPurchaseCount + 1
-    }, { transaction: t });
-    
-    await t.commit();
-    
-    return res.status(201).json({
-      success: true,
-      message: 'Product added to customer successfully',
-      data: {
-        purchase,
-        customer: {
-          id: customer.id,
-          totalSpent: currentTotalSpent + purchaseTotal,
-          purchaseCount: currentPurchaseCount + 1
-        },
-        product: {
-          id: product.id,
-          name: product.name,
-          stock: newStock
-        }
-      }
-    });
-  } catch (error) {
-    try {
-      await t.rollback();
-    } catch (rollbackError) {
-      console.error('Error rolling back transaction:', rollbackError);
-    }
-    
-    console.error('Error adding product to customer:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to add product to customer',
-      error: (error as Error).message
-    });
-  }
-};
-
-// Direct SQL creation (fallback method for frontend)
-export const createPurchaseDirectSql = async (req: Request, res: Response) => {
-  const t: Transaction = await sequelize.transaction();
-  
-  try {
-    const { customer_id, product_id, quantity = 1, price } = req.body;
-    
-    // Log request for debugging
-    console.log('DirectSQL purchase request received:', req.body);
-    
-    // Validate all required fields are present and valid
-    if (!customer_id || !product_id) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: customer_id and product_id are required'
-      });
-    }
-    
-    // Ensure that all inputs are proper numbers
-    const customerIdNum = parseInt(customer_id.toString(), 10);
-    const productIdNum = parseInt(product_id.toString(), 10);
-    const quantityNum = parseInt(quantity.toString(), 10);
-    
-    // Price can be 0, but must be a valid number
-    let productPrice = 0;
-    if (price !== undefined) {
-      try {
-        productPrice = parseFloat(price.toString());
-        if (isNaN(productPrice)) productPrice = 0;
-      } catch (e) {
-        productPrice = 0;
-      }
-    }
-    
-    // Basic validation
-    if (isNaN(customerIdNum) || customerIdNum <= 0) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid customer_id: must be a positive number'
-      });
-    }
-    
-    if (isNaN(productIdNum) || productIdNum <= 0) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid product_id: must be a positive number'
-      });
-    }
-    
-    if (isNaN(quantityNum) || quantityNum <= 0) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid quantity: must be a positive number'
-      });
-    }
-    
-    // Find the customer and product
-    const customer = await Customer.findByPk(customerIdNum);
-    const product = await Product.findByPk(productIdNum);
-    
-    if (!customer) {
-      await t.rollback();
-      return res.status(404).json({
-        success: false,
-        message: `Customer with ID ${customerIdNum} not found`
-      });
-    }
-    
-    if (!product) {
-      await t.rollback();
-      return res.status(404).json({
-        success: false,
-        message: `Product with ID ${productIdNum} not found`
-      });
-    }
-    
-    // If price wasn't provided, use the product price
-    if (productPrice === 0 && product.price) {
-      try {
-        productPrice = parseFloat(product.price.toString());
-      } catch (e) {
-        console.warn('Error parsing product price:', e);
-      }
-    }
-    
-    // Create the purchase using the values with explicit field mapping
-    try {
-      // Create with exactly the fields and format that matches the database
-      const purchase = await CustomerProduct.create({
-        customerId: customerIdNum, // This will be automatically mapped to customer_id
-        productId: productIdNum,   // This will be automatically mapped to product_id
-        quantity: quantityNum,
-        price: productPrice,
-        purchaseDate: new Date()   // This will be mapped to purchase_date
-      }, { transaction: t });
-      
-      // Update related entities
-      
-      // 1. Update product stock
-      const newStock = Math.max(0, product.stock - quantityNum);
-      await product.update({ stock: newStock }, { transaction: t });
-      
-      // 2. Update customer totals
-      let currentTotalSpent = 0;
-      let currentPurchaseCount = 0;
-      
-      if (customer.totalSpent !== null && customer.totalSpent !== undefined) {
-        currentTotalSpent = parseFloat(customer.totalSpent.toString() || '0');
-        if (isNaN(currentTotalSpent)) currentTotalSpent = 0;
-      }
-      
-      if (customer.purchaseCount !== null && customer.purchaseCount !== undefined) {
-        currentPurchaseCount = parseInt(customer.purchaseCount.toString() || '0', 10);
-        if (isNaN(currentPurchaseCount)) currentPurchaseCount = 0;
-      }
-      
-      const purchaseTotal = productPrice * quantityNum;
-      
-      await customer.update({
-        totalSpent: currentTotalSpent + purchaseTotal,
-        purchaseCount: currentPurchaseCount + 1
-      }, { transaction: t });
-      
-      // Commit the transaction
-      await t.commit();
-      
-      return res.status(201).json({
-        success: true,
-        message: 'Purchase created successfully via direct SQL method',
-        data: {
-          purchase,
-          customer: {
-            id: customer.id,
-            totalSpent: currentTotalSpent + purchaseTotal,
-            purchaseCount: currentPurchaseCount + 1
-          },
-          product: {
-            id: product.id,
-            name: product.name,
-            stock: newStock
-          }
-        }
-      });
-    } catch (createError) {
-      await t.rollback();
-      console.error('Error in direct SQL purchase creation:', createError);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to create purchase record',
-        error: (createError as Error).message
-      });
-    }
-  } catch (error) {
-    try {
-      await t.rollback();
-    } catch (rollbackError) {
-      console.error('Error rolling back transaction:', rollbackError);
-    }
-    
-    console.error('Error in direct SQL purchase creation:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to create purchase',
-      error: (error as Error).message
-    });
+    return res.status(500).json({ success: false, message: 'Failed to fetch product purchase history', error: (error as Error).message });
   }
 };
