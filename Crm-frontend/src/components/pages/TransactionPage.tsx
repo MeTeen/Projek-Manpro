@@ -210,7 +210,7 @@ const TransactionPage: React.FC = () => {
         <div style={{ padding: '20px 30px' }}>
           <Header onCustomerCreated={handleCustomerCreated} onAddNewClick={handleAddNewClick} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0' }}>
-            <div>
+            <div style={{ padding: '0 0px 0 5px' }}>
               <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Daftar Transaksi</h1>
               <p style={{ color: '#6b7280', marginTop: '8px' }}>Manage your product inventory</p>
             </div>

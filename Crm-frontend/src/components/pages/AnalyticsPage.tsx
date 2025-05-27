@@ -100,12 +100,14 @@ const AnalyticsPage: React.FC = () => {
     ];
 
     return (
+
+
         <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb' }}>
             <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ flex: 1, overflowY: 'auto', position: 'relative', padding: '20px 30px' }}>
                 <Header />
-                <div style={{ padding: '20px 30px' }}>
-                    <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '20px', color: '#1F2937' }}>
+                <div style={{ padding: '20px 10px' }}>
+                    <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '20px', color: '#1F2937' }}>
                         Analitik Penjualan
                     </h1>
                     {error && <p style={{ color: 'orange', marginBottom: '15px' }}>Sebagian data mungkin gagal dimuat: {error}</p>}
@@ -144,7 +146,7 @@ const AnalyticsPage: React.FC = () => {
 
 
 
-                    <div style={{ padding: '100px 20px 20px 20px',display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px', marginTop: '30px' }}>
+                    <div style={{ padding: '100px 20px 20px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px', marginTop: '30px' }}>
                         {productSalesData.length > 0 ? (
                             <ReusablePieChart data={productSalesData} title="Distribusi Penjualan per Produk (berdasarkan nilai)" />
                         ) : !loading && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', textAlign: 'center' }}><p>Data penjualan produk tidak tersedia.</p></div>}

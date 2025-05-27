@@ -1,139 +1,165 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
-import { toast } from 'react-toastify';
+// src/components/dashboard/CustomerSection.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import customerService, { Customer } from '../../services/customerService'; // Sesuaikan path
+import { MdPerson, MdChevronRight, MdErrorOutline, MdPeopleOutline } from 'react-icons/md'; // Tambahkan ikon
+import { Link } from 'react-router-dom'; // Untuk link "Lihat Semua"
 
-const BACKEND_URL = 'http://localhost:3000';
-
-interface Customer {
-  id: string | number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  avatarUrl?: string;
+// Definisikan interface Props untuk CustomerSection
+export interface CustomerSectionProps {
+  refreshTrigger?: number;      // Untuk memicu refresh data dari luar
+  limit?: number;               // Batas jumlah customer yang ditampilkan
+  isDashboardView?: boolean;    // Flag untuk menandakan apakah ini tampilan dashboard
 }
 
-interface CustomerSectionProps {
-  title?: string;
-  onCustomerCountChange?: (count: number) => void;
-  refreshTrigger?: number;
-}
-
-const CustomerSection: React.FC<CustomerSectionProps> = ({
-  title = 'Customers',
-  onCustomerCountChange,
-  refreshTrigger = 0
-}) => {
+const CustomerSection: React.FC<CustomerSectionProps> = ({ refreshTrigger, limit, isDashboardView }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { token, isAuthenticated } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setLoading(true);
+      setError(null);
+      let fetchedCustomers = await customerService.getAllCustomers();
 
-      if (!token || !isAuthenticated) throw new Error('Authentication required');
+      // Urutkan berdasarkan tanggal dibuat (terbaru dulu) jika ada createdAt
+      if (fetchedCustomers.length > 0 && fetchedCustomers[0].createdAt) {
+        fetchedCustomers.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+      }
+      
+      if (limit && typeof limit === 'number') {
+        fetchedCustomers = fetchedCustomers.slice(0, limit);
+      }
 
-      const response = await axios.get(`${BACKEND_URL}/api/customers`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      const data = Array.isArray(response.data.data)
-        ? response.data.data
-        : response.data;
-
-      const mapped = data.map((c: any) => {
-        const firstName = c.firstName || c.first_name || 'Unknown';
-        const lastName = c.lastName || c.last_name || '';
-        let avatarUrl = c.avatarUrl || c.avatar_url || c.avatar;
-
-        if (avatarUrl && avatarUrl.startsWith('/')) {
-          avatarUrl = `${BACKEND_URL}${avatarUrl}`;
-        }
-
-        if (!avatarUrl) {
-          avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            firstName + ' ' + lastName
-          )}&background=random`;
-        }
-
-        return {
-          id: c.id || `${firstName}-id`,
-          firstName,
-          lastName,
-          email: c.email || 'No email',
-          avatarUrl
-        };
-      });
-
-      setCustomers(mapped);
-      onCustomerCountChange?.(mapped.length);
-    } catch (err: any) {
-      console.error('Fetch error:', err);
-      toast.error('Failed to load customer data');
-      onCustomerCountChange?.(0);
+      setCustomers(fetchedCustomers);
+    } catch (err) {
+      console.error("Error fetching customers for section:", err);
+      setError("Gagal memuat daftar pelanggan.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, [limit]); // refreshTrigger akan dihandle oleh useEffect di bawah
 
   useEffect(() => {
     fetchCustomers();
-  }, [token, isAuthenticated]);
+  }, [refreshTrigger, fetchCustomers]); // fetchCustomers dimasukkan sebagai dependency useCallback
 
-  useEffect(() => {
-    if (refreshTrigger > 0) fetchCustomers();
-  }, [refreshTrigger]);
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', color: '#6B7280' }}>
+        <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '3px solid #E5E7EB', borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+        <span style={{ marginLeft: '10px' }}>Memuat pelanggan...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ 
+        padding: '20px', 
+        color: '#EF4444', 
+        backgroundColor: '#FEF2F2', 
+        borderRadius: '8px', 
+        border: '1px solid #FCA5A5',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        <MdErrorOutline size={20}/> {error}
+      </div>
+    );
+  }
 
   return (
-    <div className="mb-2">
-      <h2 className="text-lg font-semibold mb-2">{title}</h2>
-
-      <div className="bg-white rounded-lg shadow p-2">
-        {isLoading ? (
-          <p className="text-gray-500">Loading customers...</p>
-        ) : customers.length === 0 ? (
-          <p className="text-gray-400 text-sm">No customers found</p>
-        ) : (
-          <div className="flex flex-col divide-y">
-            {customers.map((customer) => (
-              <div key={customer.id} className="flex items-center gap-3 py-2">
-                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-600">
-                  <img
-                    src={customer.avatarUrl}
-                    alt={customer.firstName}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
+    <div style={{
+        // Styling untuk container section, jika isDashboardView maka mungkin tidak perlu border/shadow luar
+        // karena sudah dibungkus card di DashboardHome
+    }}>
+      {customers.length === 0 && !loading && (
+        <div style={{ 
+            textAlign: 'center', 
+            color: '#6B7280', 
+            padding: isDashboardView ? '40px 20px' : '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: isDashboardView ? '200px' : 'auto', // Beri tinggi minimal di dashboard
+            border: isDashboardView ? '1px dashed #D1D5DB' : 'none',
+            borderRadius: isDashboardView ? '8px' : '0',
+        }}>
+            <MdPeopleOutline size={isDashboardView ? 48 : 32} style={{ marginBottom: '16px', color: '#9CA3AF' }} />
+            <p style={{ fontSize: '16px', fontWeight: 500, margin: 0 }}>Belum ada pelanggan.</p>
+            {!isDashboardView && (
+                <p style={{ fontSize: '14px', marginTop: '8px' }}>Mulai dengan menambahkan pelanggan baru.</p>
+            )}
+        </div>
+      )}
+      {customers.length > 0 && (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {customers.map(customer => (
+            <li 
+              key={customer.id} 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 0', // Padding vertikal, horizontal diatur oleh parent jika perlu
+                borderBottom: '1px solid #F3F4F6', // Border lebih halus
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <img
+                  src={customer.avatarUrl || `https://ui-avatars.com/api/?name=${customer.firstName}+${customer.lastName}&background=random&size=128`}
+                  alt={`${customer.firstName} ${customer.lastName}`}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    marginRight: '12px',
+                    objectFit: 'cover',
+                    border: '1px solid #E5E7EB'
+                  }}
+                />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#1F2937', fontSize: '15px' }}>
                     {customer.firstName} {customer.lastName}
-                  </p>
-                  <p className="text-sm text-gray-500">{customer.email}</p>
+                  </div>
+                  <div style={{ fontSize: '0.875em', color: '#6B7280' }}>{customer.email}</div>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </button>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              {/* Jika tidak di dashboard, mungkin tampilkan tombol aksi atau link detail */}
+              {!isDashboardView && (
+                <Link to={`/customers/${customer.id}`} style={{ color: '#4F46E5', textDecoration: 'none' }} title="Lihat Detail">
+                  <MdChevronRight size={24} />
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {/* Tombol "Lihat Semua" hanya jika bukan tampilan dashboard dan ada pelanggan */}
+      {!isDashboardView && customers.length > 0 && ( // Mungkin tidak perlu jika sudah ada di atas section di DashboardHome
+        <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '20px', borderTop: customers.length > 0 ? '1px solid #E5E7EB' : 'none' }}>
+          <Link
+            to="/customers"
+            style={{
+              color: '#4F46E5',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: 500,
+              padding: '8px 16px',
+              borderRadius: '6px',
+              backgroundColor: '#EEF2FF',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#E0E7FF')}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#EEF2FF')}
+          >
+            Lihat Semua Pelanggan
+          </Link>
+        </div>
+      )}
     </div>
   );
 };

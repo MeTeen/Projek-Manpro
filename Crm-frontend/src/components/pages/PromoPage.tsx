@@ -264,7 +264,7 @@ const PromoPage: React.FC = () => {
             <div style={{ flex: 1, overflow: 'auto', padding: '20px 30px' }}>
                 <Header />
                 <div style={{ marginBottom: '24px', marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
+                    <div style={{ padding: '0 0px 0 5px' }}>
                         <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0 }}>Promos</h1>
                         <p style={{ color: '#6b7280', marginTop: '8px' }}>Manage your promotional offers</p>
                     </div>

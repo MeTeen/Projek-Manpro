@@ -191,7 +191,6 @@ const ProductPage: React.FC = () => {
         transition: 'margin-left 0.3s ease',
       }}>
         <div style={{ padding: '20px 30px' }}>
-          {/* Header */}
           <Header />
           
           {/* Page Title and Add Button */}
@@ -202,7 +201,7 @@ const ProductPage: React.FC = () => {
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>
-            <div>
+            <div style={{ padding: '0 0px 0 5px' }}>
               <h1 style={{ fontSize: '24px', fontWeight: '700', margin: 0 }}>Products</h1>
               <p style={{ color: '#6b7280', marginTop: '8px' }}>Manage your product inventory</p>
             </div>

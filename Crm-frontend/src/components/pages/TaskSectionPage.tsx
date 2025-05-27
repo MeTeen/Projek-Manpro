@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from '../dashboard/Header';
 import Sidebar from '../dashboard/Sidebar';
 import taskService, { Task } from '../../services/taskService';
 import { format } from 'date-fns';
+import { MdCheckCircle, MdRadioButtonUnchecked, MdDelete, MdAddCircleOutline, MdErrorOutline, MdInfoOutline, MdListAlt } from 'react-icons/md'; // Tambahkan ikon
 
-// Define the animation style
+// Define the animation style (jika masih ingin digunakan, jika tidak, bisa dihapus)
 const spinAnimation = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -17,6 +18,7 @@ const TaskSectionPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null); // Error spesifik untuk form
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -26,7 +28,9 @@ const TaskSectionPage: React.FC = () => {
   const [newTaskContent, setNewTaskContent] = useState('');
   const [newTaskDate, setNewTaskDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
-  // Handle responsive sidebar
+  const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed); // Definisikan toggleSidebar
+
+  // Handle responsive sidebar (jika diperlukan, kode Anda sebelumnya sudah ada)
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -35,37 +39,29 @@ const TaskSectionPage: React.FC = () => {
         setSidebarCollapsed(false);
       }
     };
-
     window.addEventListener('resize', handleResize);
-    // Initial check
     handleResize();
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch tasks data
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const fetchedTasks = await taskService.getTasks();
       setTasks(fetchedTasks);
       
-      // Calculate statistics
       const completed = fetchedTasks.filter(task => task.isCompleted).length;
       const pending = fetchedTasks.length - completed;
       
-      // Calculate today's tasks
-      const today = new Date();
-      const todayString = format(today, 'yyyy-MM-dd');
+      const todayString = format(new Date(), 'yyyy-MM-dd');
       const todayTasks = fetchedTasks.filter(task => {
-        const taskDate = new Date(task.date);
-        return format(taskDate, 'yyyy-MM-dd') === todayString;
+        try {
+            return format(new Date(task.date), 'yyyy-MM-dd') === todayString;
+        } catch (e) {
+            console.warn("Invalid date format for task:", task);
+            return false;
+        }
       }).length;
       
       setStats({
@@ -74,54 +70,59 @@ const TaskSectionPage: React.FC = () => {
         completed,
         today: todayTasks
       });
-      setError(null);
     } catch (err) {
       console.error('Error fetching tasks:', err);
-      setError('Failed to fetch tasks');
+      setError('Gagal memuat daftar tugas. Silakan coba lagi nanti.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleAddTask = async () => {
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const handleAddTask = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // Mencegah reload halaman standar form
+    setFormError(null);
     if (!newTaskContent.trim()) {
-      setError('Task content cannot be empty');
+      setFormError('Isi tugas tidak boleh kosong.');
       return;
+    }
+    if (!newTaskDate) {
+        setFormError('Tanggal tugas harus diisi.');
+        return;
     }
 
     try {
-      setIsLoading(true);
+      setIsLoading(true); // Atau state loading spesifik untuk form
       await taskService.createTask({
         date: newTaskDate,
         content: newTaskContent
       });
-      
-      // Reset form
       setNewTaskContent('');
       setNewTaskDate(format(new Date(), 'yyyy-MM-dd'));
-      
-      // Refresh tasks
-      fetchTasks();
+      await fetchTasks(); // Muat ulang tugas setelah menambah
     } catch (err) {
       console.error('Error adding task:', err);
-      setError('Failed to add task');
+      setFormError('Gagal menambahkan tugas.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteTask = async (id: number) => {
-    try {
-      setIsLoading(true);
-      await taskService.deleteTask(id);
-      
-      // Refresh tasks
-      fetchTasks();
-    } catch (err) {
-      console.error('Error deleting task:', err);
-      setError('Failed to delete task');
-    } finally {
-      setIsLoading(false);
+    if (window.confirm('Apakah Anda yakin ingin menghapus tugas ini?')) {
+      try {
+        setIsLoading(true);
+        await taskService.deleteTask(id);
+        await fetchTasks();
+      } catch (err) {
+        console.error('Error deleting task:', err);
+        setError('Gagal menghapus tugas.'); // Tampilkan error global jika perlu
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -129,327 +130,243 @@ const TaskSectionPage: React.FC = () => {
     try {
       setIsLoading(true);
       await taskService.updateTask(task.id, {
-        isCompleted: !task.isCompleted
+        isCompleted: !task.isCompleted,
+        // Kirim field lain jika backend mengharapkannya atau untuk mencegah null/undefined
+        date: task.date, 
+        content: task.content,
       });
-      
-      // Refresh tasks
-      fetchTasks();
+      await fetchTasks();
     } catch (err) {
       console.error('Error updating task:', err);
-      setError('Failed to update task');
+      setError('Gagal memperbarui status tugas.');
     } finally {
       setIsLoading(false);
     }
   };
+  
+  // Komponen untuk Statistik Card
+  const StatCard: React.FC<{ title: string; value: number | string; color?: string; icon?: React.ReactNode }> = ({ title, value, color, icon }) => (
+    <div style={{ 
+        backgroundColor: 'white', 
+        padding: '20px', 
+        borderRadius: '8px', 
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        height: '100%'
+    }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h5 style={{ color: '#6B7280', fontSize: '14px', margin: 0, fontWeight: 500 }}>{title}</h5>
+            {icon && <span style={{ color: color || '#6B7280' }}>{icon}</span>}
+        </div>
+        <h3 style={{ fontSize: '28px', fontWeight: '700', margin: 0, color: color || '#1F2937' }}>
+            {isLoading && typeof value === 'number' ? '...' : value}
+        </h3>
+    </div>
+  );
+
 
   return (
-    <div className="dashboard-container" style={{ minHeight: '100vh', display: 'flex' }}>
-      {/* Add the keyframes animation to the document head */}
-      <style>{spinAnimation}</style>
-
-      <Sidebar collapsed={sidebarCollapsed} />
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F3F4F6' }}>
+      <style>{spinAnimation}</style> {/* Jika Anda masih menggunakan ini untuk loading spinner */}
+      <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       
-      <div className={`main-content ${sidebarCollapsed ? 'expanded' : ''}`} style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto' }}> {/* Konten utama bisa di-scroll */}
         <Header 
-          onAddNewClick={() => {}} 
-          onCustomerCreated={() => {}}
+          // Pastikan Header menerima props ini atau sesuaikan
+          onAddNewClick={() => { /* Logika jika ada dropdown di header */ }} 
+          onCustomerCreated={() => { /* Logika jika ada customer creation dari header */ }}
         />
         
-        <div className="page-content" style={{ padding: '24px', backgroundColor: '#f9f9f9', minHeight: 'calc(100vh - 60px)' }}>
-          <div className="container-fluid">
-            {/* Page Title with style */}
-            <div className="row mb-4">
-              <div className="col-12">
-                <div className="page-title-box" style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+        <main style={{ padding: '24px' }}> {/* Ganti kelas dengan style inline */}
+          {/* Page Title */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '24px'
+          }}>
+            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
+              Manajemen Tugas
+            </h1>
+            {/* Tombol Aksi Utama (jika ada, misal: Tambah Tugas Cepat) bisa diletakkan di sini */}
+          </div>
+          
+          {/* Task Stats Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+            <StatCard title="Total Tugas" value={stats.total} color="#3B82F6" icon={<MdListAlt size={24}/>} />
+            <StatCard title="Menunggu Dikerjakan" value={stats.pending} color="#F59E0B" icon={<MdInfoOutline size={24}/>} />
+            <StatCard title="Selesai" value={stats.completed} color="#10B981" icon={<MdCheckCircle size={24}/>} />
+            <StatCard title="Tugas Hari Ini" value={stats.today} color="#6366F1" />
+          </div>
+          
+          {/* Add New Task Form in a Card */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '24px', 
+            borderRadius: '8px', 
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)', 
+            marginBottom: '24px' 
+          }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1F2937', marginBottom: '16px', borderBottom: '1px solid #E5E7EB', paddingBottom: '12px' }}>
+              Tambah Tugas Baru
+            </h2>
+            {formError && (
+              <div style={{ color: '#EF4444', backgroundColor: '#FEF2F2', padding: '10px 15px', borderRadius: '6px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MdErrorOutline /> {formError}
+              </div>
+            )}
+            <form onSubmit={handleAddTask} style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 400px' /* Lebar fleksibel untuk input teks */ }}>
+                <label htmlFor="newTaskContent" style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px', color: '#374151' }}>
+                  Deskripsi Tugas
+                </label>
+                <input 
+                  id="newTaskContent"
+                  type="text"
+                  value={newTaskContent}
+                  onChange={(e) => setNewTaskContent(e.target.value)}
+                  placeholder="Masukkan deskripsi tugas..."
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', height: '42px' }}
+                />
+              </div>
+              <div style={{ flex: '0 1 180px' /* Lebar tetap untuk tanggal */ }}>
+                <label htmlFor="newTaskDate" style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px', color: '#374151' }}>
+                  Tanggal
+                </label>
+                <input 
+                  id="newTaskDate"
+                  type="date"
+                  value={newTaskDate}
+                  onChange={(e) => setNewTaskDate(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', height: '42px' }}
+                />
+              </div>
+              <button 
+                type="submit"
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#4F46E5', // Warna utama aplikasi Anda
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  height: '42px', // Samakan tinggi dengan input
+                  display: 'flex',
                   alignItems: 'center',
-                  backgroundColor: 'white',
-                  padding: '20px',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                  marginBottom: '24px'
-                }}>
-                  <h4 className="page-title" style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>Task Management</h4>
-                </div>
-              </div>
+                  gap: '6px',
+                  opacity: isLoading ? 0.7 : 1
+                }}
+                disabled={isLoading}
+              >
+                <MdAddCircleOutline size={18} /> Tambah
+              </button>
+            </form>
+          </div>
+          
+          {/* Task List in a Card */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            borderRadius: '8px', 
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            overflow: 'hidden' // Untuk menjaga border radius pada konten internal
+          }}>
+            <div style={{ padding: '20px', borderBottom: '1px solid #E5E7EB' }}>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1F2937' }}>Daftar Tugas</h2>
             </div>
-            
-            {/* Task Stats Card */}
-            <div className="row mb-4">
-              <div className="col-md-3 col-sm-6 mb-3">
-                <div style={{ 
-                  backgroundColor: 'white', 
-                  padding: '20px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                  height: '100%'
-                }}>
-                  <h5 style={{ color: '#6c757d', fontSize: '14px', marginBottom: '12px' }}>Total Tasks</h5>
-                  <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '0' }}>
-                    {isLoading ? '...' : stats.total}
-                  </h3>
-                </div>
+            {isLoading && !tasks.length ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
+                <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '3px solid #E5E7EB', borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                <p style={{marginTop: '10px'}}>Memuat tugas...</p>
               </div>
-              <div className="col-md-3 col-sm-6 mb-3">
-                <div style={{ 
-                  backgroundColor: 'white', 
-                  padding: '20px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                  height: '100%'
-                }}>
-                  <h5 style={{ color: '#6c757d', fontSize: '14px', marginBottom: '12px' }}>Pending</h5>
-                  <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '0', color: 'var(--warning)' }}>
-                    {isLoading ? '...' : stats.pending}
-                  </h3>
-                </div>
+            ) : !isLoading && tasks.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#6B7280' }}>
+                <MdInfoOutline size={48} style={{ marginBottom: '16px', color: '#9CA3AF' }} />
+                <p style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>Tidak ada tugas.</p>
+                <p style={{ fontSize: '14px' }}>Silakan tambahkan tugas baru menggunakan form di atas.</p>
               </div>
-              <div className="col-md-3 col-sm-6 mb-3">
-                <div style={{ 
-                  backgroundColor: 'white', 
-                  padding: '20px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                  height: '100%'
-                }}>
-                  <h5 style={{ color: '#6c757d', fontSize: '14px', marginBottom: '12px' }}>Completed</h5>
-                  <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '0', color: 'var(--success)' }}>
-                    {isLoading ? '...' : stats.completed}
-                  </h3>
-                </div>
-              </div>
-              <div className="col-md-3 col-sm-6 mb-3">
-                <div style={{ 
-                  backgroundColor: 'white', 
-                  padding: '20px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                  height: '100%'
-                }}>
-                  <h5 style={{ color: '#6c757d', fontSize: '14px', marginBottom: '12px' }}>Today's Tasks</h5>
-                  <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '0', color: 'var(--primary)' }}>
-                    {isLoading ? '...' : stats.today}
-                  </h3>
-                </div>
-              </div>
-            </div>
-            
-            {/* Add New Task Form */}
-            <div className="row mb-4">
-              <div className="col-12">
-                <div className="card" style={{
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
-                  backgroundColor: 'white',
-                  padding: '0',
-                  overflow: 'hidden',
-                  border: 'none'
-                }}>
-                  <div className="card-header" style={{ 
-                    backgroundColor: '#f8f9fa', 
-                    padding: '15px 20px', 
-                    borderBottom: '1px solid #eee'
-                  }}>
-                    <h5 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>Add New Task</h5>
-                  </div>
-                  <div className="card-body" style={{ padding: '20px' }}>
-                    {error && (
+            ) : (
+              <div style={{ maxHeight: 'calc(100vh - 450px)', overflowY: 'auto' }}> {/* Batasi tinggi dan buat scrollable */}
+                {tasks.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Urutkan berdasarkan tanggal
+                      .map(task => (
+                  <div
+                    key={task.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '16px 20px',
+                      borderBottom: '1px solid #F3F4F6', // Border lebih halus antar item
+                      backgroundColor: task.isCompleted ? '#F9FAFB' : 'white',
+                      opacity: task.isCompleted ? 0.7 : 1,
+                      transition: 'background-color 0.2s ease, opacity 0.2s ease'
+                    }}
+                  >
+                    <div 
+                      style={{ marginRight: '16px', cursor: 'pointer' }}
+                      onClick={() => handleToggleComplete(task)}
+                      title={task.isCompleted ? "Tandai belum selesai" : "Tandai selesai"}
+                    >
+                      {task.isCompleted ? 
+                        <MdCheckCircle size={24} style={{ color: '#10B981' }} /> : 
+                        <MdRadioButtonUnchecked size={24} style={{ color: '#9CA3AF' }} />
+                      }
+                    </div>
+                    <div style={{ flex: 1 }}>
                       <div style={{ 
-                        color: 'white', 
-                        backgroundColor: '#dc3545', 
-                        padding: '10px 15px', 
-                        borderRadius: '4px', 
-                        marginBottom: '16px' 
+                        textDecoration: task.isCompleted ? 'line-through' : 'none',
+                        color: task.isCompleted ? '#6B7280' : '#1F2937',
+                        fontSize: '15px',
+                        fontWeight: 500,
+                        marginBottom: '4px'
                       }}>
-                        {error}
+                        {task.content}
                       </div>
-                    )}
-                    <div className="row">
-                      <div className="col-md-8 mb-3">
-                        <input 
-                          type="text"
-                          value={newTaskContent}
-                          onChange={(e) => setNewTaskContent(e.target.value)}
-                          placeholder="Enter task description"
-                          style={{
-                            width: '100%',
-                            padding: '10px 12px',
-                            border: '1px solid #ced4da',
-                            borderRadius: '4px'
-                          }}
-                        />
-                      </div>
-                      <div className="col-md-2 mb-3">
-                        <input 
-                          type="date"
-                          value={newTaskDate}
-                          onChange={(e) => setNewTaskDate(e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '10px 12px',
-                            border: '1px solid #ced4da',
-                            borderRadius: '4px'
-                          }}
-                        />
-                      </div>
-                      <div className="col-md-2 mb-3">
-                        <button 
-                          style={{
-                            width: '100%',
-                            padding: '10px 12px',
-                            backgroundColor: 'var(--indigo-600)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold'
-                          }}
-                          onClick={handleAddTask}
-                          disabled={isLoading}
-                        >
-                          Add Task
-                        </button>
+                      <div style={{ fontSize: '13px', color: '#6B7280' }}>
+                        Batas Waktu: {format(new Date(task.date), 'dd MMM yyyy')}
                       </div>
                     </div>
+                    <div style={{ 
+                        padding: '4px 10px', 
+                        backgroundColor: task.isCompleted ? '#D1FAE5' : '#FEF3C7', // Warna tag lebih lembut
+                        color: task.isCompleted ? '#065F46' : '#92400E',
+                        borderRadius: '12px', // Lebih rounded
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        marginRight: '16px',
+                        minWidth: '80px',
+                        textAlign: 'center'
+                    }}>
+                      {task.isCompleted ? 'Selesai' : 'Pending'}
+                    </div>
+                    <button
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: 'transparent',
+                        color: '#EF4444',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      onClick={() => handleDeleteTask(task.id)}
+                      title="Hapus tugas"
+                    >
+                      <MdDelete size={18} />
+                    </button>
                   </div>
-                </div>
+                ))}
               </div>
-            </div>
-            
-            {/* Main Task Content */}
-            <div className="row">
-              <div className="col-12">
-                <div className="card" style={{
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
-                  backgroundColor: 'white',
-                  padding: '0',
-                  overflow: 'hidden',
-                  border: 'none',
-                  minHeight: '400px'
-                }}>
-                  <div className="card-header" style={{ 
-                    backgroundColor: '#f8f9fa', 
-                    padding: '15px 20px', 
-                    borderBottom: '1px solid #eee'
-                  }}>
-                    <h5 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>Task List</h5>
-                  </div>
-                  <div className="card-body" style={{ padding: '20px' }}>
-                    {isLoading && !tasks.length ? (
-                      <div style={{ padding: '30px', textAlign: 'center' }}>
-                        <div style={{ marginBottom: '10px' }}>
-                          <span style={{ 
-                            display: 'inline-block', 
-                            width: '20px', 
-                            height: '20px', 
-                            border: '3px solid #ccc', 
-                            borderTopColor: 'var(--indigo-600)', 
-                            borderRadius: '50%', 
-                            animation: 'spin 1s linear infinite' 
-                          }}></span>
-                        </div>
-                        <div>Loading tasks...</div>
-                      </div>
-                    ) : tasks.length === 0 ? (
-                      <div style={{ 
-                        padding: '40px', 
-                        textAlign: 'center', 
-                        color: '#6c757d',
-                        backgroundColor: 'white',
-                        borderRadius: '8px',
-                        border: '1px dashed #dee2e6'
-                      }}>
-                        <div style={{ fontSize: '16px', marginBottom: '10px' }}>No tasks found</div>
-                        <div style={{ fontSize: '14px' }}>Add a new task using the form above</div>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '600px', overflowY: 'auto' }}>
-                        {tasks.map(task => (
-                          <div
-                            key={task.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              padding: '15px',
-                              borderRadius: '6px',
-                              border: '1px solid #eee',
-                              backgroundColor: task.isCompleted ? '#f8f9fa' : 'white',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            <div 
-                              style={{ 
-                                width: '20px', 
-                                height: '20px', 
-                                border: '2px solid ' + (task.isCompleted ? '#28a745' : '#6c757d'),
-                                borderRadius: '4px',
-                                marginRight: '15px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                backgroundColor: task.isCompleted ? '#28a745' : 'white'
-                              }}
-                              onClick={() => handleToggleComplete(task)}
-                            >
-                              {task.isCompleted && (
-                                <span style={{ color: 'white', fontSize: '12px' }}>✓</span>
-                              )}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ 
-                                textDecoration: task.isCompleted ? 'line-through' : 'none',
-                                color: task.isCompleted ? '#6c757d' : 'inherit',
-                                fontSize: '16px',
-                                fontWeight: '500',
-                                marginBottom: '5px'
-                              }}>
-                                {task.content}
-                              </div>
-                              <div style={{ fontSize: '14px', color: '#6c757d' }}>
-                                Due: {format(new Date(task.date), 'MMM dd, yyyy')}
-                              </div>
-                            </div>
-                            <div style={{ 
-                              padding: '4px 8px', 
-                              backgroundColor: task.isCompleted ? '#d4edda' : '#fff3cd',
-                              color: task.isCompleted ? '#155724' : '#856404',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              fontWeight: '500',
-                              marginRight: '15px'
-                            }}>
-                              {task.isCompleted ? 'Completed' : 'Pending'}
-                            </div>
-                            <button
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#dc3545',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '14px'
-                              }}
-                              onClick={() => handleDeleteTask(task.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
 };
 
-export default TaskSectionPage; 
+export default TaskSectionPage;

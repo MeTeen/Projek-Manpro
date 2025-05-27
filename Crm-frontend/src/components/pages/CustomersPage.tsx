@@ -304,7 +304,6 @@ const CustomersPage: React.FC = () => {
         transition: 'margin-left 0.3s ease',
       }}>
         <div style={{ padding: '20px 30px' }}>
-          {/* Header */}
           <Header />
           
           {/* Page Title and Add Button */}
@@ -313,9 +312,8 @@ const CustomersPage: React.FC = () => {
             marginTop: '24px', 
             display: 'flex', 
             justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div>
+            alignItems: 'center'}}>
+            <div style={{ padding: '0 0px 0 5px' }}>
               <h1 style={{ fontSize: '24px', fontWeight: '700', margin: 0 }}>Customers</h1>
               <p style={{ color: '#6b7280', marginTop: '8px' }}>Manage your customer data and interactions</p>
             </div>
