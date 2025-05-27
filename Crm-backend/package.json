@@ -16,7 +16,7 @@
     "migrate:debug": "ts-node src/scripts/runMigrationFix.ts",
     "migrate:direct": "ts-node src/scripts/directMigration.ts",
     "migrate:runner": "ts-node runMigrations.ts",
-    "seed": "npx sequelize-cli db:seed:all",
+    "seed:ts": "ts-node scripts/seed-ts.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

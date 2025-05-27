@@ -55,7 +55,7 @@ const analyticsService = {
   },
 
   // Panggilan untuk tren penjualan (pendapatan & jumlah transaksi)
-  async getSalesTrend(period: 'daily' | 'weekly' | 'monthly' = 'monthly'): Promise<SalesTrendItem[]> {
+  async getSalesTrend(period: string = 'monthly'): Promise<SalesTrendItem[]> {
     authService.initializeAuth();
     const token = getAuthToken();
     if (!token && import.meta.env.PROD) throw new Error('Authentication required.');

@@ -24,7 +24,6 @@ interface Config {
   test: DbConfig;
   production: DbConfig;
 }
-
 const config: Config = {
   development: {
     host: process.env.DB_HOST || 'localhost',

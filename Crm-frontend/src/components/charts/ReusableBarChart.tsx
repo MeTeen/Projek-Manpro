@@ -8,8 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
-  Cell // Untuk warna kustom per bar jika perlu
+  ResponsiveContainer
 } from 'recharts';
 
 interface BarChartDataItem {

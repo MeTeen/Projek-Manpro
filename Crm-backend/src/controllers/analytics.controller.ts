@@ -72,62 +72,60 @@ export const getKpis = async (req: Request, res: Response) => {
 };
 
 
-export const getSalesTrend = async (req: Request, res: Response) => {
-    const period = (req.query.period as string) || 'monthly'; // daily, weekly, monthly
-    let dateFormat: string;
-    let groupBy: any; // fn | col | literal
+const getMonthlyTrendDateRange = (monthsToDisplay: number = 12): { startDate: Date, endDate: Date } => {
+    const today = new Date();
+    let startDate = new Date(today);
+    let endDate = new Date(today);
 
-    switch (period) {
-        case 'daily':
-            dateFormat = '%Y-%m-%d'; // Grup per hari
-            groupBy = fn('DATE_FORMAT', col('purchase_date'), dateFormat);
-            break;
-        case 'weekly':
-            // Grup per minggu (misalnya, 'YYYY-WW')
-            // MySQL: YEARWEEK(date, mode), PostgreSQL: TO_CHAR(date, 'IYYY-IW')
-            // Ini lebih kompleks dan mungkin perlu literal query atau penyesuaian DB-specific
-            // Untuk contoh sederhana, kita bisa group by tanggal saja untuk 7 hari terakhir
-            dateFormat = '%Y-%m-%d'; // atau '%x-%v' untuk tahun-minggu jika MySQL
-            groupBy = fn('DATE_FORMAT', col('purchase_date'), dateFormat); // Atau literal('YEARWEEK(purchase_date)') untuk MySQL
-            break;
-        case 'monthly':
-        default:
-            dateFormat = '%Y-%m'; // Grup per bulan
-            groupBy = fn('DATE_FORMAT', col('purchase_date'), dateFormat);
-            break;
-    }
+    endDate.setHours(23, 59, 59, 999); // Akhir hari ini
+
+    // Ambil data dari awal bulan 'monthsToDisplay' bulan yang lalu hingga akhir hari ini
+    startDate = new Date(today.getFullYear(), today.getMonth() - (monthsToDisplay - 1), 1);
+    startDate.setHours(0, 0, 0, 0); // Set ke awal hari dari bulan tersebut
     
-    const { startDate, endDate } = getDateRange(period);
+    return { startDate, endDate };
+};
 
+export const getSalesTrend = async (req: Request, res: Response) => {
+    // Periode sekarang sudah tetap bulanan, tidak perlu membaca dari req.query.period
+    const dateFormat: string = '%Y-%m'; // Format untuk grouping per bulan (TAHUN-BULAN)
+    const groupByAttribute: any = fn('DATE_FORMAT', col('purchase_date'), dateFormat);
+
+    // Ambil rentang tanggal untuk tren bulanan (misalnya 6 bulan terakhir)
+    const { startDate, endDate } = getMonthlyTrendDateRange(6); // Anda bisa sesuaikan jumlah bulan di sini
+
+    console.log(`Workspaceing MONTHLY sales trend`);
+    console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+    console.log(`Grouping by: ${dateFormat}`);
 
     try {
         const salesData = await CustomerProduct.findAll({
             attributes: [
-                [groupBy, 'name'], // 'name' akan berisi format tanggal (hari/bulan)
+                [groupByAttribute, 'name'], // 'name' akan berisi format YYYY-MM
                 [fn('SUM', sequelize.literal('(price * quantity) - COALESCE(discount_amount, 0)')), 'pendapatan'],
                 [fn('COUNT', col('id')), 'transaksi']
             ],
             where: {
-                purchaseDate: { // Menggunakan nama field di model Sequelize (purchaseDate)
+                purchaseDate: { // Gunakan nama field di model Sequelize (purchaseDate)
                     [Op.between]: [startDate, endDate]
                 }
             },
-            group: ['name'],
-            order: [[col('name'), 'ASC']], // Urutkan berdasarkan periode
+            group: ['name'], // Group berdasarkan hasil format tanggal (YYYY-MM)
+            order: [[col('name'), 'ASC']], // Urutkan berdasarkan periode bulan
             raw: true,
         });
 
-        // Konversi hasil ke number jika perlu (Sequelize kadang mengembalikan string untuk SUM/COUNT)
         const formattedData = salesData.map(item => ({
-            name: (item as any).name,
+            name: (item as any).name, // Ini akan menjadi seperti "2025-03", "2025-04"
             pendapatan: parseFloat((item as any).pendapatan || '0'),
             transaksi: parseInt((item as any).transaksi || '0', 10),
         }));
 
+        console.log('Monthly sales trend data fetched:', formattedData);
         res.status(200).json({ success: true, data: formattedData });
     } catch (error: any) {
-        console.error('Error fetching sales trend:', error);
-        res.status(500).json({ success: false, message: 'Gagal mengambil tren penjualan.', error: error.message });
+        console.error('Error fetching monthly sales trend:', error);
+        res.status(500).json({ success: false, message: 'Gagal mengambil tren penjualan bulanan.', error: error.message });
     }
 };
 

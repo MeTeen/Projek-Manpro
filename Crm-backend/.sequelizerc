@@ -1,11 +1,13 @@
+// .sequelizerc
 const path = require('path');
 
-// This will make sequelize-cli use TypeScript files
-require('ts-node/register');
+// require('ts-node/register'); // Bisa tetap di sini atau hanya di wrapper
 
 module.exports = {
-  'config': path.resolve('config', 'database.ts'),
+  // ✅ RUBAH INI untuk menunjuk ke file wrapper .js
+  'config': path.resolve('config', 'database-wrapper.js'), 
   'models-path': path.resolve('src', 'models'),
-  'seeders-path': path.resolve('src', 'seeders'),
-  'migrations-path': path.resolve('src', 'migrations')
-}; 
+  'seeders-path': path.resolve('src', 'seeders'), // Folder seeder standar adalah 'seeders' di root
+  'migrations-path': path.resolve('migrations') // Folder migrasi standar adalah 'migrations' di root
+                                                // Sesuaikan jika Anda benar-benar meletakkannya di src/
+};
