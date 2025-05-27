@@ -96,8 +96,9 @@ Admin.hasMany(CustomerPromo, { foreignKey: 'assignedBy', as: 'promoAssignmentsMa
 
 // Asosiasi untuk Promo yang digunakan dalam Pembelian (CustomerProduct)
 CustomerProduct.belongsTo(Promo, {
-  foreignKey: 'promoId',
-  as: 'appliedPromoDetails' // Untuk mendapatkan detail promo dari sebuah transaksi
+  foreignKey: 'promoId',          // Kolom di tabel CustomerProduct yang menjadi foreign key
+  as: 'appliedPromoDetails',      // Ini adalah ALIAS yang akan Anda gunakan di controller
+  constraints: false
 });
 
 Promo.hasMany(CustomerProduct, {

@@ -5,6 +5,7 @@ import Sidebar from '../dashboard/Sidebar';
 import { EditModal } from '../common/EditModal';
 import productService, { Product, ProductInput } from '../../services/productService';
 import { MdEdit, MdDelete, MdAdd } from 'react-icons/md';
+import { formatPrice } from '../../utils/formatters';
 
 const ProductPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -177,15 +178,6 @@ const ProductPage: React.FC = () => {
     }
   };
 
-  // Format price to currency
-  const formatPrice = (price: number): string => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
-  };
 
   return (
     <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb' }}>

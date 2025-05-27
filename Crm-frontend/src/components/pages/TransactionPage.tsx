@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// axios tidak perlu diimpor di sini jika semua panggilan API melalui service
-// import axios from 'axios'; 
-
 import Sidebar from '../dashboard/Sidebar';
 import Header from '../dashboard/Header';
 import AddNewDropdown from '../dashboard/AddNewDropdown';
 import customerService, { Customer } from '../../services/customerService';
 import productService, { Product } from '../../services/productService';
-// Menggunakan PurchaseInput dan Purchase dari purchaseService yang Anda berikan
-import purchaseService, { PurchaseInput, Purchase } from '../../services/purchaseService'; 
+// Pastikan PurchaseInput diimpor dengan definisi yang menyertakan promoId?
+import purchaseService, { PurchaseInput, Purchase } from '../../services/purchaseService';
 import promoService, { Promo } from '../../services/promoService';
 import { MdAdd, MdShoppingCart, MdLocalOffer, MdInfoOutline } from 'react-icons/md';
 
@@ -16,53 +13,44 @@ const TransactionPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]); // Tipe Purchase dari service Anda
   const [loading, setLoading] = useState(true);
+  const [formSubmitLoading, setFormSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Form data untuk transaksi baru - Sesuai PurchaseInput dari service Anda
+  // PurchaseInput dari service sekarang seharusnya sudah termasuk promoId? opsional
   const [transactionData, setTransactionData] = useState<PurchaseInput>({
     customerId: 0,
     productId: 0,
     quantity: 1,
+    promoId: null, // Inisialisasi promoId
   });
-  // State lokal untuk UI pemilihan promo, tidak dikirim ke backend
-  const [selectedLocalPromoId, setSelectedLocalPromoId] = useState<number | null>(null);
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [availablePromos, setAvailablePromos] = useState<Promo[]>([]);
   const [selectedPromoObject, setSelectedPromoObject] = useState<Promo | null>(null);
-  const [usedPromosInSession, setUsedPromosInSession] = useState<Array<{ customerId: number; promoId: number }>>([]);
+  // usedPromosInSession bisa dipertimbangkan kembali jika validasi penggunaan promo sepenuhnya di backend
+  // Untuk UX, mungkin masih berguna agar admin tidak memilih promo yang sama berulang kali di form yang sama sebelum submit.
 
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
   const handleAddNewClick = () => setIsDropdownOpen(true);
   const handleCustomerCreated = useCallback(() => { fetchData(); }, []);
 
-  const fetchData = async () => {
+  const fetchData = async () => { /* ... Sama seperti sebelumnya, pastikan mengambil Purchase yang sudah ada promoId & discountAmount ... */
     try {
       setLoading(true);
       setError(null);
-
       const [purchasesRes, customersRes, productsRes] = await Promise.allSettled([
-        purchaseService.getAllPurchases(),
+        purchaseService.getAllPurchases(), // Ini akan mengambil data Purchase termasuk promoId dan discountAmount
         customerService.getAllCustomers(),
         productService.getAllProducts(),
       ]);
 
-      if (purchasesRes.status === 'fulfilled') {
-        // Update: Map response agar sesuai dengan Purchase interface yang memiliki appliedPromoDetails
-        // Namun, karena backend tidak menyimpan promo, appliedPromoDetails akan selalu null dari getAllPurchases
-        // Jika Anda ingin menampilkan promo yang *mungkin* digunakan berdasarkan logika frontend,
-        // itu perlu penanganan berbeda dan tidak akan akurat secara historis.
-        // Untuk saat ini, kita asumsikan purchasesData adalah array Purchase
-        setPurchases(purchasesRes.value);
-      } else {
-        console.error('Gagal memuat transaksi:', purchasesRes.reason);
-        setError(prev => `${prev || ''} Gagal memuat transaksi.`);
-      }
+      if (purchasesRes.status === 'fulfilled') setPurchases(purchasesRes.value);
+      else { console.error('Gagal memuat transaksi:', purchasesRes.reason); setError(prev => `${prev || ''} Gagal memuat transaksi.`); }
 
       if (customersRes.status === 'fulfilled') setCustomers(customersRes.value);
       else { console.error('Gagal memuat customer:', customersRes.reason); setError(prev => `${prev || ''} Gagal memuat customer.`); }
@@ -84,30 +72,23 @@ const TransactionPage: React.FC = () => {
     if (isAddModalOpen && transactionData.customerId > 0) {
       const fetchCustomerPromos = async () => {
         try {
-          // setLoading(true); // Mungkin tidak perlu loading global di sini
           const promosData = await promoService.getAvailablePromosForCustomer(transactionData.customerId);
-          const filteredPromos = promosData.filter(
-            p => !usedPromosInSession.some(up => up.customerId === transactionData.customerId && up.promoId === p.id)
-          );
-          setAvailablePromos(filteredPromos);
+          setAvailablePromos(promosData);
         } catch (err) {
           console.error("Gagal memuat promo tersedia:", err);
           setAvailablePromos([]);
-        } finally {
-          // setLoading(false);
         }
       };
       fetchCustomerPromos();
     } else {
       setAvailablePromos([]);
       setSelectedPromoObject(null);
-      setSelectedLocalPromoId(null);
+      // Jangan reset transactionData.promoId di sini agar pilihan tetap ada jika modal ditutup-buka tanpa ganti customer
     }
-  }, [isAddModalOpen, transactionData.customerId, usedPromosInSession]);
+  }, [isAddModalOpen, transactionData.customerId]);
 
   const handleAddTransactionClick = () => {
-    setTransactionData({ customerId: 0, productId: 0, quantity: 1 });
-    setSelectedLocalPromoId(null);
+    setTransactionData({ customerId: 0, productId: 0, quantity: 1, promoId: null });
     setSelectedProduct(null);
     setSelectedPromoObject(null);
     setAvailablePromos([]);
@@ -121,25 +102,28 @@ const TransactionPage: React.FC = () => {
 
     if (name === 'customerId' || name === 'productId' || name === 'quantity') {
       processedValue = Number(value) || 0;
-    } else if (name === 'localPromoId_ui') {
+    } else if (name === 'promoId') { // Input dropdown promo sekarang langsung bernama 'promoId'
       const promoIdVal = value ? Number(value) : null;
-      setSelectedLocalPromoId(promoIdVal);
+      processedValue = promoIdVal;
       if (promoIdVal) {
         setSelectedPromoObject(availablePromos.find(p => p.id === promoIdVal) || null);
       } else {
         setSelectedPromoObject(null);
       }
-      return; // Tidak update transactionData dengan promoId
     }
 
     setTransactionData(prev => {
       const updated = { ...prev, [name]: processedValue };
       if (name === 'customerId' && prev.customerId !== updated.customerId) {
-        updated.productId = 0; // Reset produk jika customer berubah
+        updated.productId = 0;
+        updated.promoId = null; // Reset promoId jika customer berubah
         setSelectedProduct(null);
-        setSelectedLocalPromoId(null);
         setSelectedPromoObject(null);
-        setAvailablePromos([]); // Akan di-fetch ulang
+        setAvailablePromos([]);
+      }
+      if (name === 'productId' && prev.productId !== updated.productId) {
+        updated.promoId = null; // Reset promoId jika produk berubah
+        setSelectedPromoObject(null);
       }
       return updated;
     });
@@ -161,60 +145,60 @@ const TransactionPage: React.FC = () => {
       return;
     }
 
-    // Data yang dikirim ke backend adalah PurchaseInput standar Anda
+    // transactionData sekarang sudah berisi promoId jika dipilih
     const dataToSend: PurchaseInput = {
       customerId: transactionData.customerId,
       productId: transactionData.productId,
       quantity: transactionData.quantity,
+      promoId: transactionData.promoId, // Kirim promoId ke service
     };
 
     try {
-      setLoading(true);
-      console.log('Submitting original transaction data (no promo/discount sent):', dataToSend);
-      
-      // Hanya panggil purchaseService.createPurchase
+      setFormSubmitLoading(true);
+      console.log('Submitting transaction data (with promoId if selected):', dataToSend);
+
       await purchaseService.createPurchase(dataToSend);
 
-      // Jika transaksi berhasil DAN promo dipilih secara lokal:
-      if (selectedPromoObject) {
-        setUsedPromosInSession(prev => [
-          ...prev,
-          { customerId: transactionData.customerId, promoId: selectedPromoObject.id }
-        ]);
-      }
-
       setIsAddModalOpen(false);
-      fetchData();
-      alert('Transaksi berhasil dicatat (dengan harga asli produk). Informasikan harga promo (jika ada) kepada customer secara manual.');
+      fetchData(); // Muat ulang semua data
+      alert('Transaksi berhasil dicatat!'); // Pesan lebih netral
     } catch (err) {
       console.error('Error creating transaction:', err);
       const errorMessage = err instanceof Error ? err.message : 'Gagal mencatat transaksi.';
-      setModalError(errorMessage);
+      // Coba parse error dari backend jika ada detail
+      if (errorMessage.startsWith('API Error:')) {
+        try {
+          const errorDetail = errorMessage.substring(errorMessage.indexOf('-') + 2).trim();
+          const parsedDetail = JSON.parse(errorDetail); // Coba parse sebagai JSON
+          setModalError(parsedDetail.message || parsedDetail.error || errorDetail);
+        } catch (parseErr) {
+          setModalError(errorMessage);
+        }
+      } else {
+        setModalError(errorMessage);
+      }
     } finally {
-      setLoading(false);
+      setFormSubmitLoading(false);
     }
   };
 
-  const calculatePriceDetailsForDisplay = (): { subTotal: number; visualDiscount: number; visualTotal: number } => {
-    if (!selectedProduct) return { subTotal: 0, visualDiscount: 0, visualTotal: 0 };
-
+  const calculatePriceDetails = (): { subTotal: number; discountValue: number; total: number } => {
+    if (!selectedProduct) return { subTotal: 0, discountValue: 0, total: 0 };
     const subTotal = selectedProduct.price * transactionData.quantity;
-    let visualDiscount = 0;
-
+    let discountValue = 0;
     if (selectedPromoObject) {
       if (selectedPromoObject.type === 'percentage') {
-        visualDiscount = subTotal * (selectedPromoObject.value / 100);
+        discountValue = subTotal * (selectedPromoObject.value / 100);
       } else if (selectedPromoObject.type === 'fixed_amount') {
-        visualDiscount = selectedPromoObject.value;
+        discountValue = selectedPromoObject.value;
       }
-      visualDiscount = Math.min(visualDiscount, subTotal);
+      discountValue = Math.min(discountValue, subTotal);
     }
-    const visualTotal = subTotal - visualDiscount;
-    return { subTotal, visualDiscount, visualTotal };
+    const total = subTotal - discountValue;
+    return { subTotal, discountValue, total };
   };
 
-  const priceDetailsForDisplay = calculatePriceDetailsForDisplay();
-
+  const priceDetails = calculatePriceDetails();
   const formatPrice = (price: number): string => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
   const getCustomerName = (customerId: number): string => { const c = customers.find(cust => cust.id === customerId); return c ? `${c.firstName} ${c.lastName}` : 'N/A'; };
   const getProductName = (productId: number): string => { const p = products.find(prod => prod.id === productId); return p ? p.name : 'N/A'; };
@@ -226,7 +210,10 @@ const TransactionPage: React.FC = () => {
         <div style={{ padding: '20px 30px' }}>
           <Header onCustomerCreated={handleCustomerCreated} onAddNewClick={handleAddNewClick} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Daftar Transaksi</h1>
+            <div>
+              <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Daftar Transaksi</h1>
+              <p style={{ color: '#6b7280', marginTop: '8px' }}>Manage your product inventory</p>
+            </div>
             <button onClick={handleAddTransactionClick} style={{ backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
               <MdAdd size={20} /> <span style={{ marginLeft: '5px' }}>Tambah Transaksi</span>
             </button>
@@ -235,41 +222,71 @@ const TransactionPage: React.FC = () => {
 
           <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
+
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                 <thead style={{ backgroundColor: '#f9fafb' }}>
                   <tr>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>ID</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>Customer</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>Produk</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>Qty</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>Harga Satuan (Tercatat)</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>Total (Tercatat)</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>Tgl Transaksi</th>
-                    {/* Kolom promo dihilangkan dari tabel utama karena tidak ada data historis dari backend */}
+                    {['ID', 'Customer', 'Produk', 'Qty', 'Harga Satuan', 'Diskon', 'Total Bayar', 'Tgl Transaksi', 'Promo Digunakan'].map((header) => (
+                      <th key={header} style={{ padding: '12px 16px', textAlign: header === 'Qty' || header.includes('Harga') || header === 'Diskon' || header === 'Total Bayar' ? 'right' : 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>
+                        {header}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={7} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>Loading...</td></tr>
+                    <tr>
+                      <td colSpan={9} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>Loading...</td>
+                    </tr>
                   ) : purchases.length === 0 ? (
-                    <tr><td colSpan={7} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>{error ? 'Gagal memuat transaksi.' : 'Tidak ada transaksi.'}</td></tr>
+                    <tr>
+                      <td colSpan={9} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>
+                        {error ? 'Gagal memuat transaksi.' : 'Tidak ada transaksi.'}
+                      </td>
+                    </tr>
                   ) : (
-                    purchases.map((purchase) => (
-                      <tr key={purchase.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '12px 16px' }}>{purchase.id}</td>
-                        <td style={{ padding: '12px 16px' }}>{purchase.customer ? `${purchase.customer.firstName} ${purchase.customer.lastName}` : getCustomerName(purchase.customerId)}</td>
-                        <td style={{ padding: '12px 16px' }}>{purchase.product ? purchase.product.name : getProductName(purchase.productId)}</td>
-                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>{purchase.quantity}</td>
-                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                           {/* Menampilkan harga produk asli karena itu yang tercatat */}
-                          {formatPrice(purchase.product?.price || 0)}
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 'bold' }}>
-                          {formatPrice((purchase.product?.price || 0) * purchase.quantity)}
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>{new Date(purchase.purchaseDate).toLocaleDateString()}</td>
-                      </tr>
-                    ))
+                    purchases.map((purchase) => {
+                      const totalPaid = (purchase.price * purchase.quantity) - (purchase.discountAmount || 0);
+                      return (
+                        <tr key={purchase.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                          <td style={{ padding: '12px 16px' }}>{purchase.id}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            {purchase.customer ? `${purchase.customer.firstName} ${purchase.customer.lastName}` : getCustomerName(purchase.customerId)}
+                          </td>
+                          <td style={{ padding: '12px 16px' }}>
+                            {purchase.product ? purchase.product.name : getProductName(purchase.productId)}
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'right' }}>{purchase.quantity}</td>
+                          <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                            {formatPrice(purchase.price || 0)}
+                          </td>
+                          <td style={{
+                            padding: '12px 16px',
+                            textAlign: 'right',
+                            color: (purchase.discountAmount || 0) > 0 ? 'red' : '',
+                          }}>
+                            {purchase.discountAmount ? `- ${formatPrice(purchase.discountAmount)}` : formatPrice(0)}
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'right', color: 'green' }}>
+                            {formatPrice(totalPaid)}
+                          </td>
+                          <td style={{ padding: '12px 16px' }}>{new Date(purchase.purchaseDate).toLocaleDateString()}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            {purchase.appliedPromoDetails
+                              ? // Jika ada detail promo yang di-include dari backend
+                              `${purchase.appliedPromoDetails.name} (ID: ${purchase.appliedPromoDetails.id}) - ${purchase.appliedPromoDetails.type === 'percentage'
+                                ? `${parseFloat(purchase.appliedPromoDetails.value.toString()).toFixed(0)}%` // ✅ PERUBAHAN DI SINI
+                                : formatPrice(purchase.appliedPromoDetails.value)
+                              }`
+                              : purchase.promoId
+                                ? // Jika hanya ada promoId (misalnya detail tidak di-include)
+                                `Promo ID: ${purchase.promoId} - Info detail tidak tersedia`
+                                : // Jika tidak ada promo sama sekali
+                                '-'}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -278,11 +295,14 @@ const TransactionPage: React.FC = () => {
         </div>
       </div>
 
+
+      {/* Modal Tambah Transaksi */}
       {isAddModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex:1000 }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '8px', width: '90%', maxWidth: '500px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-              <MdShoppingCart style={{ marginRight: '8px' }} /> Tambah Transaksi Baru
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', width: '90%', maxWidth: '500px', padding: '24px 24px 10px 24px', maxHeight: '100vh', overflowY: 'auto' }}>
+            <h2 style={{ margin: '0 0 7px 0', fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+              <MdShoppingCart style={{ marginRight: '10px', color: '#4F46E5' }} size={22} />
+              Tambah Transaksi Baru
             </h2>
             <form onSubmit={handleAddSubmit}>
               <div style={{ marginBottom: '16px' }}>
@@ -301,57 +321,78 @@ const TransactionPage: React.FC = () => {
               </div>
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>Kuantitas:</label>
-                <input type="number" name="quantity" value={transactionData.quantity} onChange={handleInputChange} min="1" required style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }} disabled={!transactionData.productId}/>
+                <input type="number" name="quantity" value={transactionData.quantity} onChange={handleInputChange} min="1" required style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }} disabled={!transactionData.productId} />
               </div>
 
+              {/* Promo Selection Dropdown */}
               {transactionData.customerId > 0 && transactionData.productId > 0 && availablePromos.length > 0 && (
                 <div style={{ marginBottom: '16px' }}>
                   <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
-                    <MdLocalOffer style={{ marginRight: '4px', verticalAlign: 'bottom' }}/>
+                    <MdLocalOffer style={{ marginRight: '4px', verticalAlign: 'bottom' }} />
                     Promo Tersedia (Opsional):
                   </label>
-                  <select name="localPromoId_ui" value={selectedLocalPromoId ?? ''} onChange={handleInputChange} style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
+                  <select
+                    name="promoId" // Langsung bind ke transactionData.promoId
+                    value={transactionData.promoId ?? ''}
+                    onChange={handleInputChange}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '14px', backgroundColor: 'white', boxSizing: 'border-box', height: '42px' }}
+                  >
                     <option value="">-- Tidak Pakai Promo --</option>
                     {availablePromos.map(promo => (
                       <option key={promo.id} value={promo.id}>
-                        {promo.name} ({promo.type === 'percentage' ? `${promo.value}%` : formatPrice(promo.value)})
+                        {promo.name} ({promo.type === 'percentage' ? `${Number(promo.value)}%` : formatPrice(promo.value)})
                       </option>))}
                   </select>
                 </div>
               )}
-              
+
+              {/* Price Information */}
               {selectedProduct && (
-                <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '4px' }}>
-                    <span>Harga Satuan Asli:</span>
+                <div style={{ marginBottom: '14px', padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '6px', color: '#4B5563' }}>
+                    <span>Harga Satuan:</span>
                     <span>{formatPrice(selectedProduct.price)}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px' }}>
-                    <span>Subtotal Asli ({transactionData.quantity} item):</span>
-                    <span>{formatPrice(priceDetailsForDisplay.subTotal)}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '10px', color: '#4B5563' }}>
+                    <span>Subtotal ({transactionData.quantity} item):</span>
+                    <span>{formatPrice(priceDetails.subTotal)}</span>
                   </div>
                   {selectedPromoObject && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'green', marginBottom: '8px' }}>
                       <span>Promo Diterapkan ({selectedPromoObject.name}):</span>
-                      <span>- {formatPrice(priceDetailsForDisplay.visualDiscount)}</span>
+                      <span>- {formatPrice(priceDetails.discountValue)}</span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '16px', borderTop: '1px solid #e2e8f0', paddingTop: '8px', marginTop: '8px' }}>
-                    <span>Harga untuk Customer (Setelah Promo):</span>
-                    <span style={{color: selectedPromoObject ? 'blue' : 'inherit'}}>{formatPrice(priceDetailsForDisplay.visualTotal)}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', fontSize: '16px', color: '#1F2937', borderTop: '1px solid #E5E7EB', paddingTop: '12px', marginTop: '12px' }}>
+                    <span>Total Akhir:</span>
+                    <span style={{ color: selectedPromoObject ? '#2563EB' : '#1F2937' }}>{formatPrice(priceDetails.total)}</span>
                   </div>
-                  <div style={{marginTop: '10px', fontSize: '12px', color: '#666', textAlign: 'center', borderTop: '1px dashed #ccc', paddingTop: '10px'}}>
-                     <MdInfoOutline style={{verticalAlign: 'bottom', marginRight: '4px'}} />
-                     Admin: Informasikan harga setelah promo kepada customer. Transaksi akan dicatat dengan **harga asli produk** di sistem.
+                  <div style={{ marginTop: '10px', fontSize: '12px', color: '#666', textAlign: 'center', borderTop: '1px dashed #ccc', paddingTop: '10px' }}>
+                    <MdInfoOutline style={{ verticalAlign: 'bottom', marginRight: '4px' }} />
+                    Note Admin: Pastikan kuantitas tidak melebihi stok produk. Promo hanya berlaku untuk customer terpilih.
                   </div>
                 </div>
               )}
 
-              {modalError && ( <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px' }}>{modalError}</div> )}
+              {modalError && (
+                <div style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px', border: '1px solid #FCA5A5' }}>
+                  {modalError}
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                <button type="button" onClick={() => setIsAddModalOpen(false)} style={{ padding: '10px 16px', borderRadius: '6px', border: '1px solid #d1d5db', backgroundColor: 'white', cursor: 'pointer' }}>Batal</button>
-                <button type="submit" style={{ padding: '10px 16px', borderRadius: '6px', border: 'none', backgroundColor: '#4f46e5', color: 'white', cursor: 'pointer' }} disabled={loading || !transactionData.productId}>
-                  {loading ? 'Memproses...' : 'Catat Transaksi (Harga Asli)'}
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  style={{ padding: '10px 20px', borderRadius: '6px', border: '1px solid #D1D5DB', backgroundColor: 'white', color: '#374151', fontSize: '14px', fontWeight: 500, cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: '10px 20px', borderRadius: '6px', border: 'none', backgroundColor: '#4F46E5', color: 'white', fontSize: '14px', fontWeight: 500, cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', opacity: (formSubmitLoading || !transactionData.productId) ? 0.6 : 1 }}
+                  disabled={formSubmitLoading || !transactionData.productId}
+                >
+                  {formSubmitLoading ? 'Memproses...' : 'Buat Transaksi'}
                 </button>
               </div>
             </form>

@@ -294,7 +294,7 @@ export const getAllPurchases = async (req: Request, res: Response) => {
       include: [
         { model: Customer, as: 'customer', attributes: ['id', 'firstName', 'lastName', 'email'] },
         { model: Product, as: 'product', attributes: ['id', 'name'] },
-        { model: Promo, as: 'appliedPromoDetails', attributes: ['id', 'name', 'type', 'value'] } // Tambahkan ini
+        { model: Promo, as: 'appliedPromoDetails', attributes: ['id', 'name', 'type', 'value'] }
       ],
       order: [['purchaseDate', 'DESC']]
     });

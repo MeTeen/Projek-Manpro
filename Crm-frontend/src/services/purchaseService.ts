@@ -11,28 +11,32 @@ export interface Purchase {
   customerId: number;
   productId: number;
   quantity: number;
+  price: number; // << HARGA SATUAN PRODUK SAAT TRANSAKSI
   purchaseDate: string;
   createdAt: string;
   updatedAt: string;
+  promoId?: number | null;       // << ID PROMO YANG DIGUNAKAN
+  discountAmount?: number | null; // << JUMLAH DISKON
   customer?: {
     id: number;
     firstName: string;
     lastName: string;
     email: string;
   };
-  product?: {
+  product?: { // Ini adalah data dari tabel Product (master)
     id: number;
     name: string;
-    price: number;
+    price: number; // Harga master produk
     stock: number;
   };
-  appliedPromoDetails?: Promo | null; 
+  appliedPromoDetails?: Promo | null; // Detail promo jika di-include oleh backend
 }
 
 export interface PurchaseInput {
   customerId: number;
   productId: number;
   quantity: number;
+  promoId?: number | null;
 }
 
 // Helper function to get token

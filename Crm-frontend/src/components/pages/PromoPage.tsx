@@ -7,14 +7,15 @@ import promoService, { Promo, PromoInput, AssignPromoInput } from '../../service
 import customerService, { Customer } from '../../services/customerService'; // Untuk assign
 import AuthContext from '../../context/AuthContext'; // Untuk role check
 import { MdEdit, MdDelete, MdAdd, MdPersonAdd } from 'react-icons/md';
-import Select from 'react-select'; // Contoh untuk dropdown customer
+import Select from 'react-select';
+import { formatPrice } from '../../utils/formatters';
+import PromoForm from '../forms/PromoForm';
 
-const BACKEND_URL = 'http://localhost:3000';
 
-// Style dasar, bisa disesuaikan atau pakai library UI
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'; // Pastikan ini sesuai dengan konfigurasi Anda
+
 const styles = {
-    // ... (copy beberapa style dari ProductPage atau definisikan sendiri) ...
-    actionButton: { /* ... */ },
+    actionButton: { background: 'none', border: 'none', cursor: 'pointer', color: '#5E5CEB' },
     tableCell: { padding: '12px 16px', fontSize: '14px', borderBottom: '1px solid #e5e7eb' },
     tableHeader: { padding: '12px 16px', textAlign: 'left' as 'left', fontWeight: 600, color: '#374151', fontSize: '14px', backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' },
 };
@@ -38,17 +39,6 @@ const PromoPage: React.FC = () => {
     const currentUserRole = authContext?.user?.role; // 'admin' atau 'super_admin'
 
     const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
-
-
-    // Fungsi untuk format harga (jika belum ada di komponen Anda)
-    const formatPrice = (price: number): string => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(price || 0); // Tambahkan fallback jika price null/undefined
-    };
 
     // Buat customerOptions menggunakan useMemo agar tidak dihitung ulang setiap render kecuali customers berubah
     const customerOptions = useMemo(() => customers
@@ -103,7 +93,7 @@ const PromoPage: React.FC = () => {
                         {customerData.firstName} {customerData.lastName}
                     </div>
                     <div style={{ fontSize: '0.85em', color: 'grey' }}>
-                        <span>Transaksi: {customerData.purchaseCount || 0}</span>
+                        <span>Total Transaction: {customerData.purchaseCount || 0}</span>
                         <span style={{ margin: '0 5px' }}>|</span>
                         <span>Spend: {formatPrice(customerData.totalSpent || 0)}</span>
                     </div>
@@ -172,6 +162,16 @@ const PromoPage: React.FC = () => {
     const handleDeleteClick = (promo: Promo) => {
         setSelectedPromo(promo);
         setIsDeleteModalOpen(true);
+    };
+
+    // handleInputChange sekarang menjadi onFormChange untuk PromoForm
+    const handlePromoFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : (name === 'value' ? parseFloat(value) : value)
+        }));
     };
 
     const handleAssignClick = (promo: Promo) => {
@@ -331,44 +331,7 @@ const PromoPage: React.FC = () => {
                     onClose={() => setIsAddEditModalOpen(false)}
                     onSubmit={handleAddEditSubmit}
                 >
-                    {/* Form fields untuk promo: name, description, type (select), value, startDate, endDate, isActive (checkbox) */}
-                    <div style={{ marginBottom: '16px' }}>
-                        <label>Name*</label>
-                        <input type="text" name="name" value={formData.name || ''} onChange={handleInputChange} required style={{ width: '100%', padding: '8px', border: '1px solid #ddd' }} />
-                    </div>
-                    <div style={{ marginBottom: '16px' }}>
-                        <label>Description</label>
-                        <textarea name="description" value={formData.description || ''} onChange={handleInputChange} style={{ width: '100%', padding: '8px', border: '1px solid #ddd' }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                        <div style={{ flex: 1 }}>
-                            <label>Type*</label>
-                            <select name="type" value={formData.type || 'percentage'} onChange={handleInputChange} style={{ width: '100%', padding: '8px', border: '1px solid #ddd' }}>
-                                <option value="percentage">Percentage (%)</option>
-                                <option value="fixed_amount">Fixed Amount (IDR)</option>
-                            </select>
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <label>Value*</label>
-                            <input type="number" name="value" value={formData.value || 0} onChange={handleInputChange} min="0" style={{ width: '100%', padding: '8px', border: '1px solid #ddd' }} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                        <div style={{ flex: 1 }}>
-                            <label>Start Date</label>
-                            <input type="date" name="startDate" value={formData.startDate || ''} onChange={handleInputChange} style={{ width: '100%', padding: '8px', border: '1px solid #ddd' }} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <label>End Date</label>
-                            <input type="date" name="endDate" value={formData.endDate || ''} onChange={handleInputChange} style={{ width: '100%', padding: '8px', border: '1px solid #ddd' }} />
-                        </div>
-                    </div>
-                    <div style={{ marginBottom: '16px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center' }}>
-                            <input type="checkbox" name="isActive" checked={formData.isActive === undefined ? true : formData.isActive} onChange={handleInputChange} style={{ marginRight: '8px' }} />
-                            Is Active
-                        </label>
-                    </div>
+                    <PromoForm formData={formData} onFormChange={handlePromoFormChange} />
                 </EditModal>
 
                 {/* Delete Promo Modal */}
@@ -401,14 +364,39 @@ const PromoPage: React.FC = () => {
                             value={customerOptions.find(option => option.value === assignFormData.customerId)}
                             onChange={(selectedOption) => {
                                 const customerId = selectedOption ? selectedOption.value : null;
-                                setAssignFormData({ customerId: customerId });
+                                setAssignFormData({ customerId });
                             }}
                             isLoading={!customers.length && loading}
                             placeholder="Cari atau pilih customer..."
                             isClearable
+                            menuPosition="fixed" // ⬅️ penting agar dropdown tidak ketahan modal
+                            menuShouldScrollIntoView={false}
                             styles={{
-                                option: (provided) => ({ ...provided, padding: '8px 12px' }),
-                                control: (provided) => ({ ...provided, minHeight: '44px' })
+                                control: (provided) => ({
+                                    ...provided,
+                                    minHeight: '44px',
+                                    borderRadius: '6px',
+                                    borderColor: '#3B82F6',
+                                    boxShadow: '0 0 0 1px #3B82F6',
+                                    '&:hover': {
+                                        borderColor: '#2563EB',
+                                    },
+                                }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    padding: '8px 12px',
+                                    backgroundColor: state.isFocused ? '#EEF2FF' : 'white',
+                                    color: '#111827',
+                                }),
+                                menu: (provided) => ({
+                                    ...provided,
+                                    zIndex: 9999, // ⬅️ pastikan dropdown muncul di atas modal
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                }),
+                                menuList: (provided) => ({
+                                    ...provided,
+                                    maxHeight: '250px', // batas agar tidak kepanjangan
+                                }),
                             }}
                         />
                     </div>

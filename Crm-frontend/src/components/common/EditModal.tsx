@@ -8,6 +8,7 @@ export interface EditModalProps {
   onSubmit: (e: FormEvent) => void;
   children: ReactNode;
   width?: string;
+  minHeight?: string;
 }
 
 export const EditModal: React.FC<EditModalProps> = ({
@@ -43,7 +44,7 @@ export const EditModal: React.FC<EditModalProps> = ({
           width,
           maxWidth: '90%',
           maxHeight: '90vh',
-          overflow: 'auto',
+          overflowY: 'auto', 
         }}
       >
         <h2 style={{ marginTop: 0, fontSize: '20px', fontWeight: 600 }}>{title}</h2>
