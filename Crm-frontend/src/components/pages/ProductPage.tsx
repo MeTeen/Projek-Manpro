@@ -198,10 +198,7 @@ const ProductPage: React.FC = () => {
         overflow: 'auto',
         transition: 'margin-left 0.3s ease',
       }}>
-        
         <div style={{ padding: '20px 30px' }}>
-
-          
           {/* Header */}
           <Header />
           

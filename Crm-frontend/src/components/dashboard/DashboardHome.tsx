@@ -9,7 +9,7 @@ import CustomerSection from "./CustomerSection";
 import TaskSection from "./TaskSection";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
-import CustomersList from "./CustomerTopSpending";
+// import CustomersList from "./CustomerTopSpending";
 
 const DashboardHome: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -166,7 +166,7 @@ const DashboardHome: React.FC = () => {
               }}>
                 Top Spending Customers
               </h2>
-              <CustomersList limit={5} refreshTrigger={refreshCustomer} />
+              {/* <CustomersList limit={5} refreshTrigger={refreshCustomer} /> */}
             </div>
             
             {/* Third Column (33%) - Customers Section */}
