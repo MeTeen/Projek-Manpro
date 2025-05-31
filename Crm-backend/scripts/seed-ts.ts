@@ -1,62 +1,151 @@
 // scripts/seed-ts.ts
-import { execSync } from 'child_process';
-import path from 'path';
+import { QueryInterface } from 'sequelize';
+import { sequelize } from '../src/models';
+import * as path from 'path';
+import * as fs from 'fs';
 
-const args = process.argv.slice(2);
-const command = args[0] || 'all';
-const environment = process.env.NODE_ENV || 'development';
-
-// Path ke skrip sequelize-cli di node_modules
-const sequelizeCliJsPath = path.resolve(__dirname, '..', 'node_modules', 'sequelize-cli', 'lib', 'sequelize.js');
-// Atau jika versi CLI berbeda, path bisa juga ke 'node_modules/sequelize-cli/bin/sequelize'
-// Namun, 'lib/sequelize.js' adalah entry point yang lebih umum untuk pemanggilan programatik.
-// Atau, yang lebih sederhana dan sering berhasil:
-// const sequelizeCliJsPath = path.resolve(__dirname, '..', 'node_modules', '.bin', 'sequelize');
-// Jika .bin/sequelize tidak ada, coba path di atasnya.
-// Untuk Windows, path ke .bin mungkin tidak memerlukan .js dan bisa berupa file batch/cmd.
-// Cara paling robust adalah menggunakan 'npx' tapi jika itu bermasalah, kita coba ini.
-
-// Kita akan menggunakan ts-node untuk menjalankan skrip CLI Sequelize
-// Ini membantu jika CLI itu sendiri atau konfigurasinya perlu diproses oleh ts-node
-const tsNodePath = path.resolve(__dirname, '..', 'node_modules', '.bin', 'ts-node');
-// Untuk Windows, path .bin mungkin memiliki ekstensi .cmd atau .ps1, node akan menanganinya.
-// Jika Anda menggunakan 'npx ts-node', itu lebih portabel.
-
-let operation; // Perintah untuk CLI nya sendiri seperti db:seed:all
-
-if (command === 'all') {
-  operation = `db:seed:all --env ${environment} --debug`;
-} else if (command === 'undo') {
-  if (args[1]) {
-    operation = `db:seed:undo --seed ${args[1]} --env ${environment} --debug`;
-  } else {
-    operation = `db:seed:undo --env ${environment} --debug`;
+async function runSeeders(): Promise<void> {
+  try {
+    console.log('🌱 Starting TypeScript seeders...');
+    
+    // Get QueryInterface from sequelize
+    const queryInterface: QueryInterface = sequelize.getQueryInterface();
+    
+    // Define seeders directory
+    const seedersDir = path.join(__dirname, '../src/seeders');
+    
+    // Get all TypeScript seeder files
+    const seederFiles = fs.readdirSync(seedersDir)
+      .filter(file => file.endsWith('.ts'))
+      .sort(); // Sort to run in chronological order
+    
+    console.log(`Found ${seederFiles.length} TypeScript seeder files:`, seederFiles);
+    
+    for (const file of seederFiles) {
+      const seederPath = path.join(seedersDir, file);
+      console.log(`\n📄 Running seeder: ${file}`);
+      
+      try {
+        // Clear require cache to ensure fresh module load
+        delete require.cache[require.resolve(seederPath)];
+        
+        // Import the seeder module
+        const seederModule = require(seederPath);
+        
+        // Check if it has an 'up' method
+        if (seederModule && typeof seederModule.up === 'function') {
+          await seederModule.up(queryInterface, sequelize);
+          console.log(`✅ Successfully completed seeder: ${file}`);
+        } else {
+          console.warn(`⚠️  Seeder ${file} does not have an 'up' method`);
+        }
+      } catch (error) {
+        console.error(`❌ Error running seeder ${file}:`, error);
+        throw error; // Stop execution on error
+      }
+    }
+    
+    console.log('\n🎉 All TypeScript seeders completed successfully!');
+  } catch (error) {
+    console.error('💥 Failed to run seeders:', error);
+    throw error;
   }
-} else { // Asumsikan 'command' adalah nama file seeder spesifik
-  operation = `db:seed --seed ${command} --env ${environment} --debug`;
 }
 
-// Perintah lengkap untuk dieksekusi
-// Menggunakan 'npx ts-node' lalu path ke sequelize-cli dan operasinya
-// atau langsung 'npx sequelize-cli' jika .sequelizerc sudah benar-benar efektif
-// Kita kembali ke 'npx sequelize-cli' karena .sequelizerc seharusnya sudah cukup.
-// Masalahnya mungkin bukan pada pemanggilan ts-node untuk skrip seed-ts.ts,
-// tapi bagaimana sequelize-cli sendiri memuat konfigurasinya.
-
-// Mari kita pastikan .sequelizerc dibaca. Sequelize CLI mencari .sequelizerc di CWD.
-// Skrip NPM dijalankan dari root proyek, jadi CWD seharusnya sudah benar.
-
-// Jika .sequelizerc Anda sudah benar, masalahnya mungkin ts-node/register di dalamnya
-// tidak efektif pada saat config-helper.js di sequelize-cli mencoba membaca config.
-// Alternatif lain adalah memaksa penggunaan file konfigurasi .js
-const cmd = `npx sequelize-cli ${operation}`;
-
-console.log(`Executing Seeder Command: ${cmd}`);
-
-try {
-  execSync(cmd, { stdio: 'inherit' });
-  console.log('Seeding process completed!');
-} catch (error) {
-  console.error('Seeding process failed:', error);
-  process.exit(1);
+async function revertSeeders(): Promise<void> {
+  try {
+    console.log('🔄 Reverting TypeScript seeders...');
+    
+    // Get QueryInterface from sequelize
+    const queryInterface: QueryInterface = sequelize.getQueryInterface();
+    
+    // Define seeders directory
+    const seedersDir = path.join(__dirname, '../src/seeders');
+    
+    // Get all TypeScript seeder files in reverse order
+    const seederFiles = fs.readdirSync(seedersDir)
+      .filter(file => file.endsWith('.ts'))
+      .sort()
+      .reverse(); // Reverse order for rollback
+    
+    console.log(`Found ${seederFiles.length} TypeScript seeder files to revert:`, seederFiles);
+    
+    for (const file of seederFiles) {
+      const seederPath = path.join(seedersDir, file);
+      console.log(`\n📄 Reverting seeder: ${file}`);
+      
+      try {
+        // Clear require cache to ensure fresh module load
+        delete require.cache[require.resolve(seederPath)];
+        
+        // Import the seeder module
+        const seederModule = require(seederPath);
+        
+        // Check if it has a 'down' method
+        if (seederModule && typeof seederModule.down === 'function') {
+          await seederModule.down(queryInterface, sequelize);
+          console.log(`✅ Successfully reverted seeder: ${file}`);
+        } else {
+          console.warn(`⚠️  Seeder ${file} does not have a 'down' method`);
+        }
+      } catch (error) {
+        console.error(`❌ Error reverting seeder ${file}:`, error);
+        throw error; // Stop execution on error
+      }
+    }
+    
+    console.log('\n🎉 All TypeScript seeders reverted successfully!');
+  } catch (error) {
+    console.error('💥 Failed to revert seeders:', error);
+    throw error;
+  }
 }
+
+// Main execution logic
+async function main(): Promise<void> {
+  const command = process.argv[2];
+  
+  try {
+    // Test database connection
+    await sequelize.authenticate();
+    console.log('✅ Database connection established successfully.');
+    
+    switch (command) {
+      case 'up':
+      case 'seed':
+        await runSeeders();
+        break;
+      case 'down':
+      case 'revert':
+        await revertSeeders();
+        break;
+      default:
+        console.log(`
+Usage: npm run seed:ts [command]
+
+Commands:
+  up, seed    - Run all TypeScript seeders
+  down, revert - Revert all TypeScript seeders
+
+Examples:
+  npm run seed:ts up
+  npm run seed:ts down
+        `);
+        process.exit(1);
+    }
+  } catch (error) {
+    console.error('💥 Database operation failed:', error);
+    process.exit(1);
+  } finally {
+    // Close database connection
+    await sequelize.close();
+    console.log('🔐 Database connection closed.');
+  }
+}
+
+// Run the script
+if (require.main === module) {
+  main();
+}
+
+export { runSeeders, revertSeeders };

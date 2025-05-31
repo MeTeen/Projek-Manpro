@@ -10,6 +10,9 @@ interface DbConfig {
   database: string;
   port: number;
   dialect: Dialect;
+  dialectOptions?: {
+    ssl?: boolean | object;
+  };
   pool: {
     max: number;
     min: number;
@@ -24,21 +27,23 @@ interface Config {
   test: DbConfig;
   production: DbConfig;
 }
-const config: Config = {
-  development: {
+const config: Config = {  development: {
     host: process.env.DB_HOST || 'localhost',
     username: process.env.DB_USERNAME || 'root',
     password: process.env.DB_PASSWORD || 'root',
     database: process.env.DB_NAME || 'crm_db',
     port: parseInt(process.env.DB_PORT || '3306', 10),
     dialect: 'mysql',
+    dialectOptions: {
+      ssl: false,
+    },
     pool: {
-      max: 5,
+      max: 10,
       min: 0,
-      acquire: 30000,
+      acquire: 60000,
       idle: 10000,
     },
-    logging: true,
+    logging: console.log,
   },
   test: {
     host: process.env.DB_HOST || 'localhost',
@@ -47,6 +52,9 @@ const config: Config = {
     database: process.env.DB_NAME || 'crm_test_db',
     port: parseInt(process.env.DB_PORT || '3306', 10),
     dialect: 'mysql',
+    dialectOptions: {
+      ssl: false,
+    },
     pool: {
       max: 5,
       min: 0,
@@ -54,18 +62,20 @@ const config: Config = {
       idle: 10000,
     },
     logging: false,
-  },
-  production: {
-    host: process.env.DB_HOST || 'localhost',
-    username: process.env.DB_USERNAME || 'root',
-    password: process.env.DB_PASSWORD || 'root',
-    database: process.env.DB_NAME || 'crm_prod_db',
+  },  production: {
+    host: process.env.DB_HOST || 'mysql',
+    username: process.env.DB_USERNAME || 'crm_user',
+    password: process.env.DB_PASSWORD || 'crm_password',
+    database: process.env.DB_NAME || 'crm_db',
     port: parseInt(process.env.DB_PORT || '3306', 10),
     dialect: 'mysql',
+    dialectOptions: {
+      ssl: false,
+    },
     pool: {
-      max: 5,
+      max: 10,
       min: 0,
-      acquire: 30000,
+      acquire: 60000,
       idle: 10000,
     },
     logging: false,

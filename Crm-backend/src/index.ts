@@ -20,6 +20,16 @@ app.use(express.urlencoded({ extended: true }));
 // Static file serving (for uploaded files)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Health check endpoint for Docker
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // API Routes
 app.use('/api', routes);
 

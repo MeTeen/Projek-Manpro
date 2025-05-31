@@ -1,5 +1,6 @@
 import axios from 'axios';
 import authService from './authService';
+import { API_CONFIG } from '../config/api';
 
 export interface Customer {
   id?: number;
@@ -18,8 +19,8 @@ export interface Customer {
   updatedAt?: string;
 }
 
-// Base API URL - using a direct value to avoid process.env type issues
-const API_URL = 'http://localhost:3000/api';
+// Use centralized API configuration
+const API_URL = API_CONFIG.BASE_URL;
 
 // Helper function to get token
 const getAuthToken = (): string | null => {
@@ -208,9 +209,8 @@ class CustomerService {
 
   // Try alternative API endpoint format
   async createCustomerAlternative(formData: FormData): Promise<Customer> {
-    try {
-      // Try alternate URL structure or parameters
-      const url = 'http://localhost:3000/api/customers'; // Direct URL
+    try {      // Try alternate URL structure or parameters
+      const url = `${API_CONFIG.BASE_URL}/customers`; // Use centralized config
       console.log('Trying alternative API at:', url);
       
       // Get authentication token
@@ -404,9 +404,8 @@ class CustomerService {
   /**
    * Alternative endpoint with direct token parameter
    */
-  async createCustomerAlternativeWithToken(formData: FormData, token: string): Promise<Customer> {
-    try {
-      const url = 'http://localhost:3000/api/customers'; // Direct URL
+  async createCustomerAlternativeWithToken(formData: FormData, token: string): Promise<Customer> {    try {
+      const url = `${API_CONFIG.BASE_URL}/customers`; // Use centralized config
       console.log('Trying alternative API with direct token at:', url);
       console.log('Using token (first few chars):', token.substring(0, 5) + '...');
       

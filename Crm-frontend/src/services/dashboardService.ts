@@ -1,8 +1,9 @@
 // src/services/dashboardService.ts
 import axios from 'axios';
 import authService from './authService';
+import { API_CONFIG } from '../config/api';
 
-const API_ROOT_URL = 'http://localhost:3000';
+const API_ROOT_URL = API_CONFIG.ROOT_URL;
 const API_BASE_URL = `${API_ROOT_URL}/api/dashboard`;
 
 const getAuthToken = (): string | null => {

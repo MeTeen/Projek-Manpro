@@ -1,9 +1,9 @@
 {
   "name": "crm-backend",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "migrate": "npx sequelize-cli db:migrate",
@@ -15,17 +15,20 @@
     "migrate:custom": "ts-node scripts/migrate.ts",
     "migrate:debug": "ts-node src/scripts/runMigrationFix.ts",
     "migrate:direct": "ts-node src/scripts/directMigration.ts",
-    "migrate:runner": "ts-node runMigrations.ts",
-    "seed:ts": "ts-node scripts/seed-ts.ts",
+    "migrate:runner": "ts-node runMigrations.ts",    "seed:ts": "npx ts-node scripts/seed-ts.ts",
+    "seed:ts:up": "npx ts-node scripts/seed-ts.ts up",
+    "seed:ts:down": "npx ts-node scripts/seed-ts.ts down",
+    "seed:run": "npx ts-node scripts/seed-ts.ts up",
+    "seed:revert": "npx ts-node scripts/seed-ts.ts down",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "",  "license": "ISC",
   "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
+    "date-fns": "^2.30.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -35,8 +38,7 @@
     "passport-oauth2": "^1.8.0",
     "sequelize": "^6.37.7",
     "umzug": "^3.8.2"
-  },
-  "devDependencies": {
+  },  "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",

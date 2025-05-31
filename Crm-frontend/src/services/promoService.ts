@@ -1,8 +1,9 @@
 // src/services/promoService.ts
 import axios from 'axios';
 import authService from './authService'; // Asumsi path benar
+import { API_CONFIG } from '../config/api';
 
-const API_URL = 'http://localhost:3000/api/promos'; // Sesuaikan URL
+const API_URL = `${API_CONFIG.BASE_URL}/promos`; // Use centralized config
 
 // Helper function to get token (bisa di-refactor ke utility jika dipakai banyak service)
 const getAuthToken = (): string | null => { /* ... sama seperti di productService ... */  return authService.getToken()};

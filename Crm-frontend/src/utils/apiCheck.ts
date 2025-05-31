@@ -6,8 +6,16 @@ export const checkApiConnection = async (url: string): Promise<boolean> => {
   try {
     debugLog('APICheck', `Testing connection to ${url}`);
     
-    // Check if the URL includes a health endpoint, if not, append it
-    const checkUrl = url.endsWith('/health') ? url : `${url}/health`;
+    // For health check, we need to use the root URL (without /api)
+    // The health endpoint is at the server root, not under /api
+    let checkUrl: string;
+    if (url.endsWith('/health')) {
+      checkUrl = url;
+    } else {
+      // Remove /api from the URL for health check since health is at root level
+      const rootUrl = url.replace('/api', '');
+      checkUrl = `${rootUrl}/health`;
+    }
     
     // Set a short timeout to quickly identify connectivity issues
     const response = await axios.get(checkUrl, { 

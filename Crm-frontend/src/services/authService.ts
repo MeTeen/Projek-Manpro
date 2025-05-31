@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { debugLog, debugError, logRequest, logResponse, logNetworkError } from '../utils/debug';
 import { AuthResponse, LoginData, SignUpData, UserData, JwtPayload } from '../types/auth';
+import { API_CONFIG } from '../config/api';
 
-// Use fixed API URL format
-const API_URL = 'http://localhost:3000/api';
+// Use centralized API configuration
+const API_URL = API_CONFIG.BASE_URL;
 // Use env-based storage keys if provided
 const TOKEN_KEY = import.meta.env.VITE_AUTH_TOKEN_KEY || 'token';
 const USER_KEY = import.meta.env.VITE_USER_DATA_KEY || 'user';

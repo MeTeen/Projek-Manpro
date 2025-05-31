@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { logApiConfig } from './config/api';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -16,6 +17,9 @@ import { ToastContainer } from 'react-toastify';
 
 // Set to true to show the API debugger
 const SHOW_API_DEBUGGER = true;
+
+// Initialize API configuration logging
+logApiConfig();
 
 function App() {
   return (

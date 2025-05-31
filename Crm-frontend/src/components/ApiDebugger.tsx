@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { checkApiConnection, verifyApiUrl } from '../utils/apiCheck';
 import { debugLog } from '../utils/debug';
+import { API_CONFIG } from '../config/api';
 
-// When using Vite, we should use the import.meta.env syntax
-// Default to Vite's development server if not specified
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Use centralized API configuration
+const API_URL = API_CONFIG.BASE_URL;
 
 interface ApiDebuggerProps {
   isVisible?: boolean;

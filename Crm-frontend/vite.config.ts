@@ -5,13 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5174, // Use your Vite port explicitly
-    proxy: {
-      // Setup for Mock Service Worker or a real backend
-      '/api': {
-        target: 'http://localhost:5174',
-        changeOrigin: true,
-      },
-    },
+    port: 5174, // Frontend development server port
+    host: true, // Allow external connections for Docker networking
   },
 })

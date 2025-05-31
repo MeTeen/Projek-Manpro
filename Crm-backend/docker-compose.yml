@@ -1,0 +1,64 @@
+services:  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: crm-mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: crm_db
+      MYSQL_USER: crm_user
+      MYSQL_PASSWORD: crm_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - crm-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+  # Backend API Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: mysql
+      DB_USERNAME: crm_user
+      DB_PASSWORD: crm_password
+      DB_NAME: crm_db
+      DB_PORT: 3306
+      JWT_SECRET: your_super_secret_jwt_key_change_this_in_production
+      JWT_EXPIRES_IN: 1d
+      OAUTH2_CLIENT_ID: your_client_id
+      OAUTH2_CLIENT_SECRET: your_client_secret
+      OAUTH2_CALLBACK_URL: http://localhost:3000/api/auth/callback
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./uploads:/usr/src/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - crm-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mysql_data:
+
+networks:
+  crm-network:
+    driver: bridge

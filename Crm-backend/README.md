@@ -130,6 +130,48 @@ All purchase endpoints require authentication:
 - `GET /api/purchases/product/:productId` - Get purchase history for specific product
 - `POST /api/purchases` - Create a new purchase
 
+## Docker Deployment
+
+### Quick Start with Docker
+
+1. **Build and start services:**
+   ```bash
+   docker-compose up --build -d
+   ```
+
+2. **Check service status:**
+   ```bash
+   docker-compose ps
+   ```
+
+3. **View logs:**
+   ```bash
+   docker-compose logs -f backend
+   ```
+
+4. **Stop services:**
+   ```bash
+   docker-compose down
+   ```
+
+### Environment Configuration
+
+The Docker setup includes:
+- **MySQL 8.0** database with persistent storage
+- **Node.js** backend application
+- **Automatic migrations** on startup
+- **Health checks** for reliability
+
+For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+### Production Deployment
+
+For production use:
+1. Update environment variables in `docker-compose.yml`
+2. Change default passwords and secrets
+3. Configure SSL/TLS
+4. Set up proper monitoring and backups
+
 ## Default Admin User
 
 After running seeds, you can use the following credentials to login:

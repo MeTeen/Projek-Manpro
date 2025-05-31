@@ -1,4 +1,6 @@
 // src/utils/formatters.ts
+import { API_CONFIG } from '../config/api';
+
 export const formatPrice = (price: number | null | undefined): string => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -8,4 +10,4 @@ export const formatPrice = (price: number | null | undefined): string => {
   }).format(price || 0); // Default ke 0 jika price null atau undefined
 };
 
-export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+export const BACKEND_URL = API_CONFIG.ROOT_URL;
