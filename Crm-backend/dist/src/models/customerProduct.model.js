@@ -44,6 +44,21 @@ class CustomerProduct extends sequelize_1.Model {
                 defaultValue: sequelize_1.DataTypes.NOW,
                 field: 'purchase_date'
             },
+            promoId: {
+                type: sequelize_1.DataTypes.INTEGER.UNSIGNED,
+                allowNull: true,
+                references: {
+                    model: 'promos', // Nama tabel promo
+                    key: 'id'
+                },
+                field: 'promo_id'
+            },
+            discountAmount: {
+                type: sequelize_1.DataTypes.DECIMAL(10, 2),
+                allowNull: true,
+                defaultValue: 0,
+                field: 'discount_amount'
+            },
             createdAt: {
                 type: sequelize_1.DataTypes.DATE,
                 allowNull: false,

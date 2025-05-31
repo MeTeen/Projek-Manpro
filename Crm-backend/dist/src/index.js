@@ -22,13 +22,29 @@ const path_1 = __importDefault(require("path"));
 dotenv_1.default.config();
 // Create Express app
 const app = (0, express_1.default)();
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '8080', 10);
+// CORS configuration - Allow all origins
+const corsOptions = {
+    origin: '*',
+    credentials: false,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
 // Middleware
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 // Static file serving (for uploaded files)
 app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
+// Health check endpoint for Docker
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
 // API Routes
 app.use('/api', routes_1.default);
 // 404 handler
@@ -52,10 +68,11 @@ const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // Sync database
         yield models_1.sequelize.sync({ force: false });
-        console.log('Database connected successfully');
-        // Start server
-        app.listen(PORT, () => {
+        console.log('Database connected successfully'); // Start server
+        app.listen(PORT, '0.0.0.0', () => {
             console.log(`Server is running on port ${PORT}`);
+            console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`CORS Origin: ${process.env.CORS_ORIGIN || '*'}`);
         });
     }
     catch (error) {

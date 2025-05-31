@@ -6,7 +6,7 @@ module.exports = {
   async up(queryInterface: QueryInterface, Sequelize: Sequelize) { // Tambahkan tipe jika diinginkan
     // Tambahkan kolom promo_id
     await queryInterface.addColumn('customer_products', 'promo_id', {
-      type: DataTypes.INTEGER.UNSIGNED, // Gunakan DataTypes dari argumen Sequelize
+      type: DataTypes.INTEGER, // Gunakan DataTypes dari argumen Sequelize
       allowNull: true,
       references: {
         model: 'promos',

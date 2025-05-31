@@ -12,9 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
 module.exports = {
     up: (queryInterface) => __awaiter(void 0, void 0, void 0, function* () {
-        yield queryInterface.createTable('products', {
-            id: {
-                type: sequelize_1.DataTypes.INTEGER.UNSIGNED,
+        yield queryInterface.createTable('products', { id: {
+                type: sequelize_1.DataTypes.INTEGER,
                 autoIncrement: true,
                 primaryKey: true,
             },

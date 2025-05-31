@@ -11,6 +11,26 @@ import activityRoutes from './activity.routes';
 
 const router = Router();
 
+// Health check endpoints
+router.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    port: process.env.PORT || 3000,
+    environment: process.env.NODE_ENV || 'development',
+    database: 'connected'
+  });
+});
+
+// Basic status endpoint
+router.get('/status', (req, res) => {
+  res.status(200).json({ 
+    message: 'CRM Backend API is running',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Auth routes
 router.use('/auth', authRoutes);
 

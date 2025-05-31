@@ -6,6 +6,7 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
 // Apply JWT authentication to all purchase routes
 router.use(auth_middleware_1.authenticateJWT);
+router.use(auth_middleware_1.isAdmin);
 // POST /api/purchases - Create a new purchase
 router.post('/', purchase_controller_1.createPurchase);
 // POST /api/purchases/add-to-customer - Add product to customer (from dropdown)

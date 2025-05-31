@@ -6,19 +6,21 @@ dotenv.config();
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env as keyof typeof config];
 
-// Create Sequelize instance
-const sequelize = new Sequelize(
-  dbConfig.database,
-  dbConfig.username,
-  dbConfig.password,
-  {
-    host: dbConfig.host,
-    port: dbConfig.port,
-    dialect: dbConfig.dialect,
-    pool: dbConfig.pool,
-    logging: dbConfig.logging,
-  }
-);
+// Create Sequelize instance with connection URI for better Supabase compatibility
+const connectionString = process.env.DATABASE_URL || 
+  `postgresql://${dbConfig.username}:${dbConfig.password}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`;
+
+const sequelize = new Sequelize(connectionString, {
+  dialect: 'postgres',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
+  },
+  pool: dbConfig.pool,
+  logging: dbConfig.logging,
+});
 
 // Import models
 import Admin from './admin.model';

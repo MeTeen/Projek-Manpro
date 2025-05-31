@@ -5,29 +5,39 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const config = {
-    development: {
-        host: process.env.DB_HOST || 'localhost',
-        username: process.env.DB_USERNAME || 'root',
-        password: process.env.DB_PASSWORD || 'root',
-        database: process.env.DB_NAME || 'crm_db',
-        port: parseInt(process.env.DB_PORT || '3306', 10),
-        dialect: 'mysql',
+const config = { development: {
+        host: process.env.DB_HOST || 'aws-0-us-east-2.pooler.supabase.com',
+        username: process.env.DB_USERNAME || 'postgres.slmrcglupqfskshfcsut',
+        password: process.env.DB_PASSWORD || 'ZxHI6aX3RmIKo0Sq',
+        database: process.env.DB_NAME || 'postgres',
+        port: parseInt(process.env.DB_PORT || '5432', 10),
+        dialect: 'postgres',
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false
+            },
+        },
         pool: {
-            max: 5,
+            max: 10,
             min: 0,
-            acquire: 30000,
+            acquire: 60000,
             idle: 10000,
         },
-        logging: true,
-    },
-    test: {
-        host: process.env.DB_HOST || 'localhost',
-        username: process.env.DB_USERNAME || 'root',
-        password: process.env.DB_PASSWORD || 'root',
-        database: process.env.DB_NAME || 'crm_test_db',
-        port: parseInt(process.env.DB_PORT || '3306', 10),
-        dialect: 'mysql',
+        logging: console.log,
+    }, test: {
+        host: process.env.DB_HOST || 'aws-0-us-east-2.pooler.supabase.com',
+        username: process.env.DB_USERNAME || 'postgres.slmrcglupqfskshfcsut',
+        password: process.env.DB_PASSWORD || 'ZxHI6aX3RmIKo0Sq',
+        database: process.env.DB_NAME || 'postgres',
+        port: parseInt(process.env.DB_PORT || '5432', 10),
+        dialect: 'postgres',
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false
+            },
+        },
         pool: {
             max: 5,
             min: 0,
@@ -35,18 +45,23 @@ const config = {
             idle: 10000,
         },
         logging: false,
-    },
-    production: {
-        host: process.env.DB_HOST || 'localhost',
-        username: process.env.DB_USERNAME || 'root',
-        password: process.env.DB_PASSWORD || 'root',
-        database: process.env.DB_NAME || 'crm_prod_db',
-        port: parseInt(process.env.DB_PORT || '3306', 10),
-        dialect: 'mysql',
+    }, production: {
+        host: process.env.DB_HOST || 'aws-0-us-east-2.pooler.supabase.com',
+        username: process.env.DB_USERNAME || 'postgres.slmrcglupqfskshfcsut',
+        password: process.env.DB_PASSWORD || 'ZxHI6aX3RmIKo0Sq',
+        database: process.env.DB_NAME || 'postgres',
+        port: parseInt(process.env.DB_PORT || '5432', 10),
+        dialect: 'postgres',
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false
+            },
+        },
         pool: {
-            max: 5,
+            max: 10,
             min: 0,
-            acquire: 30000,
+            acquire: 60000,
             idle: 10000,
         },
         logging: false,

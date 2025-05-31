@@ -1,8 +1,9 @@
 import axios from 'axios';
 import authService from './authService';
+import { API_CONFIG } from '../config/api';
 
-// API URL
-const API_URL = 'http://localhost:3000/api';
+// Use centralized API configuration
+const API_URL = API_CONFIG.BASE_URL;
 
 export interface UserProfile {
   id: string;

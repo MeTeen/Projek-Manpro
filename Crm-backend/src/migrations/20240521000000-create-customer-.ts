@@ -6,9 +6,8 @@ module.exports = {
     const tables = await queryInterface.showAllTables();
     if (!tables.includes('customers')) {
       // Create the table if it doesn't exist
-      await queryInterface.createTable('customers', {
-        id: {
-          type: DataTypes.INTEGER.UNSIGNED,
+      await queryInterface.createTable('customers', {        id: {
+          type: DataTypes.INTEGER,
           autoIncrement: true,
           primaryKey: true,
         },

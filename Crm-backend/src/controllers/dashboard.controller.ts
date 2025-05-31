@@ -8,12 +8,10 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
     try {
         const todayStart = startOfDay(new Date());
         const todayEnd = endOfDay(new Date());
-        const sevenDaysAgoStart = startOfDay(subDays(new Date(), 6)); // 7 hari termasuk hari ini
-
-        // 1. Total Pendapatan (Net setelah diskon)
+        const sevenDaysAgoStart = startOfDay(subDays(new Date(), 6)); // 7 hari termasuk hari ini        // 1. Total Pendapatan (Net setelah diskon)
         const revenueResult = await CustomerProduct.findOne({
             attributes: [
-                [fn('SUM', sequelize.literal('(`price` * `quantity`) - COALESCE(`discount_amount`, 0)')), 'totalRevenue']
+                [fn('SUM', sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'totalRevenue']
             ],
             raw: true,
         });
@@ -57,13 +55,11 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
                     [Op.between]: [todayStart, todayEnd]
                 }
             }
-        });
-
-        // 7. Tren Penjualan 7 Hari Terakhir (Pendapatan Harian)
+        });        // 7. Tren Penjualan 7 Hari Terakhir (Pendapatan Harian)
         const salesTrendLast7Days = await CustomerProduct.findAll({
             attributes: [
-                [fn('DATE_FORMAT', col('purchase_date'), '%Y-%m-%d'), 'name'], // Format sebagai YYYY-MM-DD
-                [fn('SUM', sequelize.literal('(`price` * `quantity`) - COALESCE(`discount_amount`, 0)')), 'pendapatan']
+                [fn('TO_CHAR', col('purchase_date'), 'YYYY-MM-DD'), 'name'], // Format sebagai YYYY-MM-DD untuk PostgreSQL
+                [fn('SUM', sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'pendapatan']
             ],
             where: {
                 purchaseDate: {

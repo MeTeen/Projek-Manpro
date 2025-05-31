@@ -40,9 +40,8 @@ class Admin extends Model {
   // Class method for model initialization
   public static initialize(sequelize: Sequelize): typeof Admin {
     return Admin.init(
-      {
-        id: {
-          type: DataTypes.INTEGER.UNSIGNED,
+      {        id: {
+          type: DataTypes.INTEGER,
           autoIncrement: true,
           primaryKey: true,
         },

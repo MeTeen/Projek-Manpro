@@ -2,9 +2,8 @@ import { QueryInterface, DataTypes } from 'sequelize';
 
 module.exports = {
   async up(queryInterface: QueryInterface): Promise<void> {
-    await queryInterface.createTable('promos', {
-      id: {
-        type: DataTypes.INTEGER.UNSIGNED,
+    await queryInterface.createTable('promos', {      id: {
+        type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
         allowNull: false,
@@ -38,9 +37,8 @@ module.exports = {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true,
-      },
-      created_by: {
-        type: DataTypes.INTEGER.UNSIGNED,
+      },      created_by: {
+        type: DataTypes.INTEGER,
         allowNull: true,
         references: {
           model: 'admins',

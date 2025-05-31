@@ -23,9 +23,8 @@ class Admin extends sequelize_1.Model {
     }
     // Class method for model initialization
     static initialize(sequelize) {
-        return Admin.init({
-            id: {
-                type: sequelize_1.DataTypes.INTEGER.UNSIGNED,
+        return Admin.init({ id: {
+                type: sequelize_1.DataTypes.INTEGER,
                 autoIncrement: true,
                 primaryKey: true,
             },
@@ -55,13 +54,11 @@ class Admin extends sequelize_1.Model {
                 type: sequelize_1.DataTypes.DATE,
                 allowNull: false,
                 defaultValue: sequelize_1.DataTypes.NOW,
-                field: 'created_at'
             },
             updatedAt: {
                 type: sequelize_1.DataTypes.DATE,
                 allowNull: false,
                 defaultValue: sequelize_1.DataTypes.NOW,
-                field: 'updated_at'
             },
         }, {
             tableName: 'admins',

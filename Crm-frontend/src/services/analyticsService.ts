@@ -1,9 +1,10 @@
 // src/services/analyticsService.ts
 import axios from 'axios';
 import authService from './authService'; // Asumsi Anda menggunakan ini untuk token
+import { API_CONFIG } from '../config/api';
 
-// Mengambil base URL dari environment variable Vite
-const API_BASE_URL = `http://localhost:3000/api/analytics`; // Sesuaikan path jika endpoint analitik Anda berbeda
+// Use centralized API configuration
+const API_BASE_URL = `${API_CONFIG.BASE_URL}/analytics`;
 
 // Helper function untuk mendapatkan token (jika endpoint dilindungi)
 const getAuthToken = (): string | null => {

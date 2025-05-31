@@ -35,10 +35,9 @@ const getDateRange = (period: string): { startDate: Date, endDate: Date } => {
 
 
 export const getKpis = async (req: Request, res: Response) => {
-    try {
-        const totalRevenueResult = await CustomerProduct.findOne({
+    try {        const totalRevenueResult = await CustomerProduct.findOne({
             attributes: [
-                [fn('SUM', sequelize.literal('(price * quantity) - COALESCE(discount_amount, 0)')), 'totalRevenue']
+                [fn('SUM', sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'totalRevenue']
             ],
             raw: true,
         });
@@ -88,8 +87,8 @@ const getMonthlyTrendDateRange = (monthsToDisplay: number = 12): { startDate: Da
 
 export const getSalesTrend = async (req: Request, res: Response) => {
     // Periode sekarang sudah tetap bulanan, tidak perlu membaca dari req.query.period
-    const dateFormat: string = '%Y-%m'; // Format untuk grouping per bulan (TAHUN-BULAN)
-    const groupByAttribute: any = fn('DATE_FORMAT', col('purchase_date'), dateFormat);
+    const dateFormat: string = 'YYYY-MM'; // Format untuk grouping per bulan (TAHUN-BULAN) untuk PostgreSQL
+    const groupByAttribute: any = fn('TO_CHAR', col('purchase_date'), dateFormat);
 
     // Ambil rentang tanggal untuk tren bulanan (misalnya 6 bulan terakhir)
     const { startDate, endDate } = getMonthlyTrendDateRange(6); // Anda bisa sesuaikan jumlah bulan di sini
@@ -98,11 +97,10 @@ export const getSalesTrend = async (req: Request, res: Response) => {
     console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
     console.log(`Grouping by: ${dateFormat}`);
 
-    try {
-        const salesData = await CustomerProduct.findAll({
+    try {        const salesData = await CustomerProduct.findAll({
             attributes: [
                 [groupByAttribute, 'name'], // 'name' akan berisi format YYYY-MM
-                [fn('SUM', sequelize.literal('(price * quantity) - COALESCE(discount_amount, 0)')), 'pendapatan'],
+                [fn('SUM', sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'pendapatan'],
                 [fn('COUNT', col('id')), 'transaksi']
             ],
             where: {
@@ -130,11 +128,10 @@ export const getSalesTrend = async (req: Request, res: Response) => {
 };
 
 export const getProductSalesDistribution = async (req: Request, res: Response) => {
-    try {
-        const productSales = await CustomerProduct.findAll({
+    try {        const productSales = await CustomerProduct.findAll({
             attributes: [
                 // Tidak perlu productId di sini karena kita join dengan Product
-                [fn('SUM', sequelize.literal('(CustomerProduct.price * CustomerProduct.quantity) - COALESCE(CustomerProduct.discount_amount, 0)')), 'value']
+                [fn('SUM', sequelize.literal('("CustomerProduct"."price" * "CustomerProduct"."quantity") - COALESCE("CustomerProduct"."discount_amount", 0)')), 'value']
             ],
             include: [{
                 model: Product,
@@ -167,9 +164,8 @@ export const getTopCustomersBySpend = async (req: Request, res: Response) => {
             attributes: [
                 // `CustomerProduct.price` dan `CustomerProduct.quantity` adalah nama field di model CustomerProduct
                 // Sequelize akan memetakannya ke nama kolom database jika ada 'field' atau 'underscored:true'
-                // Untuk literal, lebih aman menggunakan nama kolom database aktual jika berbeda dari nama field model.
-                // Asumsi nama kolom di DB adalah price, quantity, discount_amount (sesuai migrasi)
-                [fn('SUM', sequelize.literal('(CustomerProduct.price * CustomerProduct.quantity) - COALESCE(CustomerProduct.discount_amount, 0)')), 'value']
+                // Untuk literal, lebih aman menggunakan nama kolom database aktual jika berbeda dari nama field model.                // Asumsi nama kolom di DB adalah price, quantity, discount_amount (sesuai migrasi)
+                [fn('SUM', sequelize.literal('("CustomerProduct"."price" * "CustomerProduct"."quantity") - COALESCE("CustomerProduct"."discount_amount", 0)')), 'value']
             ],
             include: [{
                 model: Customer,

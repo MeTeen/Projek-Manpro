@@ -2,9 +2,8 @@ import { QueryInterface, DataTypes } from 'sequelize';
 
 module.exports = {
   up: async (queryInterface: QueryInterface) => {
-    await queryInterface.createTable('products', {
-      id: {
-        type: DataTypes.INTEGER.UNSIGNED,
+    await queryInterface.createTable('products', {      id: {
+        type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
       },

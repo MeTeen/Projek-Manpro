@@ -10,10 +10,18 @@ dotenv.config();
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '8080', 10);
+
+// CORS configuration - Allow all origins
+const corsOptions = {
+  origin: '*',
+  credentials: false,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -56,11 +64,11 @@ const startServer = async () => {
   try {
     // Sync database
     await sequelize.sync({ force: false });
-    console.log('Database connected successfully');
-
-    // Start server
-    app.listen(PORT, () => {
+    console.log('Database connected successfully');    // Start server
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`CORS Origin: ${process.env.CORS_ORIGIN || '*'}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

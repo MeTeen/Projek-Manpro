@@ -27,8 +27,9 @@ const authenticateJWT = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
             });
         }
         // Verify the token
-        const decoded = (0, jwt_1.verifyToken)(token);
-        if (!decoded) {
+        // Pastikan verifyToken mengembalikan payload yang sesuai dengan AuthenticatedUser atau setidaknya memiliki 'id'
+        const decoded = (0, jwt_1.verifyToken)(token); // Type assertion jika perlu
+        if (!decoded || !decoded.id) { // Periksa juga keberadaan decoded.id
             return res.status(401).json({
                 success: false,
                 message: 'Authentication failed: Invalid token'
@@ -47,6 +48,7 @@ const authenticateJWT = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
             id: admin.id,
             username: admin.username,
             email: admin.email,
+            // Pastikan admin.role adalah tipe yang kompatibel dengan AuthenticatedUser['role']
             role: admin.role
         };
         next();
@@ -61,15 +63,16 @@ const authenticateJWT = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
 });
 exports.authenticateJWT = authenticateJWT;
 /**
- * Middleware to ensure user has admin role
+ * Middleware to ensure user has admin role (allows admin or super_admin)
  */
 const isAdmin = (req, res, next) => {
-    if (!req.user) {
+    if (!req.user) { // req.user sekarang bertipe AuthenticatedUser | undefined
         return res.status(401).json({
             success: false,
             message: 'Authentication required'
         });
     }
+    // req.user.role akan memiliki tipe 'admin' | 'super_admin'
     if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
         return res.status(403).json({
             success: false,
