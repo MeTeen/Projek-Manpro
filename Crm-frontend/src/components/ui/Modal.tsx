@@ -1,41 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
+  title: React.ReactNode;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  closeOnOverlayClick?: boolean;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   showCloseButton?: boolean;
-  footer?: React.ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  onClose,
-  title,
-  children,
+const Modal: React.FC<ModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
   size = 'md',
-  closeOnOverlayClick = true,
-  showCloseButton = true,
-  footer
+  showCloseButton = true 
 }) => {
-  const modalRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -44,88 +27,109 @@ const Modal: React.FC<ModalProps> = ({
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (closeOnOverlayClick && e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  const getSizeClasses = (size: string) => {
-    switch (size) {
-      case 'sm':
-        return 'w-96 max-w-[90%]';
-      case 'md':
-        return 'w-[500px] max-w-[90%]';
-      case 'lg':
-        return 'w-[700px] max-w-[90%]';
-      case 'xl':
-        return 'w-[900px] max-w-[95%]';
-      default:
-        return 'w-[500px] max-w-[90%]';
-    }
-  };
-
   if (!isOpen) return null;
+  const getSizeClasses = () => {
+    switch (size) {
+      case 'xs': return { maxWidth: '320px' };
+      case 'sm': return { maxWidth: '400px' };
+      case 'md': return { maxWidth: '500px' };
+      case 'lg': return { maxWidth: '600px' };
+      case 'xl': return { maxWidth: '900px' };
+      case '2xl': return { maxWidth: '1200px' };
+      default: return { maxWidth: '500px' };
+    }
+  };
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[1000] animate-fadeIn"
-      onClick={handleOverlayClick}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '16px'
+      }}
+      onClick={onClose}
     >
       <div 
-        ref={modalRef} 
-        className={`bg-white rounded-lg shadow-xl max-h-[90vh] overflow-hidden flex flex-col animate-slideUp ${getSizeClasses(size)}`}
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          width: '100%',
+          ...getSizeClasses(),
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          position: 'relative'
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {(title || showCloseButton) && (
-          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 flex-shrink-0">
-            {title && (
-              <h2 className="m-0 text-lg font-semibold text-gray-900">
-                {title}
-              </h2>
-            )}
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="bg-none border-none text-xl cursor-pointer p-1 text-gray-500 rounded flex items-center justify-center transition-colors duration-200 hover:text-gray-700"
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="20" 
-                  height="20" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
-        
-        <div className="px-6 py-6 overflow-auto flex-1">
-          {children}
+        {/* Header */}
+        <div style={{
+          padding: '20px 24px',
+          borderBottom: '1px solid #e5e7eb',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <h2 style={{
+            fontSize: '18px',
+            fontWeight: '600',
+            color: '#1f2937',
+            margin: 0
+          }}>
+            {title}
+          </h2>
+          {showCloseButton && (
+            <button
+              onClick={onClose}
+              style={{
+                padding: '8px',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                borderRadius: '4px',
+                color: '#6b7280',
+                fontSize: '20px',
+                lineHeight: 1,
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.color = '#374151';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = '#6b7280';
+              }}
+            >
+              ×
+            </button>
+          )}
         </div>
         
-        {footer && (
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
-            {footer}
-          </div>
-        )}
+        {/* Body */}
+        <div style={{ padding: '24px' }}>
+          {children}
+        </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default Modal;

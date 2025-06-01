@@ -44,7 +44,7 @@ const getKpis = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const totalRevenueResult = yield models_1.CustomerProduct.findOne({
             attributes: [
-                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('(price * quantity) - COALESCE(discount_amount, 0)')), 'totalRevenue']
+                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'totalRevenue']
             ],
             raw: true,
         });
@@ -86,8 +86,8 @@ const getMonthlyTrendDateRange = (monthsToDisplay = 12) => {
 };
 const getSalesTrend = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // Periode sekarang sudah tetap bulanan, tidak perlu membaca dari req.query.period
-    const dateFormat = '%Y-%m'; // Format untuk grouping per bulan (TAHUN-BULAN)
-    const groupByAttribute = (0, sequelize_1.fn)('DATE_FORMAT', (0, sequelize_1.col)('purchase_date'), dateFormat);
+    const dateFormat = 'YYYY-MM'; // Format untuk grouping per bulan (TAHUN-BULAN) untuk PostgreSQL
+    const groupByAttribute = (0, sequelize_1.fn)('TO_CHAR', (0, sequelize_1.col)('purchase_date'), dateFormat);
     // Ambil rentang tanggal untuk tren bulanan (misalnya 6 bulan terakhir)
     const { startDate, endDate } = getMonthlyTrendDateRange(6); // Anda bisa sesuaikan jumlah bulan di sini
     console.log(`Workspaceing MONTHLY sales trend`);
@@ -97,7 +97,7 @@ const getSalesTrend = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         const salesData = yield models_1.CustomerProduct.findAll({
             attributes: [
                 [groupByAttribute, 'name'], // 'name' akan berisi format YYYY-MM
-                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('(price * quantity) - COALESCE(discount_amount, 0)')), 'pendapatan'],
+                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'pendapatan'],
                 [(0, sequelize_1.fn)('COUNT', (0, sequelize_1.col)('id')), 'transaksi']
             ],
             where: {
@@ -128,7 +128,7 @@ const getProductSalesDistribution = (req, res) => __awaiter(void 0, void 0, void
         const productSales = yield models_1.CustomerProduct.findAll({
             attributes: [
                 // Tidak perlu productId di sini karena kita join dengan Product
-                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('(CustomerProduct.price * CustomerProduct.quantity) - COALESCE(CustomerProduct.discount_amount, 0)')), 'value']
+                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('("CustomerProduct"."price" * "CustomerProduct"."quantity") - COALESCE("CustomerProduct"."discount_amount", 0)')), 'value']
             ],
             include: [{
                     model: models_1.Product,
@@ -160,9 +160,8 @@ const getTopCustomersBySpend = (req, res) => __awaiter(void 0, void 0, void 0, f
             attributes: [
                 // `CustomerProduct.price` dan `CustomerProduct.quantity` adalah nama field di model CustomerProduct
                 // Sequelize akan memetakannya ke nama kolom database jika ada 'field' atau 'underscored:true'
-                // Untuk literal, lebih aman menggunakan nama kolom database aktual jika berbeda dari nama field model.
-                // Asumsi nama kolom di DB adalah price, quantity, discount_amount (sesuai migrasi)
-                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('(CustomerProduct.price * CustomerProduct.quantity) - COALESCE(CustomerProduct.discount_amount, 0)')), 'value']
+                // Untuk literal, lebih aman menggunakan nama kolom database aktual jika berbeda dari nama field model.                // Asumsi nama kolom di DB adalah price, quantity, discount_amount (sesuai migrasi)
+                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('("CustomerProduct"."price" * "CustomerProduct"."quantity") - COALESCE("CustomerProduct"."discount_amount", 0)')), 'value']
             ],
             include: [{
                     model: models_1.Customer,

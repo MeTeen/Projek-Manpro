@@ -63,7 +63,7 @@ const TaskSection: React.FC = () => {
           <div style={{ marginBottom: '10px' }}>
             <span style={{ 
               display: 'inline-block', 
-              width: '20px', 
+              width: '10px', 
               height: '20px', 
               border: '3px solid #ccc', 
               borderTopColor: 'var(--indigo-600)', 

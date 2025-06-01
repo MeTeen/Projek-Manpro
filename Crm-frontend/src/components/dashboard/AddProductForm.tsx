@@ -130,37 +130,40 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ isOpen, onClose, onProd
         />
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <FormInput
           label="Product Name"
           name="name"
           value={formData.name}
           onChange={handleChange}
           required
-          placeholder="Enter product name"
-        />
+          placeholder="Enter product name"        />
         
-        <div className="grid grid-cols-2 gap-4">
-          <FormInput
-            label="Stock"
-            name="stock"
-            type="number"
-            value={formData.stock.toString()}
-            onChange={handleChange}
-            min="0"
-            placeholder="0"
-          />
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ flex: 1 }}>
+            <FormInput
+              label="Stock"
+              name="stock"
+              type="number"
+              value={formData.stock.toString()}
+              onChange={handleChange}
+              min="0"
+              placeholder="0"
+            />
+          </div>
           
-          <FormInput
-            label="Price"
-            name="price"
-            type="number"
-            value={formData.price.toString()}
-            onChange={handleChange}
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-          />
+          <div style={{ flex: 1 }}>
+            <FormInput
+              label="Price"
+              name="price"
+              type="number"
+              value={formData.price.toString()}
+              onChange={handleChange}
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+            />
+          </div>
         </div>
         
         <FormInput
@@ -171,7 +174,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ isOpen, onClose, onProd
           placeholder="e.g. 10cm x 20cm x 5cm"
         />
 
-        <div className="flex justify-end gap-3 pt-4">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px' }}>
           <Button 
             variant="secondary" 
             onClick={onClose}

@@ -2,12 +2,11 @@ import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 
 import Header from '../dashboard/Header';
 import Sidebar from '../dashboard/Sidebar';
-import { EditModal } from '../common/EditModal';
+import { ConfirmModal, FormModal } from '../ui';
+import FormInput from '../ui/FormInput';
 import customerService, { Customer } from '../../services/customerService';
 import { MdEdit, MdDelete, MdPersonAdd, MdPhotoCamera } from 'react-icons/md';
-
-// Definisi konstanta BACKEND_URL
-const BACKEND_URL = 'http://localhost:3000';
+import { BACKEND_URL } from '../../utils/formatters';
 
 const CustomersPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -165,9 +164,8 @@ const CustomersPage: React.FC = () => {
       }
     }
   };
-
   // Handle new customer form input changes
-  const handleNewCustomerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNewInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setNewCustomerData(prev => ({
       ...prev,
@@ -471,22 +469,29 @@ const CustomersPage: React.FC = () => {
                   ))
                 )}
               </tbody>
-            </table>
-          </div>
+            </table>          </div>
           
          
         </div>
       </div>
-      
+
       {/* Edit Customer Modal */}
-      <EditModal
-      isOpen={isEditModalOpen}
-      title="Edit Customer"
-      onClose={() => setIsEditModalOpen(false)}
-      onSubmit={handleEditSubmit}
-    >
-      {/* Avatar Section */}
-      <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <FormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditSubmit}
+        title="Edit Customer"
+        loading={loading}
+        submitText="Update Customer"
+        cancelText="Cancel"
+        size="lg"
+      >      {/* Avatar Section */}
+      <div style={{ 
+        marginBottom: '20px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center' 
+      }}>
         {/* hidden file input */}
         <input
           type="file"
@@ -500,8 +505,8 @@ const CustomersPage: React.FC = () => {
         <div
           onClick={handleAvatarClick}
           style={{
-            width: '100px',
-            height: '100px',
+            width: '96px',
+            height: '96px',
             borderRadius: '50%',
             backgroundColor: '#f3f4f6',
             cursor: 'pointer',
@@ -510,526 +515,269 @@ const CustomersPage: React.FC = () => {
             alignItems: 'center',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundImage: avatarPreview ? `url(${avatarPreview})` : 'none',
             border: '2px dashed #d1d5db',
             marginBottom: '12px',
-            position: 'relative'
+            position: 'relative',
+            backgroundImage: avatarPreview ? `url(${avatarPreview})` : 'none',
           }}
         >
-          {!avatarPreview && <MdPhotoCamera size={32} color="#6b7280" />}
-          <div
+          {!avatarPreview && <MdPhotoCamera size={32} style={{ color: '#6b7280' }} />}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            backgroundColor: '#4f46e5',
+            borderRadius: '50%',
+            width: '28px',
+            height: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+          }}>
+            <MdPhotoCamera size={16} style={{ color: 'white' }} />
+          </div>
+        </div>
+        <p style={{ 
+          fontSize: '14px', 
+          color: '#6b7280', 
+          margin: 0 
+        }}>
+          Click to upload profile picture
+        </p>
+      </div>{/* First Name */}      <FormInput
+        type="text"
+        name="firstName"
+        value={formData.firstName || ''}
+        onChange={handleInputChange}
+        required
+        label="First Name"
+      />
+
+      {/* Last Name */}
+      <FormInput
+        type="text"
+        name="lastName"
+        value={formData.lastName || ''}
+        onChange={handleInputChange}
+        required
+        label="Last Name"
+      />      {/* Email */}
+      <FormInput
+        type="email"
+        name="email"
+        value={formData.email || ''}
+        onChange={handleInputChange}
+        required
+        label="Email"
+      />
+
+      {/* Phone */}
+      <FormInput
+        type="text"
+        name="phone"
+        value={formData.phone || ''}
+        onChange={handleInputChange}
+        label="Phone"
+      />      {/* Address */}
+      <FormInput
+        type="text"
+        name="address"
+        value={formData.address || ''}
+        onChange={handleInputChange}
+        label="Address"
+      />      {/* City, State, Zip */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ flex: 1 }}>
+          <FormInput
+            type="text"
+            name="city"
+            value={formData.city || ''}
+            onChange={handleInputChange}
+            label="City"
+            fullWidth={true}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <FormInput
+            type="text"
+            name="state"
+            value={formData.state || ''}
+            onChange={handleInputChange}
+            label="State"
+            fullWidth={true}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <FormInput
+            type="text"
+            name="zipCode"
+            value={formData.zipCode || ''}
+            onChange={handleInputChange}
+            label="Zip Code"
+            fullWidth={true}
+          />
+        </div>
+      </div>
+      </FormModal>        {/* Add Customer Modal */}
+      <FormModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddSubmit}
+        title="Add New Customer"
+        loading={loading}
+        submitText="Create Customer"
+        cancelText="Cancel"
+        size="lg"
+      >        {/* Avatar Section */}
+        <div style={{ 
+          marginBottom: '20px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center' 
+        }}>
+          <input 
+            type="file" 
+            ref={newFileInputRef}
+            style={{ display: 'none' }}
+            accept="image/*"
+            onChange={handleNewAvatarChange}
+          />
+          <div 
+            onClick={handleNewAvatarClick}
             style={{
+              width: '96px',
+              height: '96px',
+              borderRadius: '50%',
+              backgroundColor: '#f3f4f6',
+              cursor: 'pointer',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: '2px dashed #d1d5db',
+              marginBottom: '12px',
+              position: 'relative',
+              backgroundImage: newAvatarPreview ? `url(${newAvatarPreview})` : 'none',
+            }}
+          >
+            {!newAvatarPreview && (
+              <MdPhotoCamera size={32} style={{ color: '#6b7280' }} />
+            )}
+            
+            {/* Camera icon overlay */}
+            <div style={{
               position: 'absolute',
               bottom: 0,
               right: 0,
-              backgroundColor: '#5E5CEB',
+              backgroundColor: '#4f46e5',
               borderRadius: '50%',
               width: '28px',
               height: '28px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}
-          >
-            <MdPhotoCamera size={16} color="white" />
-          </div>
-        </div>
-        <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
-          Click to upload profile picture
-        </p>
-      </div>
-
-      {/* First Name */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-          First Name
-        </label>
-        <input
-          type="text"
-          name="firstName"
-          value={formData.firstName || ''}
-          onChange={handleInputChange}
-          required
-          style={{
-            width: '100%',
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-        />
-      </div>
-
-      {/* Last Name */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-          Last Name
-        </label>
-        <input
-          type="text"
-          name="lastName"
-          value={formData.lastName || ''}
-          onChange={handleInputChange}
-          required
-          style={{
-            width: '100%',
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-        />
-      </div>
-
-      {/* Email */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-          Email
-        </label>
-        <input
-          type="email"
-          name="email"
-          value={formData.email || ''}
-          onChange={handleInputChange}
-          required
-          style={{
-            width: '100%',
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-        />
-      </div>
-
-      {/* Phone */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-          Phone
-        </label>
-        <input
-          type="text"
-          name="phone"
-          value={formData.phone || ''}
-          onChange={handleInputChange}
-          style={{
-            width: '100%',
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-        />
-      </div>
-
-      {/* Address */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-          Address
-        </label>
-        <input
-          type="text"
-          name="address"
-          value={formData.address || ''}
-          onChange={handleInputChange}
-          style={{
-            width: '100%',
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-        />
-      </div>
-
-      {/* City, State, Zip */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-            City
-          </label>
-          <input
-            type="text"
-            name="city"
-            value={formData.city || ''}
-            onChange={handleInputChange}
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-            State
-          </label>
-          <input
-            type="text"
-            name="state"
-            value={formData.state || ''}
-            onChange={handleInputChange}
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-            Zip Code
-          </label>
-          <input
-            type="text"
-            name="zipCode"
-            value={formData.zipCode || ''}
-            onChange={handleInputChange}
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          />
-        </div>
-      </div>
-    </EditModal>
-      
-      {/* Add Customer Modal */}
-      {isAddModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            padding: '24px',
-            width: '500px',
-            maxWidth: '90%',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }}>
-            <h2 style={{ marginTop: 0, fontSize: '20px', fontWeight: '600' }}>Add New Customer</h2>
-            <form onSubmit={handleAddSubmit}>
-              {/* Avatar Section */}
-              <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <input 
-                  type="file" 
-                  ref={newFileInputRef}
-                  style={{ display: 'none' }}
-                  accept="image/*"
-                  onChange={handleNewAvatarChange}
-                />
-                <div 
-                  onClick={handleNewAvatarClick}
-                  style={{
-                    width: '100px',
-                    height: '100px',
-                    borderRadius: '50%',
-                    backgroundColor: '#f3f4f6',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundImage: newAvatarPreview ? `url(${newAvatarPreview})` : 'none',
-                    border: '2px dashed #d1d5db',
-                    marginBottom: '12px',
-                    position: 'relative'
-                  }}
-                >
-                  {!newAvatarPreview && (
-                    <MdPhotoCamera size={32} color="#6b7280" />
-                  )}
-                  
-                  {/* Camera icon overlay */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '0',
-                    right: '0',
-                    backgroundColor: '#5E5CEB',
-                    borderRadius: '50%',
-                    width: '28px',
-                    height: '28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                  }}>
-                    <MdPhotoCamera size={16} color="white" />
-                  </div>
-                </div>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '0' }}>
-                  Click to upload profile picture
-                </p>
-              </div>
-              
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={newCustomerData.firstName || ''}
-                  onChange={handleNewCustomerInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={newCustomerData.lastName || ''}
-                  onChange={handleNewCustomerInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={newCustomerData.email || ''}
-                  onChange={handleNewCustomerInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Phone
-                </label>
-                <input
-                  type="text"
-                  name="phone"
-                  value={newCustomerData.phone || ''}
-                  onChange={handleNewCustomerInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Address
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={newCustomerData.address || ''}
-                  onChange={handleNewCustomerInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={newCustomerData.city || ''}
-                    onChange={handleNewCustomerInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={newCustomerData.state || ''}
-                    onChange={handleNewCustomerInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                    Zip Code
-                  </label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={newCustomerData.zipCode || ''}
-                    onChange={handleNewCustomerInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  style={{
-                    padding: '10px 16px',
-                    backgroundColor: '#f3f4f6',
-                    color: '#374151',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    padding: '10px 16px',
-                    backgroundColor: '#5E5CEB',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  {loading ? 'Creating...' : 'Create Customer'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      
-      {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            padding: '24px',
-            width: '400px',
-            maxWidth: '90%'
-          }}>
-            <h2 style={{ marginTop: 0, fontSize: '20px', fontWeight: '600' }}>Delete Customer</h2>
-            <p style={{ color: '#4b5563', marginBottom: '24px' }}>
-              Are you sure you want to delete {selectedCustomer?.firstName} {selectedCustomer?.lastName}? This action cannot be undone.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                style={{
-                  padding: '10px 16px',
-                  backgroundColor: '#f3f4f6',
-                  color: '#374151',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={loading}
-                style={{
-                  padding: '10px 16px',
-                  backgroundColor: '#EF4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
-              >
-                {loading ? 'Deleting...' : 'Delete Customer'}
-              </button>
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+            }}>
+              <MdPhotoCamera size={16} style={{ color: 'white' }} />
             </div>
           </div>
+          <p style={{ 
+            fontSize: '14px', 
+            color: '#6b7280', 
+            margin: 0 
+          }}>
+            Click to upload profile picture
+          </p>
         </div>
-      )}
+        <FormInput
+          label="First Name"
+          type="text"
+          name="firstName"
+          value={newCustomerData.firstName || ''}
+          onChange={handleNewInputChange}
+          required
+        />
+        
+        <FormInput
+          label="Last Name"
+          type="text"
+          name="lastName"
+          value={newCustomerData.lastName || ''}
+          onChange={handleNewInputChange}
+          required
+        />
+        
+        <FormInput
+          label="Email"
+          type="email"
+          name="email"
+          value={newCustomerData.email || ''}
+          onChange={handleNewInputChange}
+          required
+        />
+        
+        <FormInput
+          label="Phone"
+          type="text"
+          name="phone"
+          value={newCustomerData.phone || ''}
+          onChange={handleNewInputChange}
+        />
+        
+        <FormInput
+          label="Address"
+          type="text"
+          name="address"
+          value={newCustomerData.address || ''}
+          onChange={handleNewInputChange}
+        />
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ flex: 1 }}>
+            <FormInput
+              label="City"
+              type="text"
+              name="city"
+              value={newCustomerData.city || ''}
+              onChange={handleNewInputChange}
+              fullWidth={false}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <FormInput
+              label="State"
+              type="text"
+              name="state"
+              value={newCustomerData.state || ''}
+              onChange={handleNewInputChange}
+              fullWidth={false}
+            />
+          </div>
+          <div style={{ flex: '1' }}>
+            <FormInput
+              label="Zip Code"
+              type="text"
+              name="zipCode"
+              value={newCustomerData.zipCode || ''}
+              onChange={handleNewInputChange}
+              fullWidth={false}
+            />
+          </div>
+        </div>
+      </FormModal>
+        {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Customer"
+        message={`Are you sure you want to delete ${selectedCustomer?.firstName} ${selectedCustomer?.lastName}? This action cannot be undone.`}
+        confirmText="Delete Customer"
+        cancelText="Cancel"
+        variant="danger"
+        loading={loading}
+      />
     </div>
   );
 };

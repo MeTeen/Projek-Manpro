@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Customer, Product, CustomerProduct } from '../models';
+import { Customer, Product, CustomerProduct, Promo } from '../models';
 import { CustomerInput } from '../models/customer.model';
 import { getAvatarUrl } from '../middlewares/upload.middleware';
 import { Op } from 'sequelize';
@@ -264,16 +264,14 @@ export const deleteCustomer = async (req: Request, res: Response) => {
  */
 export const getCustomerWithPurchases = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    
-    // Find customer with eager loading of products
+    const { id } = req.params;    // Find customer with eager loading of products
     const customer = await Customer.findByPk(id, {
       include: [{
         model: Product,
         through: {
-          attributes: ['quantity', 'purchaseDate']
+          attributes: ['quantity', 'purchaseDate', 'price', 'promoId', 'discountAmount']
         },
-        as: 'products'
+        as: 'Products' // Use capital P to match the association alias
       }]
     });
     
@@ -303,7 +301,7 @@ export const getCustomerWithPurchases = async (req: Request, res: Response) => {
       purchaseCount: customer.purchaseCount,
       createdAt: customer.createdAt,
       updatedAt: customer.updatedAt,
-      purchases: customerWithProducts.products || []
+      purchases: customerWithProducts.Products || []
     };
     
     res.status(200).json({

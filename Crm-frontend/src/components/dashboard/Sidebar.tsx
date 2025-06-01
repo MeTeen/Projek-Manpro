@@ -41,8 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
     return currentPath.startsWith(path);
   };
 
-  return (
-    <div className="sidebar" 
+  return (    <div 
       style={{
         width: collapsed ? '60px' : '240px',
         minHeight: '100vh',

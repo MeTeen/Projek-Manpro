@@ -5,7 +5,8 @@ interface FormSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> 
   error?: string;
   required?: boolean;
   fullWidth?: boolean;
-  options: { value: string | number; label: string }[];
+  options?: { value: string | number; label: string }[];
+  children?: React.ReactNode;
 }
 
 const FormSelect: React.FC<FormSelectProps> = ({ 
@@ -14,6 +15,7 @@ const FormSelect: React.FC<FormSelectProps> = ({
   required = false, 
   fullWidth = true,
   options,
+  children,
   className = '',
   ...props 
 }) => {
@@ -25,8 +27,7 @@ const FormSelect: React.FC<FormSelectProps> = ({
     fontSize: '14px',
     outline: 'none',
     transition: 'border-color 0.2s ease',
-    backgroundColor: '#fff',
-    cursor: 'pointer',
+    fontFamily: 'inherit',
     height: '44px',
   };
 
@@ -34,11 +35,18 @@ const FormSelect: React.FC<FormSelectProps> = ({
     borderColor: '#5E5CEB',
     boxShadow: '0 0 0 1px #5E5CEB',
   };
+
   return (
-    <div className="mb-4">
+    <div style={{ marginBottom: '16px' }}>
       {label && (
-        <label className="block mb-1.5 font-medium text-sm text-gray-700">
-          {label}{required && <span className="text-red-500"> *</span>}
+        <label style={{ 
+          display: 'block', 
+          marginBottom: '6px', 
+          fontWeight: 500,
+          fontSize: '14px',
+          color: '#374151'
+        }}>
+          {label}{required && <span style={{ color: '#EF4444', marginLeft: '4px' }}>*</span>}
         </label>
       )}
       <select
@@ -59,14 +67,29 @@ const FormSelect: React.FC<FormSelectProps> = ({
           props.onBlur?.(e);
         }}
       >
-        {options.map(option => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
+        {options ? (
+          options.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))
+        ) : (
+          children
+        )}
       </select>
       {error && (
-        <p className="text-red-500 text-xs mt-1 m-0">
+        <p style={{ 
+          color: '#EF4444', 
+          fontSize: '12px', 
+          marginTop: '4px', 
+          margin: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+        }}>
+          <svg style={{ width: '16px', height: '16px' }} fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
           {error}
         </p>
       )}

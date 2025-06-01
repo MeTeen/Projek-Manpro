@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from '../dashboard/Sidebar';
 import Header from '../dashboard/Header';
 import AddNewDropdown from '../dashboard/AddNewDropdown';
+import { FormModal, FormInput, FormSelect } from '../ui';
 import customerService, { Customer } from '../../services/customerService';
 import productService, { Product } from '../../services/productService';
 // Pastikan PurchaseInput diimpor dengan definisi yang menyertakan promoId?
 import purchaseService, { PurchaseInput, Purchase } from '../../services/purchaseService';
 import promoService, { Promo } from '../../services/promoService';
-import { MdAdd, MdShoppingCart, MdLocalOffer, MdInfoOutline } from 'react-icons/md';
+import { MdAdd, MdShoppingCart, MdInfoOutline } from 'react-icons/md';
 
 const TransactionPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -209,10 +210,9 @@ const TransactionPage: React.FC = () => {
       <div style={{ flex: 1, overflow: 'auto', transition: 'margin-left 0.3s ease' }}>
         <div style={{ padding: '20px 30px' }}>
           <Header onCustomerCreated={handleCustomerCreated} onAddNewClick={handleAddNewClick} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0' }}>
-            <div style={{ padding: '0 0px 0 5px' }}>
-              <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Daftar Transaksi</h1>
-              <p style={{ color: '#6b7280', marginTop: '8px' }}>Manage your product inventory</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0' }}>            <div style={{ padding: '0 0px 0 5px' }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Transaction History</h1>
+              <p style={{ color: '#6b7280', marginTop: '8px' }}>View and manage customer transactions with promo tracking</p>
             </div>
             <button onClick={handleAddTransactionClick} style={{ backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
               <MdAdd size={20} /> <span style={{ marginLeft: '5px' }}>Tambah Transaksi</span>
@@ -226,7 +226,7 @@ const TransactionPage: React.FC = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                 <thead style={{ backgroundColor: '#f9fafb' }}>
                   <tr>
-                    {['ID', 'Customer', 'Produk', 'Qty', 'Harga Satuan', 'Diskon', 'Total Bayar', 'Tgl Transaksi', 'Promo Digunakan'].map((header) => (
+                    {['Transaction ID', 'Customer', 'Product', 'Qty', 'Unit Price', 'Discount', 'Total Paid', 'Date', 'Promo Used'].map((header) => (
                       <th key={header} style={{ padding: '12px 16px', textAlign: header === 'Qty' || header.includes('Harga') || header === 'Diskon' || header === 'Total Bayar' ? 'right' : 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>
                         {header}
                       </th>
@@ -259,30 +259,61 @@ const TransactionPage: React.FC = () => {
                           <td style={{ padding: '12px 16px', textAlign: 'right' }}>{purchase.quantity}</td>
                           <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                             {formatPrice(purchase.price || 0)}
-                          </td>
-                          <td style={{
+                          </td>                          <td style={{
                             padding: '12px 16px',
                             textAlign: 'right',
-                            color: (purchase.discountAmount || 0) > 0 ? 'red' : '',
+                            color: (purchase.discountAmount || 0) > 0 ? '#dc2626' : '#6b7280',
+                            fontWeight: (purchase.discountAmount || 0) > 0 ? '600' : '400',
                           }}>
-                            {purchase.discountAmount ? `- ${formatPrice(purchase.discountAmount)}` : formatPrice(0)}
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'right', color: 'green' }}>
+                            {(purchase.discountAmount || 0) > 0 
+                              ? `- ${formatPrice(purchase.discountAmount || 0)}` 
+                              : '-'
+                            }
+                          </td>                          <td style={{ 
+                            padding: '12px 16px', 
+                            textAlign: 'right', 
+                            color: '#059669',
+                            fontWeight: '600'
+                          }}>
                             {formatPrice(totalPaid)}
                           </td>
-                          <td style={{ padding: '12px 16px' }}>{new Date(purchase.purchaseDate).toLocaleDateString()}</td>
-                          <td style={{ padding: '12px 16px' }}>
-                            {purchase.appliedPromoDetails
-                              ? // Jika ada detail promo yang di-include dari backend
-                              `${purchase.appliedPromoDetails.name} (ID: ${purchase.appliedPromoDetails.id}) - ${purchase.appliedPromoDetails.type === 'percentage'
-                                ? `${parseFloat(purchase.appliedPromoDetails.value.toString()).toFixed(0)}%` // ✅ PERUBAHAN DI SINI
-                                : formatPrice(purchase.appliedPromoDetails.value)
-                              }`
-                              : purchase.promoId
-                                ? // Jika hanya ada promoId (misalnya detail tidak di-include)
-                                `Promo ID: ${purchase.promoId} - Info detail tidak tersedia`
-                                : // Jika tidak ada promo sama sekali
-                                '-'}
+                          <td style={{ padding: '12px 16px' }}>{new Date(purchase.purchaseDate).toLocaleDateString()}</td>                          <td style={{ padding: '12px 16px' }}>
+                            {purchase.appliedPromoDetails ? (
+                              <div>
+                                <div style={{ 
+                                  fontWeight: '600', 
+                                  color: '#4f46e5',
+                                  fontSize: '13px'
+                                }}>
+                                  {purchase.appliedPromoDetails.name}
+                                </div>
+                                <div style={{ 
+                                  fontSize: '11px', 
+                                  color: '#6b7280',
+                                  marginTop: '2px'
+                                }}>
+                                  {purchase.appliedPromoDetails.type === 'percentage'
+                                    ? `${parseFloat(purchase.appliedPromoDetails.value.toString()).toFixed(0)}% OFF`
+                                    : `${formatPrice(purchase.appliedPromoDetails.value)} OFF`
+                                  }
+                                </div>
+                              </div>
+                            ) : purchase.promoId ? (
+                              <div style={{ 
+                                fontSize: '12px', 
+                                color: '#f59e0b',
+                                fontStyle: 'italic'
+                              }}>
+                                Promo ID: {purchase.promoId}
+                              </div>
+                            ) : (
+                              <span style={{ 
+                                color: '#9ca3af',
+                                fontSize: '12px'
+                              }}>
+                                No promo
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -290,115 +321,218 @@ const TransactionPage: React.FC = () => {
                   )}
                 </tbody>
               </table>
-            </div>
-          </div>
+            </div>          </div>
         </div>
       </div>
 
-
       {/* Modal Tambah Transaksi */}
-      {isAddModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '8px', width: '90%', maxWidth: '500px', padding: '24px 24px 10px 24px', maxHeight: '100vh', overflowY: 'auto' }}>
-            <h2 style={{ margin: '0 0 7px 0', fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-              <MdShoppingCart style={{ marginRight: '10px', color: '#4F46E5' }} size={22} />
-              Tambah Transaksi Baru
-            </h2>
-            <form onSubmit={handleAddSubmit}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>Customer:</label>
-                <select name="customerId" value={transactionData.customerId} onChange={handleInputChange} required style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
-                  <option value={0}>-- Pilih Customer --</option>
-                  {customers.map(c => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>Produk:</label>
-                <select name="productId" value={transactionData.productId} onChange={handleInputChange} required style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }} disabled={!transactionData.customerId}>
-                  <option value={0}>-- Pilih Produk --</option>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name} (Stok: {p.stock}) - {formatPrice(p.price)}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>Kuantitas:</label>
-                <input type="number" name="quantity" value={transactionData.quantity} onChange={handleInputChange} min="1" required style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }} disabled={!transactionData.productId} />
-              </div>
+      <FormModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddSubmit}        title="Create New Transaction"
+        submitText="Create Transaction"
+        loading={formSubmitLoading}
+        disabled={!transactionData.productId}        icon={<MdShoppingCart style={{ marginRight: '8px', color: '#4f46e5' }} size={22} />}
+      >
+        <FormSelect
+          name="customerId"
+          value={transactionData.customerId}
+          onChange={handleInputChange}
+          required          label="Customer:"
+        >
+          <option value={0}>-- Select Customer --</option>
+          {customers.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.firstName} {c.lastName}
+            </option>
+          ))}
+        </FormSelect>
 
-              {/* Promo Selection Dropdown */}
-              {transactionData.customerId > 0 && transactionData.productId > 0 && availablePromos.length > 0 && (
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
-                    <MdLocalOffer style={{ marginRight: '4px', verticalAlign: 'bottom' }} />
-                    Promo Tersedia (Opsional):
-                  </label>
-                  <select
-                    name="promoId" // Langsung bind ke transactionData.promoId
-                    value={transactionData.promoId ?? ''}
-                    onChange={handleInputChange}
-                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '14px', backgroundColor: 'white', boxSizing: 'border-box', height: '42px' }}
-                  >
-                    <option value="">-- Tidak Pakai Promo --</option>
-                    {availablePromos.map(promo => (
-                      <option key={promo.id} value={promo.id}>
-                        {promo.name} ({promo.type === 'percentage' ? `${Number(promo.value)}%` : formatPrice(promo.value)})
-                      </option>))}
-                  </select>
-                </div>
-              )}
-
-              {/* Price Information */}
-              {selectedProduct && (
-                <div style={{ marginBottom: '14px', padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '6px', color: '#4B5563' }}>
-                    <span>Harga Satuan:</span>
-                    <span>{formatPrice(selectedProduct.price)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '10px', color: '#4B5563' }}>
-                    <span>Subtotal ({transactionData.quantity} item):</span>
-                    <span>{formatPrice(priceDetails.subTotal)}</span>
-                  </div>
-                  {selectedPromoObject && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'green', marginBottom: '8px' }}>
-                      <span>Promo Diterapkan ({selectedPromoObject.name}):</span>
-                      <span>- {formatPrice(priceDetails.discountValue)}</span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', fontSize: '16px', color: '#1F2937', borderTop: '1px solid #E5E7EB', paddingTop: '12px', marginTop: '12px' }}>
-                    <span>Total Akhir:</span>
-                    <span style={{ color: selectedPromoObject ? '#2563EB' : '#1F2937' }}>{formatPrice(priceDetails.total)}</span>
-                  </div>
-                  <div style={{ marginTop: '10px', fontSize: '12px', color: '#666', textAlign: 'center', borderTop: '1px dashed #ccc', paddingTop: '10px' }}>
-                    <MdInfoOutline style={{ verticalAlign: 'bottom', marginRight: '4px' }} />
-                    Note Admin: Pastikan kuantitas tidak melebihi stok produk. Promo hanya berlaku untuk customer terpilih.
-                  </div>
-                </div>
-              )}
-
-              {modalError && (
-                <div style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px', border: '1px solid #FCA5A5' }}>
-                  {modalError}
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  style={{ padding: '10px 20px', borderRadius: '6px', border: '1px solid #D1D5DB', backgroundColor: 'white', color: '#374151', fontSize: '14px', fontWeight: 500, cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  style={{ padding: '10px 20px', borderRadius: '6px', border: 'none', backgroundColor: '#4F46E5', color: 'white', fontSize: '14px', fontWeight: 500, cursor: 'pointer', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', opacity: (formSubmitLoading || !transactionData.productId) ? 0.6 : 1 }}
-                  disabled={formSubmitLoading || !transactionData.productId}
-                >
-                  {formSubmitLoading ? 'Memproses...' : 'Buat Transaksi'}
-                </button>
+        <FormSelect
+          name="productId"
+          value={transactionData.productId}
+          onChange={handleInputChange}
+          required
+          disabled={!transactionData.customerId}          label="Product:"
+        >
+          <option value={0}>-- Select Product --</option>
+          {products.map(p => (
+            <option key={p.id} value={p.id}>
+              {p.name} (Stok: {p.stock}) - {formatPrice(p.price)}
+            </option>
+          ))}
+        </FormSelect>        <div style={{ marginBottom: '16px' }}>
+          <FormInput
+            type="number"
+            name="quantity"
+            value={transactionData.quantity}
+            onChange={handleInputChange}
+            min={1}
+            required
+            disabled={!transactionData.productId}
+            label="Quantity:"
+          />
+        </div>        {/* Promo Selection Dropdown */}
+        {transactionData.customerId > 0 && transactionData.productId > 0 && availablePromos.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ 
+              backgroundColor: '#f0f9ff', 
+              border: '1px solid #0ea5e9', 
+              borderRadius: '6px', 
+              padding: '12px',
+              marginBottom: '8px'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '8px',
+                color: '#0369a1',
+                fontWeight: '600',
+                fontSize: '14px'
+              }}>
+                🎯 Promo Available for this Customer
               </div>
-            </form>
+              <FormSelect
+                name="promoId"
+                value={transactionData.promoId ?? ''}
+                onChange={handleInputChange}
+                label=""
+              >
+                <option value="">-- Select a Promo (Optional) --</option>
+                {availablePromos.map(promo => (
+                  <option key={promo.id} value={promo.id}>
+                    {promo.name} - {promo.type === 'percentage' 
+                      ? `${Number(promo.value)}% OFF` 
+                      : `${formatPrice(promo.value)} OFF`
+                    }
+                  </option>
+                ))}
+              </FormSelect>            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* No Promo Available Message */}
+        {transactionData.customerId > 0 && transactionData.productId > 0 && availablePromos.length === 0 && (
+          <div style={{ 
+            marginBottom: '16px',
+            backgroundColor: '#fef3c7', 
+            border: '1px solid #f59e0b', 
+            borderRadius: '6px', 
+            padding: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            fontSize: '14px',
+            color: '#92400e'
+          }}>
+            ℹ️ No promos available for this customer
+          </div>
+        )}
+
+        {/* Price Information */}
+        {selectedProduct && (
+          <div style={{ 
+            marginBottom: '16px', 
+            padding: '16px', 
+            backgroundColor: selectedPromoObject ? '#f0fdf4' : '#f9fafb', 
+            borderRadius: '8px', 
+            border: selectedPromoObject ? '1px solid #10b981' : '1px solid #e5e7eb' 
+          }}>
+            <div style={{ 
+              fontSize: '16px', 
+              fontWeight: '600', 
+              marginBottom: '12px',
+              color: '#374151',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              💰 Price Summary
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              fontSize: '14px', 
+              marginBottom: '8px', 
+              color: '#6b7280' 
+            }}>
+              <span>Unit Price:</span>
+              <span style={{ fontWeight: '500' }}>{formatPrice(selectedProduct.price)}</span>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              fontSize: '14px', 
+              marginBottom: selectedPromoObject ? '8px' : '12px', 
+              color: '#6b7280' 
+            }}>
+              <span>Subtotal ({transactionData.quantity} item{transactionData.quantity > 1 ? 's' : ''}):</span>
+              <span style={{ fontWeight: '500' }}>{formatPrice(priceDetails.subTotal)}</span>
+            </div>
+              {selectedPromoObject && (
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                fontSize: '14px', 
+                color: '#dc2626',
+                marginBottom: '8px',
+                padding: '8px',
+                backgroundColor: '#fef2f2',
+                borderRadius: '4px',
+                border: '1px dashed #fca5a5'
+              }}>
+                <span style={{ fontWeight: '500' }}>
+                  🎯 Promo Applied ({selectedPromoObject.name}):
+                </span>
+                <span style={{ fontWeight: '600' }}>- {formatPrice(priceDetails.discountValue)}</span>
+              </div>
+            )}
+            
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              fontWeight: '600', 
+              fontSize: '16px', 
+              color: selectedPromoObject ? '#059669' : '#111827', 
+              borderTop: '1px solid #e5e7eb', 
+              paddingTop: '12px', 
+              marginTop: '12px',
+              backgroundColor: selectedPromoObject ? '#ecfdf5' : 'transparent',
+              padding: '12px',
+              borderRadius: '6px'
+            }}>
+              <span>Final Total:</span>
+              <span style={{ fontSize: '18px' }}>
+                {formatPrice(priceDetails.total)}
+              </span>
+            </div>
+            <div style={{ 
+              marginTop: '12px', 
+              fontSize: '12px', 
+              color: '#6b7280', 
+              textAlign: 'center', 
+              borderTop: '1px dashed #d1d5db', 
+              paddingTop: '12px' 
+            }}>
+              <MdInfoOutline style={{ display: 'inline', marginRight: '4px' }} />
+              Note Admin: Pastikan kuantitas tidak melebihi stok produk. Promo hanya berlaku untuk customer terpilih.
+            </div>
+          </div>
+        )}        {modalError && (
+          <div style={{ 
+            backgroundColor: '#fef2f2', 
+            color: '#b91c1c', 
+            padding: '8px 12px', 
+            borderRadius: '6px', 
+            fontSize: '14px', 
+            border: '1px solid #fecaca', 
+            marginBottom: '16px' 
+          }}>
+            {modalError}
+          </div>
+        )}
+      </FormModal>
+
       <AddNewDropdown isOpen={isDropdownOpen} onClose={() => setIsDropdownOpen(false)} onAddCustomer={handleCustomerCreated} onAddProduct={() => fetchData()} />
     </div>
   );

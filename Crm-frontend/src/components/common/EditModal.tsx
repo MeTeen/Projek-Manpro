@@ -16,31 +16,87 @@ export const EditModal: React.FC<EditModalProps> = ({
   title,
   onClose,
   onSubmit,
-  children,
-  width = '500px',
+  children,  width = '500px',
 }) => {
   if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-40">
+    <div style={{
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      right: '0',
+      bottom: '0',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
       <div 
-        className="bg-white rounded-lg p-6 max-w-[90%] max-h-[90vh] overflow-y-auto"
-        style={{ width }}
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          padding: '24px',
+          maxWidth: '90%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          width
+        }}
       >
-        <h2 className="mt-0 text-xl font-semibold text-gray-900 mb-4">{title}</h2>
+        <h2 style={{
+          marginTop: '0',
+          fontSize: '20px',
+          fontWeight: '600',
+          color: '#111827',
+        }}>{title}</h2>
         <form onSubmit={onSubmit}>
           {children}
-          <div className="flex justify-end gap-3 mt-6">
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '12px',
+            marginTop: '24px'
+          }}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 bg-gray-100 text-gray-700 border-0 rounded cursor-pointer text-sm font-medium hover:bg-gray-200 transition-colors"
+              style={{
+                paddingLeft: '16px',
+                paddingRight: '16px',
+                paddingTop: '10px',
+                paddingBottom: '10px',
+                backgroundColor: '#f3f4f6',
+                color: '#374151',
+                border: '0',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e5e7eb'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2.5 bg-indigo-600 text-white border-0 rounded cursor-pointer text-sm font-medium hover:bg-indigo-700 transition-colors"
+              style={{
+                paddingLeft: '16px',
+                paddingRight: '16px',
+                paddingTop: '10px',
+                paddingBottom: '10px',
+                backgroundColor: '#4f46e5',
+                color: 'white',
+                border: '0',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338ca'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
             >
               Save Changes
             </button>

@@ -13,13 +13,13 @@ interface AvatarUploadProps {
 const getSizeClasses = (size: 'sm' | 'md' | 'lg') => {
   switch (size) {
     case 'sm':
-      return { container: 'w-16 h-16', icon: 20 };
+      return { width: '64px', height: '64px', icon: 20 };
     case 'md':
-      return { container: 'w-24 h-24', icon: 24 };
+      return { width: '96px', height: '96px', icon: 24 };
     case 'lg':
-      return { container: 'w-32 h-32', icon: 32 };
+      return { width: '128px', height: '128px', icon: 32 };
     default:
-      return { container: 'w-24 h-24', icon: 24 };
+      return { width: '96px', height: '96px', icon: 24 };
   }
 };
 
@@ -53,13 +53,17 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
       }
     }
   };
-
   return (
-    <div className="flex flex-col items-center mb-5">
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      marginBottom: '20px'
+    }}>
       <input
         type="file"
         ref={fileInputRef}
-        className="hidden"
+        style={{ display: 'none' }}
         accept="image/*"
         onChange={handleFileChange}
         disabled={disabled}
@@ -67,30 +71,70 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
       
       <div
         onClick={handleClick}
-        className={`${sizeClasses.container} rounded-full bg-gray-100 ${
-          disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-indigo-600 hover:bg-gray-50'
-        } flex justify-center items-center bg-cover bg-center border-2 border-dashed border-gray-300 mb-3 relative transition-all duration-200`}
         style={{
+          width: sizeClasses.width,
+          height: sizeClasses.height,
+          borderRadius: '50%',
+          backgroundColor: '#f3f4f6',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.6 : 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          border: '2px dashed #d1d5db',
+          marginBottom: '12px',
+          position: 'relative',
+          transition: 'all 0.2s',
           backgroundImage: preview ? `url(${preview})` : 'none',
+        }}
+        onMouseEnter={(e) => {
+          if (!disabled) {
+            e.currentTarget.style.borderColor = '#4f46e5';
+            e.currentTarget.style.backgroundColor = '#f9fafb';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!disabled) {
+            e.currentTarget.style.borderColor = '#d1d5db';
+            e.currentTarget.style.backgroundColor = '#f3f4f6';
+          }
         }}
       >
         {!preview && (
           <MdPhotoCamera 
             size={sizeClasses.icon} 
-            className="text-gray-500" 
+            style={{ color: '#6b7280' }}
           />
         )}
         
         {!disabled && (
-          <div className="absolute bottom-0 right-0 bg-indigo-600 rounded-full w-7 h-7 flex items-center justify-center shadow-sm border-2 border-white">
-            <MdPhotoCamera size={16} className="text-white" />
+          <div style={{
+            position: 'absolute',
+            bottom: '0',
+            right: '0',
+            backgroundColor: '#4f46e5',
+            borderRadius: '50%',
+            width: '28px',
+            height: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+            border: '2px solid white'
+          }}>
+            <MdPhotoCamera size={16} style={{ color: 'white' }} />
           </div>
         )}
       </div>
       
-      <p className={`text-sm m-0 text-center ${
-        disabled ? 'text-gray-400' : 'text-gray-500'
-      }`}>
+      <p style={{
+        fontSize: '14px',
+        margin: '0',
+        textAlign: 'center',
+        color: disabled ? '#9ca3af' : '#6b7280'
+      }}>
         {placeholder}
       </p>
     </div>

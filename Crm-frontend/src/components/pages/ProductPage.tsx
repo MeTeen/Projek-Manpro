@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 
 import Header from '../dashboard/Header';
 import Sidebar from '../dashboard/Sidebar';
-import { EditModal } from '../common/EditModal';
+import { ConfirmModal, FormModal } from '../ui';
+import FormInput from '../ui/FormInput';
 import productService, { Product, ProductInput } from '../../services/productService';
 import { MdEdit, MdDelete, MdAdd } from 'react-icons/md';
 import { formatPrice } from '../../utils/formatters';
@@ -307,287 +308,122 @@ const ProductPage: React.FC = () => {
                   ))
                 )}
               </tbody>
-            </table>
-          </div>
+            </table>          </div>
         </div>
       </div>
-      
+
       {/* Edit Product Modal */}
-      <EditModal
+      <FormModal
         isOpen={isEditModalOpen}
-        title="Edit Product"
         onClose={() => setIsEditModalOpen(false)}
         onSubmit={handleEditSubmit}
-        width="500px"
-      >
-        {/* Product Name */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
-            Product Name
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name || ''}
-            onChange={handleInputChange}
-            required
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
-          />
-        </div>
+        title="Edit Product"
+        loading={loading}
+        submitText="Save Changes"
+        cancelText="Cancel"
+        size="md"      >
+        <FormInput
+          label="Product Name"
+          type="text"
+          name="name"
+          value={formData.name || ''}
+          onChange={handleInputChange}
+          required
+        />
 
-        {/* Stock */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
-            Stock
-          </label>
-          <input
-            type="number"
-            name="stock"
-            value={formData.stock ?? 0}
-            onChange={handleInputChange}
-            required
-            min={0}
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
-          />
-        </div>
+        <FormInput
+          label="Stock"
+          type="number"
+          name="stock"
+          value={formData.stock ?? 0}
+          onChange={handleInputChange}
+          required
+          min={0}
+        />
 
-        {/* Price */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
-            Price (IDR)
-          </label>
-          <input
-            type="number"
-            name="price"
-            value={formData.price ?? 0}
-            onChange={handleInputChange}
-            required
-            min={0}
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
-          />
-        </div>
+        <FormInput
+          label="Price (IDR)"
+          type="number"
+          name="price"
+          value={formData.price ?? 0}
+          onChange={handleInputChange}
+          required
+          min={0}
+        />
 
-        {/* Dimensions */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
-            Dimensions
-          </label>
-          <input
-            type="text"
-            name="dimensions"
-            value={formData.dimensions || ''}
-            onChange={handleInputChange}
-            placeholder="e.g. 10x20x30 cm"
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
-          />
-        </div>
-      </EditModal>
-      
+        <FormInput
+          label="Dimensions"
+          type="text"
+          name="dimensions"
+          value={formData.dimensions || ''}
+          onChange={handleInputChange}
+          placeholder="e.g. 10x20x30 cm"
+        />
+      </FormModal>
+
       {/* Add Product Modal */}
-      {isAddModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            padding: '24px',
-            width: '500px',
-            maxWidth: '90%',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }}>
-            <h2 style={{ marginTop: 0, fontSize: '20px', fontWeight: '600' }}>Add New Product</h2>
-            <form onSubmit={handleAddSubmit}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={newProductData.name}
-                  onChange={handleNewProductInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Stock
-                </label>
-                <input
-                  type="number"
-                  name="stock"
-                  value={newProductData.stock}
-                  onChange={handleNewProductInputChange}
-                  required
-                  min="0"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Price (IDR)
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={newProductData.price}
-                  onChange={handleNewProductInputChange}
-                  required
-                  min="0"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px' }}>
-                  Dimensions
-                </label>
-                <input
-                  type="text"
-                  name="dimensions"
-                  value={newProductData.dimensions}
-                  onChange={handleNewProductInputChange}
-                  placeholder="e.g. 10x20x30 cm"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  style={{
-                    padding: '10px 16px',
-                    backgroundColor: '#f3f4f6',
-                    color: '#374151',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    padding: '10px 16px',
-                    backgroundColor: '#5E5CEB',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  {loading ? 'Creating...' : 'Create Product'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      
+      <FormModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddSubmit}
+        title="Add New Product"
+        loading={loading}
+        submitText="Create Product"
+        cancelText="Cancel"
+        size="md"      >
+        <FormInput
+          label="Product Name"
+          type="text"
+          name="name"
+          value={newProductData.name}
+          onChange={handleNewProductInputChange}
+          required
+        />
+
+        <FormInput
+          label="Stock"
+          type="number"
+          name="stock"
+          value={newProductData.stock}
+          onChange={handleNewProductInputChange}
+          required
+          min="0"
+        />
+
+        <FormInput
+          label="Price (IDR)"
+          type="number"
+          name="price"
+          value={newProductData.price}
+          onChange={handleNewProductInputChange}
+          required
+          min="0"
+        />
+
+        <FormInput
+          label="Dimensions"
+          type="text"
+          name="dimensions"
+          value={newProductData.dimensions}
+          onChange={handleNewProductInputChange}
+          placeholder="e.g. 10x20x30 cm"
+        />
+      </FormModal>
+
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            padding: '24px',
-            width: '400px',
-            maxWidth: '90%'
-          }}>
-            <h2 style={{ marginTop: 0, fontSize: '20px', fontWeight: '600' }}>Delete Product</h2>
-            <p style={{ color: '#4b5563', marginBottom: '24px' }}>
-              Are you sure you want to delete "{selectedProduct?.name}"? This action cannot be undone.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                style={{
-                  padding: '10px 16px',
-                  backgroundColor: '#f3f4f6',
-                  color: '#374151',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={loading}
-                style={{
-                  padding: '10px 16px',
-                  backgroundColor: '#EF4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
-              >
-                {loading ? 'Deleting...' : 'Delete Product'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Product"
+        message={`Are you sure you want to delete "${selectedProduct?.name}"? This action cannot be undone.`}
+        confirmText="Delete Product"
+        cancelText="Cancel"
+        variant="danger"
+        loading={loading}
+      />
     </div>
   );
 };
 
-export default ProductPage; 
+export default ProductPage;

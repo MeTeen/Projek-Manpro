@@ -105,14 +105,49 @@ const AddCustomerForm: React.FC<AddCustomerFormProps> = ({ isOpen, onClose, onCu
   };
 
   if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div ref={formRef} className="bg-white p-6 rounded-lg w-full max-w-lg overflow-auto max-h-[90vh]">
-        <div className="flex justify-between items-center mb-4 border-b pb-2">
-          <h2 className="text-lg font-semibold">Add New Customer</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-red-500" aria-label="Close modal">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <div style={{
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      right: '0',
+      bottom: '0',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 50
+    }}>
+      <div ref={formRef} style={{
+        backgroundColor: 'white',
+        padding: '24px',
+        borderRadius: '8px',
+        width: '100%',
+        maxWidth: '512px',
+        overflow: 'auto',
+        maxHeight: '90vh'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid #e5e7eb',
+          paddingBottom: '8px'
+        }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '600' }}>Add New Customer</h2>
+          <button 
+            onClick={onClose} 
+            style={{
+              color: '#6b7280',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
+            aria-label="Close modal"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -120,68 +155,145 @@ const AddCustomerForm: React.FC<AddCustomerFormProps> = ({ isOpen, onClose, onCu
         </div>
 
         {error && (
-          <div className="bg-red-100 text-red-600 p-3 rounded mb-4 text-sm">
+          <div style={{
+            backgroundColor: '#fee2e2',
+            color: '#dc2626',
+            padding: '12px',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}>
             {error}
             {!isAuthenticated && (
-              <button onClick={redirectToLogin} className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded">Log In</button>
+              <button 
+                onClick={redirectToLogin} 
+                style={{
+                  marginLeft: '8px',
+                  paddingLeft: '8px',
+                  paddingRight: '8px',
+                  paddingTop: '4px',
+                  paddingBottom: '4px',
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  fontSize: '12px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                Log In
+              </button>
             )}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label className="block text-sm font-medium">Avatar</label>
-            <input type="file" accept="image/*" onChange={handleAvatarChange} ref={fileInputRef} className="hidden" />
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500' }}>Avatar</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleAvatarChange} 
+              ref={fileInputRef} 
+              style={{ display: 'none' }} 
+            />
             <div 
-              className="w-20 h-20 bg-gray-200 flex items-center justify-center rounded-full cursor-pointer mt-2 overflow-hidden"
+              style={{
+                width: '80px',
+                height: '80px',
+                backgroundColor: '#e5e7eb',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                marginTop: '8px',
+                overflow: 'hidden',
+                backgroundImage: avatarPreview ? `url(${avatarPreview})` : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
               onClick={handleAvatarClick}
-              style={{ backgroundImage: avatarPreview ? `url(${avatarPreview})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}
             >
               {!avatarPreview && (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '24px', height: '24px', color: '#6b7280' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
               )}
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium">First Name</label>
-              <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+          </div>          <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, marginBottom: '6px' }}>First Name</label>
+              <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} style={{ width: '100%', border: '1px solid #ddd', borderRadius: '4px', padding: '8px 12px' }} required />
             </div>
-            <div>
-              <label className="block text-sm font-medium">Last Name</label>
-              <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, marginBottom: '6px' }}>Last Name</label>
+              <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} style={{ width: '100%', border: '1px solid #ddd', borderRadius: '4px', padding: '8px 12px' }} required />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium">Email</label>
-              <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, marginBottom: '6px' }}>Email</label>
+              <input type="email" name="email" value={formData.email} onChange={handleChange} style={{ width: '100%', border: '1px solid #ddd', borderRadius: '4px', padding: '8px 12px' }} required />
             </div>
-            <div>
-              <label className="block text-sm font-medium">Phone</label>
-              <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full border rounded px-3 py-2" />
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, marginBottom: '6px' }}>Phone</label>
+              <input type="tel" name="phone" value={formData.phone} onChange={handleChange} style={{ width: '100%', border: '1px solid #ddd', borderRadius: '4px', padding: '8px 12px' }} />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium">Street Address</label>
-            <input type="text" name="streetAddress" value={formData.streetAddress} onChange={handleChange} className="w-full border rounded px-3 py-2" />
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, marginBottom: '6px' }}>Street Address</label>
+            <input type="text" name="streetAddress" value={formData.streetAddress} onChange={handleChange} style={{ width: '100%', border: '1px solid #ddd', borderRadius: '4px', padding: '8px 12px' }} />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <input type="text" name="city" value={formData.city} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="City" />
-            <input type="text" name="state" value={formData.state} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="State" />
-            <input type="text" name="zipCode" value={formData.zipCode} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="Zip Code" />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" className="px-4 py-2 border rounded text-sm" onClick={onClose} disabled={isSubmitting}>Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50" disabled={isSubmitting}>
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+            <input type="text" name="city" value={formData.city} onChange={handleChange} style={{ flex: 1, border: '1px solid #ddd', borderRadius: '4px', padding: '8px 12px' }} placeholder="City" />
+            <input type="text" name="state" value={formData.state} onChange={handleChange} style={{ flex: 1, border: '1px solid #ddd', borderRadius: '4px', padding: '8px 12px' }} placeholder="State" />
+            <input type="text" name="zipCode" value={formData.zipCode} onChange={handleChange} style={{ flex: 1, border: '1px solid #ddd', borderRadius: '4px', padding: '8px 12px' }} placeholder="Zip Code" />
+          </div>          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '8px' }}>
+            <button 
+              type="button" 
+              style={{
+                paddingLeft: '16px',
+                paddingRight: '16px',
+                paddingTop: '8px',
+                paddingBottom: '8px',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                fontSize: '14px',
+                background: 'white',
+                cursor: 'pointer'
+              }}
+              onClick={onClose} 
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              style={{
+                paddingLeft: '16px',
+                paddingRight: '16px',
+                paddingTop: '8px',
+                paddingBottom: '8px',
+                backgroundColor: '#4f46e5',
+                color: 'white',
+                borderRadius: '4px',
+                fontSize: '14px',
+                border: 'none',
+                cursor: 'pointer',
+                opacity: isSubmitting ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) e.currentTarget.style.backgroundColor = '#4338ca';
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitting) e.currentTarget.style.backgroundColor = '#4f46e5';
+              }}
+              disabled={isSubmitting}
+            >
               {isSubmitting ? 'Saving...' : 'Save Customer'}
             </button>
           </div>

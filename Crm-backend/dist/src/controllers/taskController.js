@@ -11,13 +11,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteTask = exports.updateTask = exports.createTask = exports.getTasks = void 0;
 const index_1 = require("../models/index");
-// Get all tasks
+// Get all tasks with pagination
 const getTasks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const tasks = yield index_1.Task.findAll({
-            order: [['date', 'ASC']]
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = (page - 1) * limit;
+        const { count, rows: tasks } = yield index_1.Task.findAndCountAll({
+            order: [['date', 'ASC']],
+            limit,
+            offset,
+            attributes: ['id', 'date', 'content', 'isCompleted', 'createdAt', 'updatedAt']
         });
-        res.json(tasks);
+        res.json({
+            tasks,
+            pagination: {
+                total: count,
+                page,
+                limit,
+                totalPages: Math.ceil(count / limit)
+            }
+        });
     }
     catch (error) {
         res.status(500).json({ message: 'Error fetching tasks', error });

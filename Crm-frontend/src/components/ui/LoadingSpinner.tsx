@@ -37,14 +37,13 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     'border-gray-200 rounded-full animate-spin inline-block'
   ].join(' ');
 
-  return (
-    <div className={containerClasses}>
+  return (    <div className={containerClasses}>
       <div 
         className={spinnerClasses}
         style={{ borderTopColor: color }}
       />
       {text && (
-        <span className="text-gray-500 text-sm font-medium">
+        <span style={{ color: '#6b7280', fontSize: '14px', fontWeight: '500' }}>
           {text}
         </span>
       )}

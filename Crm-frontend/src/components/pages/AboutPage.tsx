@@ -22,100 +22,221 @@ export default function AboutPage() {
         { icon: '📊', title: 'Analytics', description: 'Analisis mendalam terhadap performa bisnis' },
         { icon: '🎯', title: 'Promosi', description: 'Kelola kampanye dan promosi produk' },
         { icon: '✅', title: 'Task Management', description: 'Organisasi tugas dan follow-up pelanggan' },
-    ];
-
-    return (
-        <div className="flex h-screen bg-gray-50">
+    ];    return (
+        <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb' }}>
             <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-            <div className="flex-1 overflow-y-auto">
+            <div style={{ flex: 1, overflowY: 'auto' }}>
                 <Header 
                     onAddNewClick={() => {}} 
                     onCustomerCreated={() => {}}
                 />
-                <main className="p-6">
-                    <div className="max-w-4xl mx-auto">
+                <main style={{ padding: '24px' }}>
+                    <div style={{ maxWidth: '896px', margin: '0 auto' }}>
                         {/* Hero Section */}
-                        <div className="text-center mb-12">
-                            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+                            <h1 style={{ 
+                                fontSize: '36px', 
+                                fontWeight: 'bold', 
+                                color: '#111827', 
+                                marginBottom: '16px' 
+                            }}>
                                 Tentang CRM Dashboard
                             </h1>
-                            <p className="text-xl text-gray-600 mb-8">
+                            <p style={{ 
+                                fontSize: '20px', 
+                                color: '#4b5563', 
+                                marginBottom: '32px' 
+                            }}>
                                 Solusi manajemen hubungan pelanggan yang komprehensif untuk bisnis modern
                             </p>
-                            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-8 rounded-lg shadow-lg">
-                                <h2 className="text-2xl font-bold mb-4">Dibuat dengan ❤️ untuk Manajemen Proyek</h2>
-                                <p className="text-lg opacity-90">
+                            <div style={{ 
+                                background: 'linear-gradient(to right, #3b82f6, #9333ea)', 
+                                color: 'white', 
+                                padding: '32px', 
+                                borderRadius: '8px', 
+                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' 
+                            }}>
+                                <h2 style={{ 
+                                    fontSize: '24px', 
+                                    fontWeight: 'bold', 
+                                    marginBottom: '16px' 
+                                }}>
+                                    Dibuat dengan ❤️ untuk Manajemen Proyek
+                                </h2>
+                                <p style={{ 
+                                    fontSize: '18px', 
+                                    opacity: 0.9 
+                                }}>
                                     Aplikasi ini dikembangkan sebagai bagian dari mata kuliah Manajemen Proyek, 
                                     menggabungkan teori dan praktik dalam pengembangan sistem informasi bisnis.
                                 </p>
                             </div>
-                        </div>
-
-                        {/* Features Section */}
-                        <div className="mb-12">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Fitur Utama</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        </div>                        {/* Features Section */}
+                        <div style={{ marginBottom: '48px' }}>
+                            <h2 style={{ 
+                                fontSize: '30px', 
+                                fontWeight: 'bold', 
+                                color: '#111827', 
+                                marginBottom: '32px', 
+                                textAlign: 'center' 
+                            }}>
+                                Fitur Utama
+                            </h2>
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                                gap: '24px' 
+                            }}>
                                 {features.map((feature, index) => (
-                                    <div key={index} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-                                        <div className="text-3xl mb-4">{feature.icon}</div>
-                                        <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                                        <p className="text-gray-600">{feature.description}</p>
+                                    <div 
+                                        key={index} 
+                                        style={{ 
+                                            backgroundColor: 'white', 
+                                            padding: '24px', 
+                                            borderRadius: '8px', 
+                                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', 
+                                            border: '1px solid #e5e7eb',
+                                            transition: 'box-shadow 0.2s',
+                                            cursor: 'default'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+                                        }}
+                                    >
+                                        <div style={{ fontSize: '30px', marginBottom: '16px' }}>
+                                            {feature.icon}
+                                        </div>
+                                        <h3 style={{ 
+                                            fontSize: '20px', 
+                                            fontWeight: '600', 
+                                            color: '#111827', 
+                                            marginBottom: '8px' 
+                                        }}>
+                                            {feature.title}
+                                        </h3>
+                                        <p style={{ color: '#4b5563' }}>
+                                            {feature.description}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
-                        </div>
-
-                        {/* Team Section */}
-                        <div className="mb-12">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Tim Pengembang</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        </div>                        {/* Team Section */}
+                        <div style={{ marginBottom: '48px' }}>
+                            <h2 style={{ 
+                                fontSize: '30px', 
+                                fontWeight: 'bold', 
+                                color: '#111827', 
+                                marginBottom: '32px', 
+                                textAlign: 'center' 
+                            }}>
+                                Tim Pengembang
+                            </h2>
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                                gap: '24px' 
+                            }}>
                                 {teamMembers.map((member, index) => (
-                                    <div key={index} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
-                                        <div className="text-4xl mb-4">{member.avatar}</div>
-                                        <h3 className="text-xl font-semibold text-gray-900 mb-2">{member.name}</h3>
-                                        <p className="text-gray-600">{member.role}</p>
+                                    <div 
+                                        key={index} 
+                                        style={{ 
+                                            backgroundColor: 'white', 
+                                            padding: '24px', 
+                                            borderRadius: '8px', 
+                                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', 
+                                            border: '1px solid #e5e7eb', 
+                                            textAlign: 'center' 
+                                        }}
+                                    >
+                                        <div style={{ fontSize: '32px', marginBottom: '16px' }}>
+                                            {member.avatar}
+                                        </div>
+                                        <h3 style={{ 
+                                            fontSize: '20px', 
+                                            fontWeight: '600', 
+                                            color: '#111827', 
+                                            marginBottom: '8px' 
+                                        }}>
+                                            {member.name}
+                                        </h3>
+                                        <p style={{ color: '#4b5563' }}>
+                                            {member.role}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
-                        </div>
-
-                        {/* Technology Stack */}
-                        <div className="mb-12">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Teknologi yang Digunakan</h2>
-                            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                        </div>                        {/* Technology Stack */}
+                        <div style={{ marginBottom: '48px' }}>
+                            <h2 style={{ 
+                                fontSize: '30px', 
+                                fontWeight: 'bold', 
+                                color: '#111827', 
+                                marginBottom: '32px', 
+                                textAlign: 'center' 
+                            }}>
+                                Teknologi yang Digunakan
+                            </h2>
+                            <div style={{ 
+                                backgroundColor: 'white', 
+                                padding: '32px', 
+                                borderRadius: '8px', 
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', 
+                                border: '1px solid #e5e7eb' 
+                            }}>
+                                <div style={{ 
+                                    display: 'grid', 
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+                                    gap: '24px', 
+                                    textAlign: 'center' 
+                                }}>
                                     <div>
-                                        <div className="text-2xl mb-2">⚛️</div>
-                                        <h4 className="font-semibold">React</h4>
-                                        <p className="text-sm text-gray-600">Frontend Framework</p>
+                                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>⚛️</div>
+                                        <h4 style={{ fontWeight: '600' }}>React</h4>
+                                        <p style={{ fontSize: '14px', color: '#4b5563' }}>Frontend Framework</p>
                                     </div>
                                     <div>
-                                        <div className="text-2xl mb-2">📘</div>
-                                        <h4 className="font-semibold">TypeScript</h4>
-                                        <p className="text-sm text-gray-600">Type Safety</p>
+                                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📘</div>
+                                        <h4 style={{ fontWeight: '600' }}>TypeScript</h4>
+                                        <p style={{ fontSize: '14px', color: '#4b5563' }}>Type Safety</p>
                                     </div>
                                     <div>
-                                        <div className="text-2xl mb-2">🎨</div>
-                                        <h4 className="font-semibold">Tailwind CSS</h4>
-                                        <p className="text-sm text-gray-600">Styling</p>
+                                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎨</div>
+                                        <h4 style={{ fontWeight: '600' }}>Inline Styles</h4>
+                                        <p style={{ fontSize: '14px', color: '#4b5563' }}>Styling</p>
                                     </div>
                                     <div>
-                                        <div className="text-2xl mb-2">📊</div>
-                                        <h4 className="font-semibold">Recharts</h4>
-                                        <p className="text-sm text-gray-600">Data Visualization</p>
+                                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                                        <h4 style={{ fontWeight: '600' }}>Recharts</h4>
+                                        <p style={{ fontSize: '14px', color: '#4b5563' }}>Data Visualization</p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Contact Section */}
-                        <div className="text-center bg-gray-100 p-8 rounded-lg">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Butuh Bantuan?</h2>
-                            <p className="text-gray-600 mb-6">
+                        </div>                        {/* Contact Section */}
+                        <div style={{ 
+                            textAlign: 'center', 
+                            backgroundColor: '#f3f4f6', 
+                            padding: '32px', 
+                            borderRadius: '8px' 
+                        }}>
+                            <h2 style={{ 
+                                fontSize: '24px', 
+                                fontWeight: 'bold', 
+                                color: '#111827', 
+                                marginBottom: '16px' 
+                            }}>
+                                Butuh Bantuan?
+                            </h2>
+                            <p style={{ 
+                                color: '#4b5563', 
+                                marginBottom: '24px' 
+                            }}>
                                 Jika Anda memiliki pertanyaan atau saran mengenai aplikasi ini, 
                                 jangan ragu untuk menghubungi tim pengembang.
                             </p>
-                            <div className="space-x-4">
+                            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
                                 <Button variant="primary">
                                     📧 Hubungi Tim
                                 </Button>

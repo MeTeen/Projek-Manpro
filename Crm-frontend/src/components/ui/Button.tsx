@@ -20,58 +20,131 @@ const Button: React.FC<ButtonProps> = ({
   children,
   disabled,
   className = '',
+  style,
   ...props 
 }) => {
-  const getVariantClasses = (variant: ButtonVariant) => {
+  const getVariantStyles = (variant: ButtonVariant) => {
+    const baseStyle = {
+      border: 'none',
+      borderRadius: '4px',
+      cursor: disabled || loading ? 'not-allowed' : 'pointer',
+      fontFamily: 'inherit',
+      fontSize: '14px',
+      fontWeight: 500,
+      outline: 'none',
+      transition: 'all 0.2s ease',
+      opacity: disabled || loading ? 0.6 : 1,
+    };
+
     switch (variant) {
       case 'primary':
-        return 'bg-indigo-600 text-white border-none hover:bg-indigo-700';
+        return {
+          ...baseStyle,
+          backgroundColor: '#4F46E5',
+          color: 'white',
+        };
       case 'secondary':
-        return 'bg-gray-100 text-gray-700 border-none hover:bg-gray-200';
+        return {
+          ...baseStyle,
+          backgroundColor: '#F3F4F6',
+          color: '#374151',
+        };
       case 'danger':
-        return 'bg-red-500 text-white border-none hover:bg-red-600';
+        return {
+          ...baseStyle,
+          backgroundColor: '#EF4444',
+          color: 'white',
+        };
       case 'success':
-        return 'bg-emerald-500 text-white border-none hover:bg-emerald-600';
+        return {
+          ...baseStyle,
+          backgroundColor: '#10B981',
+          color: 'white',
+        };
       case 'outline':
-        return 'bg-transparent text-indigo-600 border border-indigo-600 hover:bg-indigo-600 hover:text-white';
+        return {
+          ...baseStyle,
+          backgroundColor: 'transparent',
+          color: '#4F46E5',
+          border: '1px solid #4F46E5',
+        };
       default:
-        return 'bg-indigo-600 text-white border-none hover:bg-indigo-700';
+        return {
+          ...baseStyle,
+          backgroundColor: '#4F46E5',
+          color: 'white',
+        };
     }
   };
 
-  const getSizeClasses = (size: ButtonSize) => {
+  const getSizeStyles = (size: ButtonSize) => {
     switch (size) {
       case 'sm':
-        return 'px-3 py-1.5 text-xs font-medium';
+        return { padding: '6px 12px' };
       case 'md':
-        return 'px-4 py-2.5 text-sm font-medium';
+        return { padding: '8px 16px' };
       case 'lg':
-        return 'px-5 py-3 text-base font-medium';
+        return { padding: '12px 24px' };
       default:
-        return 'px-4 py-2.5 text-sm font-medium';
+        return { padding: '8px 16px' };
     }
   };
 
-  const baseClasses = [
-    'flex items-center justify-center',
-    icon ? 'gap-2' : '',
-    'rounded transition-all duration-200 ease-in-out',
-    'font-inherit outline-none',
-    fullWidth ? 'w-full' : '',
-    (disabled || loading) ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
-    getVariantClasses(variant),
-    getSizeClasses(size),
-    className
-  ].filter(Boolean).join(' ');
+  const buttonStyle = {
+    ...getVariantStyles(variant),
+    ...getSizeStyles(size),
+    width: fullWidth ? '100%' : 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: icon ? '8px' : '0',
+    ...style,
+  };
+
   return (
     <button
       {...props}
       disabled={disabled || loading}
-      className={baseClasses}
+      style={buttonStyle}
+      className={className}
+      onMouseEnter={(e) => {
+        if (!disabled && !loading) {
+          if (variant === 'primary') {
+            e.currentTarget.style.backgroundColor = '#3730A3';
+          } else if (variant === 'secondary') {
+            e.currentTarget.style.backgroundColor = '#E5E7EB';
+          } else if (variant === 'danger') {
+            e.currentTarget.style.backgroundColor = '#DC2626';
+          } else if (variant === 'success') {
+            e.currentTarget.style.backgroundColor = '#047857';
+          } else if (variant === 'outline') {
+            e.currentTarget.style.backgroundColor = '#4F46E5';
+            e.currentTarget.style.color = 'white';
+          }
+        }
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        if (!disabled && !loading) {
+          const originalStyle = getVariantStyles(variant);
+          e.currentTarget.style.backgroundColor = originalStyle.backgroundColor || 'transparent';
+          e.currentTarget.style.color = originalStyle.color || 'inherit';
+        }
+        props.onMouseLeave?.(e);
+      }}
     >
       {loading ? (
         <>
-          <div className="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin" />
+          <div 
+            style={{
+              width: '16px',
+              height: '16px',
+              border: '2px solid transparent',
+              borderTop: '2px solid currentColor',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
           Loading...
         </>
       ) : (

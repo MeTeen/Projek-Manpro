@@ -45,6 +45,52 @@ const getAuthToken = (): string | null => {
 class CustomerService {
   private readonly baseUrl = '/customers';
 
+  /**
+   * Get basic customer info for dropdowns/selection (optimized)
+   * @param fields Specific fields to fetch (default: id, firstName, lastName)
+   */
+  async getCustomersBasicInfo(fields: string[] = ['id', 'firstName', 'lastName']): Promise<Partial<Customer>[]> {
+    try {
+      // Ensure auth is initialized before each API call
+      authService.initializeAuth();
+      
+      // Get authentication token
+      const token = getAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      const fieldsParam = fields.join(',');
+      const response = await axios.get(`${API_URL}${this.baseUrl}?fields=${fieldsParam}&limit=1000`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching basic customer info:', error);
+      
+      // Fallback to regular method if fields parameter not supported
+      try {
+        const allCustomers = await this.getAllCustomers();
+        return allCustomers.map(customer => {
+          const result: any = {};
+          fields.forEach(field => {
+            if (field in customer) {
+              result[field] = customer[field as keyof Customer];
+            }
+          });
+          return result;
+        });
+      } catch (fallbackError) {
+        console.error('Fallback method also failed:', fallbackError);
+        throw error;
+      }
+    }
+  }
+
   async getAllCustomers(): Promise<Customer[]> {
     try {
       // Ensure auth is initialized before each API call

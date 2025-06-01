@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getProductPurchaseHistory = exports.getCustomerPurchases = exports.getAllPurchases = exports.addProductToCustomer = exports.createPurchase = void 0;
-const models_1 = require("../models"); // Pastikan Promo diimpor
+const models_1 = require("../models"); // Pastikan Promo dan CustomerPromo diimpor
 const sequelize_1 = require("sequelize");
 function validateAndCalculatePromo(promoId, customerId, basePrice // Harga total sebelum diskon (misal: product.price * quantity)
 ) {
@@ -43,6 +43,22 @@ function validateAndCalculatePromo(promoId, customerId, basePrice // Harga total
                 appliedPromo: null,
                 discountAmount: 0,
                 message: `Promo with ID ${promoId} is not valid, not active, expired, or not assigned for this customer.`
+            };
+        }
+        // Check if promo has already been used by this customer (for one-time use promos)
+        const customerPromo = yield models_1.CustomerPromo.findOne({
+            where: {
+                customerId: customerId,
+                promoId: promoId,
+                isUsed: true
+            }
+        });
+        if (customerPromo) {
+            return {
+                isValid: false,
+                appliedPromo: null,
+                discountAmount: 0,
+                message: `This promo has already been used and cannot be applied again.`
             };
         }
         let discount = 0;
@@ -133,6 +149,19 @@ const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function*
             totalSpent: currentTotalSpent + finalPurchaseTotal, // totalSpent adalah setelah diskon
             purchaseCount: currentPurchaseCount + 1
         }, { transaction: t });
+        // Mark promo as used if a promo was applied
+        if (promoDetails.appliedPromo) {
+            yield models_1.CustomerPromo.update({
+                isUsed: true,
+                usedAt: new Date()
+            }, {
+                where: {
+                    customerId: customerIdNum,
+                    promoId: promoDetails.appliedPromo.id
+                },
+                transaction: t
+            });
+        }
         yield t.commit();
         transactionCompleted = true;
         return res.status(201).json({
@@ -245,6 +274,19 @@ const addProductToCustomer = (req, res) => __awaiter(void 0, void 0, void 0, fun
             totalSpent: currentTotalSpent + finalPurchaseTotal,
             purchaseCount: currentPurchaseCount + 1
         }, { transaction: t });
+        // Mark promo as used if a promo was applied
+        if (promoDetails.appliedPromo) {
+            yield models_1.CustomerPromo.update({
+                isUsed: true,
+                usedAt: new Date()
+            }, {
+                where: {
+                    customerId: customerIdNum,
+                    promoId: promoDetails.appliedPromo.id
+                },
+                transaction: t
+            });
+        }
         yield t.commit();
         transactionCompleted = true;
         return res.status(201).json({

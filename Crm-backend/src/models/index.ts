@@ -44,13 +44,15 @@ CustomerPromo.initialize(sequelize);
 Customer.belongsToMany(Product, { 
   through: CustomerProduct,
   foreignKey: 'customerId',
-  otherKey: 'productId'
+  otherKey: 'productId',
+  as: 'Products' // Use capital P to match Sequelize default
 });
 
 Product.belongsToMany(Customer, { 
   through: CustomerProduct,
   foreignKey: 'productId',
-  otherKey: 'customerId'
+  otherKey: 'customerId',
+  as: 'Customers' // Use capital C to match Sequelize default
 });
 
 // Add direct associations for CustomerProduct to fix include queries

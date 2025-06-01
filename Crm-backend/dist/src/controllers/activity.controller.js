@@ -15,13 +15,39 @@ const date_fns_1 = require("date-fns");
 const getRecentActivities = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const limit = parseInt(req.query.limit, 10) || 10; // Default 10 aktivitas terakhir
     try {
+        // Execute all queries in parallel for better performance
+        const [newCustomers, newPurchases, newPromos, newTasks] = yield Promise.all([
+            // 1. Pelanggan Baru
+            models_1.Customer.findAll({
+                limit: Math.ceil(limit / 3), // Ambil sepertiga dari limit
+                order: [['createdAt', 'DESC']],
+                attributes: ['id', 'firstName', 'lastName', 'createdAt'],
+            }),
+            // 2. Transaksi Baru
+            models_1.CustomerProduct.findAll({
+                limit: Math.ceil(limit / 2),
+                order: [['createdAt', 'DESC']],
+                include: [
+                    { model: models_1.Customer, as: 'customer', attributes: ['id', 'firstName', 'lastName'] },
+                    { model: models_1.Product, as: 'product', attributes: ['id', 'name', 'price'] }
+                ],
+                attributes: ['id', 'createdAt', 'quantity', 'price', 'discountAmount', 'productId', 'customerId']
+            }),
+            // 3. Promo Baru
+            models_1.Promo.findAll({
+                limit: Math.ceil(limit / 4),
+                order: [['createdAt', 'DESC']],
+                attributes: ['id', 'name', 'createdAt']
+            }),
+            // 4. Task Baru
+            models_1.Task.findAll({
+                limit: Math.ceil(limit / 4),
+                order: [['createdAt', 'DESC']],
+                attributes: ['id', 'content', 'createdAt', 'date', 'isCompleted']
+            })
+        ]);
         const activities = [];
-        // 1. Pelanggan Baru
-        const newCustomers = yield models_1.Customer.findAll({
-            limit: Math.ceil(limit / 3), // Ambil sepertiga dari limit
-            order: [['createdAt', 'DESC']],
-            attributes: ['id', 'firstName', 'lastName', 'createdAt'],
-        });
+        // Process customers
         newCustomers.forEach(c => {
             activities.push({
                 id: `customer-${c.id}`,
@@ -31,16 +57,7 @@ const getRecentActivities = (req, res) => __awaiter(void 0, void 0, void 0, func
                 relatedEntity: { id: c.id, name: `${c.firstName} ${c.lastName}`, path: `/customers/${c.id}` }
             });
         });
-        // 2. Transaksi Baru
-        const newPurchases = yield models_1.CustomerProduct.findAll({
-            limit: Math.ceil(limit / 2),
-            order: [['createdAt', 'DESC']],
-            include: [
-                { model: models_1.Customer, as: 'customer', attributes: ['id', 'firstName', 'lastName'] },
-                { model: models_1.Product, as: 'product', attributes: ['id', 'name', 'price'] } // 'price' adalah harga master produk
-            ],
-            attributes: ['id', 'createdAt', 'quantity', 'price', 'discountAmount', 'productId', 'customerId'] // Pastikan semua field dasar juga diambil
-        });
+        // Process purchases
         newPurchases.forEach(p => {
             const purchase = p;
             const customerName = purchase.customer ? `${purchase.customer.firstName} ${purchase.customer.lastName}` : 'Unknown Customer';
@@ -51,30 +68,20 @@ const getRecentActivities = (req, res) => __awaiter(void 0, void 0, void 0, func
                 type: 'purchase',
                 description: `Transaksi baru oleh ${customerName} untuk produk ${productName} (Qty: ${purchase.quantity}, Total: Rp ${total.toLocaleString('id-ID')})`,
                 timestamp: purchase.createdAt,
-                relatedEntity: { id: purchase.id, name: `Transaksi #${purchase.id}`, path: `/transaksi` } // atau ke detail transaksi jika ada
+                relatedEntity: { id: purchase.id, name: `Transaksi #${purchase.id}`, path: `/transaksi` }
             });
         });
-        // 3. Promo Baru (Contoh, Anda bisa tambahkan perubahan status promo, dll)
-        const newPromos = yield models_1.Promo.findAll({
-            limit: Math.ceil(limit / 4),
-            order: [['createdAt', 'DESC']],
-            attributes: ['id', 'name', 'createdAt']
-        });
+        // Process promos
         newPromos.forEach(pr => {
             activities.push({
                 id: `promo-${pr.id}`,
                 type: 'promo',
                 description: `Promo baru ditambahkan: ${pr.name}`,
                 timestamp: pr.createdAt,
-                relatedEntity: { id: pr.id, name: pr.name, path: `/promo` } // atau ke detail promo
+                relatedEntity: { id: pr.id, name: pr.name, path: `/promo` }
             });
         });
-        // 4. Task Baru (Contoh)
-        const newTasks = yield models_1.Task.findAll({
-            limit: Math.ceil(limit / 4),
-            order: [['createdAt', 'DESC']],
-            attributes: ['id', 'content', 'createdAt', 'date', 'isCompleted']
-        });
+        // Process tasks
         newTasks.forEach(t => {
             activities.push({
                 id: `task-${t.id}`,

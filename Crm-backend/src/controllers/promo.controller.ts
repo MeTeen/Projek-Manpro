@@ -31,7 +31,18 @@ export const createPromo = async (req: Request, res: Response) => {
 
 export const getAllPromos = async (req: Request, res: Response) => {
   try {
-    const promos = await Promo.findAll({ include: [{ model: Customer, as: 'eligibleCustomers', attributes: ['id', 'firstName', 'lastName'] }] });
+    // Optimize: Only fetch eligible customers if specifically requested
+    const includeCustomers = req.query.includeCustomers === 'true';
+    
+    const promos = await Promo.findAll({
+      include: includeCustomers ? [{ 
+        model: Customer, 
+        as: 'eligibleCustomers', 
+        attributes: ['id', 'firstName', 'lastName'] 
+      }] : [],
+      order: [['createdAt', 'DESC']] // Add ordering for consistent results
+    });
+    
     res.status(200).json({ success: true, count: promos.length, data: promos });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching promos', error: (error as Error).message });
@@ -142,7 +153,10 @@ export const getAvailablePromosForCustomer = async (req: Request, res: Response)
             include: [{
                 model: Promo,
                 as: 'availablePromos',
-                through: { attributes: [] }, // Tidak perlu data dari tabel junction di sini
+                through: { 
+                    attributes: [],
+                    where: { isUsed: false } // Only include unused promos
+                },
                 where: {
                     isActive: true,
                     [Op.or]: [ // Promo valid jika tidak ada tanggal atau berada dalam rentang tanggal

@@ -39,11 +39,14 @@ export interface AssignPromoInput {
     promoId: number;
 }
 
-const promoService = {
-  async getAllPromos(): Promise<Promo[]> {
+const promoService = {  async getAllPromos(includeCustomers: boolean = false): Promise<Promo[]> {
     const token = getAuthToken();
     if (!token) throw new Error('Authentication required');
-    const response = await axios.get(API_URL, { headers: { 'Authorization': `Bearer ${token}` } });
+    
+    const params = includeCustomers ? '?includeCustomers=true' : '';
+    const response = await axios.get(API_URL + params, { 
+      headers: { 'Authorization': `Bearer ${token}` } 
+    });
     return response.data.data;
   },
 

@@ -23,54 +23,65 @@ const StatCard: React.FC<StatCardProps> = ({
   isLoading = false,
   trend 
 }) => {
-  const getColorClasses = (color: string) => {
+  const getColorStyles = (color: string) => {
     const colorMap: { [key: string]: { bg: string; text: string } } = {
-      '#10B981': { bg: 'bg-emerald-50', text: 'text-emerald-600' },
-      '#3B82F6': { bg: 'bg-blue-50', text: 'text-blue-600' },
-      '#F59E0B': { bg: 'bg-amber-50', text: 'text-amber-600' },
-      '#8B5CF6': { bg: 'bg-purple-50', text: 'text-purple-600' },
-      '#EF4444': { bg: 'bg-red-50', text: 'text-red-600' },
-      '#EC4899': { bg: 'bg-pink-50', text: 'text-pink-600' },
-      '#4F46E5': { bg: 'bg-indigo-50', text: 'text-indigo-600' },
+      '#10B981': { bg: '#ecfdf5', text: '#059669' },
+      '#3B82F6': { bg: '#dbeafe', text: '#2563eb' },
+      '#F59E0B': { bg: '#fef3c7', text: '#d97706' },
+      '#8B5CF6': { bg: '#f3e8ff', text: '#7c3aed' },
+      '#EF4444': { bg: '#fee2e2', text: '#dc2626' },
+      '#EC4899': { bg: '#fce7f3', text: '#db2777' },
+      '#4F46E5': { bg: '#eef2ff', text: '#4f46e5' },
     };
-    return colorMap[color] || { bg: 'bg-indigo-50', text: 'text-indigo-600' };
+    return colorMap[color] || { bg: '#eef2ff', text: '#4f46e5' };
   };
 
-  const colorClasses = getColorClasses(color);
-
-  return (
-    <Card className="h-full transition-all duration-300 hover:shadow-lg" hover>
-      <div className="flex justify-between items-start mb-3">
-        <h3 className="text-sm font-semibold text-gray-600 truncate">{title}</h3>
-        <div className={`${colorClasses.bg} ${colorClasses.text} rounded-full p-2 flex items-center justify-center w-10 h-10 flex-shrink-0`}>
+  const colorStyles = getColorStyles(color);
+    return (
+    <Card hover>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+        <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{title}</h3>
+        <div style={{ 
+          backgroundColor: colorStyles.bg,
+          color: colorStyles.text,
+          borderRadius: '50%',
+          padding: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '40px',
+          height: '40px',
+          flexShrink: 0
+        }}>
           {icon}
         </div>
       </div>
       
-      <div className="flex flex-col">
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-gray-900 leading-none">
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', lineHeight: '1' }}>
             {isLoading ? (
-              <div className="animate-pulse">
-                <div className="h-8 bg-gray-200 rounded w-16"></div>
-              </div>
+              <div style={{ backgroundColor: '#e5e7eb', height: '32px', width: '64px', borderRadius: '4px' }}></div>
             ) : (
               value
             )}
           </span>
           {trend && (
-            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-              trend.isPositive 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
+            <span style={{ 
+              fontSize: '12px', 
+              fontWeight: '500', 
+              padding: '4px 8px', 
+              borderRadius: '50px',
+              backgroundColor: trend.isPositive ? '#dcfce7' : '#fee2e2',
+              color: trend.isPositive ? '#166534' : '#991b1b'
+            }}>
               {trend.isPositive ? '+' : ''}{trend.value}%
             </span>
           )}
         </div>
         
         {description && (
-          <p className="text-sm text-gray-500 mt-2 leading-relaxed">{description}</p>
+          <p style={{ fontSize: '14px', color: '#6b7280', margin: 0, marginTop: '8px', lineHeight: '1.5' }}>{description}</p>
         )}
       </div>
     </Card>

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { sequelize, Customer, Product, CustomerProduct, Promo } from '../models'; // Pastikan Promo diimpor
+import { sequelize, Customer, Product, CustomerProduct, Promo, CustomerPromo } from '../models'; // Pastikan Promo dan CustomerPromo diimpor
 import { Transaction, Op } from 'sequelize';
 
 // --- Fungsi Helper untuk Validasi dan Kalkulasi Promo (Opsional, bisa diletakkan di sini atau di utils) ---
@@ -47,6 +47,23 @@ async function validateAndCalculatePromo(
       message: `Promo with ID ${promoId} is not valid, not active, expired, or not assigned for this customer.`
     };
   }
+  // Check if promo has already been used by this customer (for one-time use promos)
+  const customerPromo = await CustomerPromo.findOne({
+    where: {
+      customerId: customerId,
+      promoId: promoId,
+      isUsed: true
+    }
+  });
+
+  if (customerPromo) {
+    return {
+      isValid: false,
+      appliedPromo: null,
+      discountAmount: 0,
+      message: `This promo has already been used and cannot be applied again.`
+    };
+  }
 
   let discount = 0;
   if (promo.type === 'percentage') {
@@ -69,11 +86,12 @@ async function validateAndCalculatePromo(
 export const createPurchase = async (req: Request, res: Response) => {
   const t: Transaction = await sequelize.transaction();
   let transactionCompleted = false;
-
   try {
-    const { customerId, productId, quantity = 1, promoId } = req.body; // Ambil promoId dari body
+    const { customerId, productId, quantity = 1, promoId, promoCode } = req.body; // Ambil promoId atau promoCode dari body
 
     console.log('Purchase request received:', req.body);
+    console.log('PromoId received:', promoId, 'Type:', typeof promoId);
+    console.log('PromoCode received:', promoCode, 'Type:', typeof promoCode);
 
     const customerIdNum = parseInt(customerId, 10);
     const productIdNum = parseInt(productId, 10);
@@ -107,8 +125,7 @@ export const createPurchase = async (req: Request, res: Response) => {
       await t.rollback();
       transactionCompleted = true;
       return res.status(404).json({ success: false, message: `Product with ID ${productIdNum} not found` });
-    }
-    if (product.stock < quantityNum) {
+    }    if (product.stock < quantityNum) {
       await t.rollback();
       transactionCompleted = true;
       return res.status(400).json({ success: false, message: `Not enough stock. Requested: ${quantityNum}, Available: ${product.stock}` });
@@ -117,8 +134,28 @@ export const createPurchase = async (req: Request, res: Response) => {
     const productPrice = parseFloat(product.price?.toString() || '0');
     const basePurchaseTotal = productPrice * quantityNum;
 
+    // Resolve promo: if promoCode is provided, find the corresponding promoId
+    let resolvedPromoId = promoId ? parseInt(promoId, 10) : null;
+    
+    if (promoCode && !resolvedPromoId) {
+      console.log('Looking up promo by code:', promoCode);
+      const promoByCode = await Promo.findOne({
+        where: { name: promoCode }, // Using name field as the code
+        transaction: t
+      });
+      
+      if (promoByCode) {
+        resolvedPromoId = promoByCode.id;
+        console.log('Found promo by code:', promoByCode.id, promoByCode.name);
+      } else {
+        await t.rollback();
+        transactionCompleted = true;
+        return res.status(400).json({ success: false, message: `Promo code '${promoCode}' not found` });
+      }
+    }
+
     // Validasi dan kalkulasi promo
-    const promoDetails = await validateAndCalculatePromo(promoId ? parseInt(promoId, 10) : null, customerIdNum, basePurchaseTotal);
+    const promoDetails = await validateAndCalculatePromo(resolvedPromoId, customerIdNum, basePurchaseTotal);
 
     if (!promoDetails.isValid) {
       await t.rollback();
@@ -145,12 +182,27 @@ export const createPurchase = async (req: Request, res: Response) => {
     }, { transaction: t });
 
     let currentTotalSpent = parseFloat(customer.totalSpent?.toString() || '0');
-    let currentPurchaseCount = parseInt(customer.purchaseCount?.toString() || '0', 10);
-
-    await customer.update({
+    let currentPurchaseCount = parseInt(customer.purchaseCount?.toString() || '0', 10);    await customer.update({
       totalSpent: currentTotalSpent + finalPurchaseTotal, // totalSpent adalah setelah diskon
       purchaseCount: currentPurchaseCount + 1
     }, { transaction: t });
+
+    // Mark promo as used if a promo was applied
+    if (promoDetails.appliedPromo) {
+      await CustomerPromo.update(
+        { 
+          isUsed: true, 
+          usedAt: new Date() 
+        },
+        { 
+          where: { 
+            customerId: customerIdNum, 
+            promoId: promoDetails.appliedPromo.id 
+          },
+          transaction: t 
+        }
+      );
+    }
 
     await t.commit();
     transactionCompleted = true;
@@ -246,12 +298,27 @@ export const addProductToCustomer = async (req: Request, res: Response) => {
     await product.update({ stock: newStock }, { transaction: t });
 
     let currentTotalSpent = parseFloat(customer.totalSpent?.toString() || '0');
-    let currentPurchaseCount = parseInt(customer.purchaseCount?.toString() || '0', 10);
-
-    await customer.update({
+    let currentPurchaseCount = parseInt(customer.purchaseCount?.toString() || '0', 10);    await customer.update({
       totalSpent: currentTotalSpent + finalPurchaseTotal,
       purchaseCount: currentPurchaseCount + 1
     }, { transaction: t });
+
+    // Mark promo as used if a promo was applied
+    if (promoDetails.appliedPromo) {
+      await CustomerPromo.update(
+        { 
+          isUsed: true, 
+          usedAt: new Date() 
+        },
+        { 
+          where: { 
+            customerId: customerIdNum, 
+            promoId: promoDetails.appliedPromo.id 
+          },
+          transaction: t 
+        }
+      );
+    }
 
     await t.commit();
     transactionCompleted = true;

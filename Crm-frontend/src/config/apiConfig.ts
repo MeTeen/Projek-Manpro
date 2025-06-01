@@ -1,5 +1,5 @@
 // Configuration for API endpoints
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 // Additional API configuration options can be added here
 export const API_TIMEOUT = import.meta.env.VITE_API_TIMEOUT || 10000; // 10 seconds timeout

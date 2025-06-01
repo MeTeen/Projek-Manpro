@@ -36,19 +36,56 @@ const Header: React.FC<HeaderProps> = ({ onCustomerCreated, onAddNewClick }) => 
   const handleLogout = () => {
     logout();
   };
-
   return (
-    <header className="dashboard-header">
+    <header style={{
+      backgroundColor: 'white',
+      borderBottom: '1px solid #e5e7eb',
+      padding: '16px 24px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    }}>
       <h1 style={{ fontSize: '20px', fontWeight: '600' }}>Dashboard</h1>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', position: 'relative' }}>
-        <button className="add-new-button" onClick={toggleDropdown}>
+        <button 
+          style={{
+            backgroundColor: '#4f46e5',
+            color: 'white',
+            borderRadius: '50px',
+            padding: '8px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '14px',
+            border: 'none',
+            cursor: 'pointer'
+          }}
+          onClick={toggleDropdown}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
           Add New
         </button>
-        <button className="logout-button" onClick={handleLogout}>
+        <button 
+          style={{
+            backgroundColor: '#ef4444',
+            color: 'white',
+            borderRadius: '50px',
+            padding: '8px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '14px',
+            transition: 'background-color 0.2s ease',
+            border: 'none',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
+          onClick={handleLogout}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>

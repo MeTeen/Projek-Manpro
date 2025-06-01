@@ -8,5 +8,7 @@ export { default as ErrorState } from './ErrorState';
 export { default as DataTable } from './DataTable';
 export { default as AvatarUpload } from './AvatarUpload';
 export { default as Modal } from './Modal';
+export { default as ConfirmModal } from './ConfirmModal';
+export { default as FormModal } from './FormModal';
 export { default as Card } from './Card';
 export { default as StatCard } from './StatCard';

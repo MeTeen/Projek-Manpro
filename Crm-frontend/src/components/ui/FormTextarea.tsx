@@ -33,10 +33,16 @@ const FormTextarea: React.FC<FormTextareaProps> = ({
     boxShadow: '0 0 0 1px #5E5CEB',
   };
   return (
-    <div className="mb-4">
+    <div style={{ marginBottom: '16px' }}>
       {label && (
-        <label className="block mb-1.5 font-medium text-sm text-gray-700">
-          {label}{required && <span className="text-red-500"> *</span>}
+        <label style={{ 
+          display: 'block', 
+          marginBottom: '6px', 
+          fontWeight: 500,
+          fontSize: '14px',
+          color: '#374151'
+        }}>
+          {label}{required && <span style={{ color: '#EF4444', marginLeft: '4px' }}>*</span>}
         </label>
       )}
       <textarea
@@ -58,7 +64,12 @@ const FormTextarea: React.FC<FormTextareaProps> = ({
         }}
       />
       {error && (
-        <p className="text-red-500 text-xs mt-1 m-0">
+        <p style={{ 
+          color: '#EF4444', 
+          fontSize: '12px', 
+          marginTop: '4px', 
+          margin: 0 
+        }}>
           {error}
         </p>
       )}

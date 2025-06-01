@@ -2,17 +2,14 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import Header from '../dashboard/Header'; // Sesuaikan path
 import Sidebar from '../dashboard/Sidebar'; // Sesuaikan path
-import { EditModal } from '../common/EditModal'; // Sesuaikan path
-import promoService, { Promo, PromoInput, AssignPromoInput } from '../../services/promoService'; // Sesuaikan path
+import { ConfirmModal, FormModal } from '../ui'; // Updated imports
+import promoService, { Promo, PromoInput } from '../../services/promoService'; // Sesuaikan path
 import customerService, { Customer } from '../../services/customerService'; // Untuk assign
 import AuthContext from '../../context/AuthContext'; // Untuk role check
 import { MdEdit, MdDelete, MdAdd, MdPersonAdd } from 'react-icons/md';
 import Select from 'react-select';
-import { formatPrice } from '../../utils/formatters';
+import { formatPrice, BACKEND_URL } from '../../utils/formatters';
 import PromoForm from '../forms/PromoForm';
-
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'; // Pastikan ini sesuai dengan konfigurasi Anda
 
 const styles = {
     actionButton: { background: 'none', border: 'none', cursor: 'pointer', color: '#5E5CEB' },
@@ -38,22 +35,52 @@ const PromoPage: React.FC = () => {
     const authContext = useContext(AuthContext);
     const currentUserRole = authContext?.user?.role; // 'admin' atau 'super_admin'
 
-    const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
-
-    // Buat customerOptions menggunakan useMemo agar tidak dihitung ulang setiap render kecuali customers berubah
+    const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);    // Buat customerOptions menggunakan useMemo agar tidak dihitung ulang setiap render kecuali customers berubah
     const customerOptions = useMemo(() => customers
-        .filter(customer => typeof customer.id === 'number')
-        .map(customer => ({
-            value: customer.id as number,
-            label: `${customer.firstName} ${customer.lastName}`, // Label dasar untuk pencarian
-            // Sertakan data customer lengkap untuk digunakan di formatOptionLabel
-            customerData: customer
-        })), [customers]);
-
-
+        // Filter out any invalid customers
+        .filter(customer => typeof customer?.id === 'number')
+        .map(customer => {
+            // Ensure we have valid string values for names to prevent issues
+            const firstName = customer.firstName || '';
+            const lastName = customer.lastName || '';
+            const label = `${firstName} ${lastName}`.trim() || 'Customer';
+            
+            return {
+                value: customer.id as number,
+                label: label, // Label dasar untuk pencarian
+                // Sertakan data customer lengkap untuk digunakan di formatOptionLabel
+                customerData: customer
+            };
+        }), [customers]);
     // Komponen kustom untuk menampilkan setiap opsi di dropdown
-    const formatOptionLabel = ({ value, label, customerData }: { value: number, label: string, customerData: Customer }) => {
-        let imageUrl = 'https://via.placeholder.com/40?text=N/A'; // Fallback default
+    const formatOptionLabel = ({ customerData }: { value: number, label: string, customerData: Customer }) => {
+        // Use initials as default fallback instead of placeholder.com
+        const getInitials = () => {
+            const first = customerData.firstName ? customerData.firstName.charAt(0) : '';
+            const last = customerData.lastName ? customerData.lastName.charAt(0) : '';
+            return (first + last).toUpperCase() || 'NA';
+        };
+        
+        // Create data URL for fallback avatar with initials
+        const createFallbackAvatar = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 40;
+            canvas.height = 40;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = '#E5E7EB'; // Light gray background
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.font = 'bold 16px sans-serif';
+                ctx.fillStyle = '#6B7280'; // Text color
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(getInitials(), canvas.width/2, canvas.height/2);
+                return canvas.toDataURL();
+            }
+            return ''; // Empty string as last resort
+        };
+        
+        let imageUrl = createFallbackAvatar();
 
         if (customerData.avatarUrl) {
             if (customerData.avatarUrl.startsWith('http://') || customerData.avatarUrl.startsWith('https://')) {
@@ -82,10 +109,9 @@ const PromoPage: React.FC = () => {
                         border: '1px solid #eee'
                     }}
                     onError={(e) => {
-                        // Jika terjadi error saat memuat gambar (misal, file tidak ada di server),
-                        // ganti dengan placeholder untuk menghindari ikon gambar rusak.
-                        (e.target as HTMLImageElement).onerror = null; // mencegah loop error jika placeholder juga error
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40?text=N/A';
+                        // If image loading fails, use our canvas-generated fallback with initials
+                        (e.target as HTMLImageElement).onerror = null; // prevent error loop
+                        (e.target as HTMLImageElement).src = createFallbackAvatar();
                     }}
                 />
                 <div style={{ lineHeight: '1.4' }}>
@@ -100,35 +126,63 @@ const PromoPage: React.FC = () => {
                 </div>
             </div>
         );
-    };
-
-    const fetchPromos = async () => {
+    };const fetchData = async () => {
         try {
             setLoading(true);
-            const data = await promoService.getAllPromos();
-            setPromos(data);
             setError(null);
+              // Use Promise.allSettled for parallel loading with error handling
+            const isAdminUser = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+            
+            const promises: Promise<any>[] = [
+                promoService.getAllPromos(false), // Don't include customers for basic list
+            ];
+            
+            // Only fetch customers if user has admin privileges
+            if (isAdminUser) {
+                promises.push(customerService.getCustomersBasicInfo(['id', 'firstName', 'lastName']));
+            }
+            
+            const results = await Promise.allSettled(promises);
+            
+            // Handle promos result
+            if (results[0].status === 'fulfilled') {
+                setPromos(results[0].value);
+            } else {
+                console.error('Failed to load promos:', results[0].reason);
+                setError('Failed to load promos');
+            }
+            
+            // Handle customers result (if applicable)
+            if (isAdminUser && results[1]) {
+                if (results[1].status === 'fulfilled') {
+                    setCustomers(results[1].value as Customer[]);
+                } else {
+                    console.error('Failed to load customers:', results[1].reason);
+                    // Don't set error here as promos are more important
+                }
+            }
+            
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load promos');
+            setError(err instanceof Error ? err.message : 'Failed to load data');
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchCustomers = async () => { // Untuk modal assign
+    const fetchPromos = async () => {
         try {
-            const data = await customerService.getAllCustomers();
-            setCustomers(data);
+            setLoading(true);
+            const data = await promoService.getAllPromos(false);
+            setPromos(data);
+            setError(null);
         } catch (err) {
-            console.error("Failed to load customers for assignment", err);
+            setError(err instanceof Error ? err.message : 'Failed to load promos');        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchPromos();
-        if (currentUserRole === 'admin' || currentUserRole === 'super_admin') {
-            fetchCustomers(); // Hanya fetch jika bisa assign
-        }
+        fetchData(); // Use the optimized parallel fetch
     }, [currentUserRole]);
 
     const handleAddClick = () => {
@@ -172,22 +226,10 @@ const PromoPage: React.FC = () => {
             ...prev,
             [name]: type === 'checkbox' ? checked : (name === 'value' ? parseFloat(value) : value)
         }));
-    };
-
-    const handleAssignClick = (promo: Promo) => {
+    };    const handleAssignClick = (promo: Promo) => {
         setSelectedPromo(promo);
         setAssignFormData({ customerId: null });
         setIsAssignModalOpen(true);
-    };
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
-        const checked = (e.target as HTMLInputElement).checked;
-
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : (name === 'value' ? parseFloat(value) : value)
-        }));
     };
 
     const handleAddEditSubmit = async (e: React.FormEvent) => {
@@ -237,21 +279,29 @@ const PromoPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleAssignSubmit = async (e: React.FormEvent) => {
+    };    const handleAssignSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedPromo?.id || !assignFormData.customerId) {
+        if (!selectedPromo?.id) {
+            setError("No promo selected. Please try again.");
+            return;
+        }
+        
+        if (!assignFormData.customerId) {
             alert("Please select a customer.");
             return;
         }
+        
         try {
             setLoading(true);
-            await promoService.assignPromoToCustomer({ promoId: selectedPromo.id, customerId: assignFormData.customerId });
+            await promoService.assignPromoToCustomer({ 
+                promoId: selectedPromo.id, 
+                customerId: assignFormData.customerId 
+            });
             alert('Promo assigned successfully');
             setIsAssignModalOpen(false);
-            fetchPromos(); // Refresh untuk lihat updated eligibleCustomers (jika di-display)
+            fetchPromos(); // Refresh to see updated eligibleCustomers (if displayed)
         } catch (err) {
+            console.error("Error assigning promo:", err);
             setError(err instanceof Error ? err.message : 'Failed to assign promo');
         } finally {
             setLoading(false);
@@ -277,9 +327,10 @@ const PromoPage: React.FC = () => {
 
                 {error && <div style={{ backgroundColor: '#FEE2E2', color: '#B91C1C', padding: '12px', borderRadius: '4px', marginBottom: '20px' }}>{error}</div>}
 
-                <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)', overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
+                <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                    <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                        <thead style={{ backgroundColor: '#f9fafb' }}>
                             <tr>
                                 <th style={styles.tableHeader}>Name</th>
                                 <th style={styles.tableHeader}>Type</th>
@@ -297,22 +348,22 @@ const PromoPage: React.FC = () => {
                                 <tr><td colSpan={7} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>No promos found.</td></tr>
                             ) : (
                                 promos.map(promo => (
-                                    <tr key={promo.id}>
+                                    <tr key={promo.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                                         <td style={styles.tableCell}>{promo.name}</td>
                                         <td style={styles.tableCell}>{promo.type}</td>
                                         <td style={styles.tableCell}>{promo.type === 'percentage' ? `${promo.value}%` : `Rp ${promo.value.toLocaleString('id-ID')}`}</td>
                                         <td style={styles.tableCell}>{promo.isActive ? 'Yes' : 'No'}</td>
                                         <td style={styles.tableCell}>{promo.startDate ? new Date(promo.startDate).toLocaleDateString() : 'N/A'}</td>
                                         <td style={styles.tableCell}>{promo.endDate ? new Date(promo.endDate).toLocaleDateString() : 'N/A'}</td>
-                                        <td style={{ ...styles.tableCell, textAlign: 'right' as 'right' }}>
+                                        <td style={{ ...styles.tableCell, textAlign: 'right' }}>
                                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                                                 {(currentUserRole === 'admin' || currentUserRole === 'super_admin') && (
-                                                    <button onClick={() => handleAssignClick(promo)} title="Assign to Customer" style={{ background: 'none', border: 'none', color: '#10B981', cursor: 'pointer' }}><MdPersonAdd size={18} /></button>
+                                                    <button onClick={() => handleAssignClick(promo)} title="Assign to Customer" style={{ background: 'none', border: 'none', color: '#10B981', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdPersonAdd size={18} /></button>
                                                 )}
                                                 {currentUserRole === 'super_admin' && (
                                                     <>
-                                                        <button onClick={() => handleEditClick(promo)} title="Edit Promo" style={{ background: 'none', border: 'none', color: '#5E5CEB', cursor: 'pointer' }}><MdEdit size={18} /></button>
-                                                        <button onClick={() => handleDeleteClick(promo)} title="Delete Promo" style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}><MdDelete size={18} /></button>
+                                                        <button onClick={() => handleEditClick(promo)} title="Edit Promo" style={{ background: 'none', border: 'none', color: '#5E5CEB', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdEdit size={18} /></button>
+                                                        <button onClick={() => handleDeleteClick(promo)} title="Delete Promo" style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdDelete size={18} /></button>
                                                     </>
                                                 )}
                                             </div>
@@ -322,92 +373,124 @@ const PromoPage: React.FC = () => {
                             )}
                         </tbody>
                     </table>
-                </div>
-
-                {/* Add/Edit Promo Modal */}
-                <EditModal
+                    </div>
+                </div>                {/* Add/Edit Promo Modal */}
+                <FormModal
                     isOpen={isAddEditModalOpen}
-                    title={selectedPromo ? "Edit Promo" : "Add New Promo"}
                     onClose={() => setIsAddEditModalOpen(false)}
                     onSubmit={handleAddEditSubmit}
+                    title={selectedPromo ? "Edit Promo" : "Add New Promo"}
+                    submitText={loading ? 'Saving...' : 'Save Changes'}
+                    loading={loading}                    icon={<MdEdit size={22} style={{ color: '#4f46e5' }} />}
                 >
                     <PromoForm formData={formData} onFormChange={handlePromoFormChange} />
-                </EditModal>
-
-                {/* Delete Promo Modal */}
-                {isDeleteModalOpen && selectedPromo && (
-                    <EditModal // Re-use EditModal structure for simplicity or create a dedicated ConfirmModal
-                        isOpen={isDeleteModalOpen}
-                        title="Delete Promo"
-                        onClose={() => setIsDeleteModalOpen(false)}
-                        onSubmit={handleDeleteConfirm} // onSubmit akan jadi onConfirm di sini
-                    >
-                        <p>Are you sure you want to delete promo "{selectedPromo.name}"?</p>
-                    </EditModal>
-                )}
-
-                {/* Assign Promo to Customer Modal */}
-                <EditModal
-                    isOpen={isAssignModalOpen} // Pastikan ini dikontrol oleh state yang benar
-                    title={`Assign Promo: ${selectedPromo?.name}`} // selectedPromo juga dari state
-                    onClose={() => setIsAssignModalOpen(false)} // Pastikan setIsAssignModalOpen didefinisikan
-                    onSubmit={handleAssignSubmit} // Pastikan handleAssignSubmit didefinisikan
-                // submitText="Assign Promo" // Anda bisa menambahkan prop ini jika EditModal mendukungnya
+                    {error && (
+                        <div style={{
+                            backgroundColor: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            color: '#b91c1c',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+                </FormModal>{/* Delete Promo Modal */}
+                <ConfirmModal
+                    isOpen={isDeleteModalOpen}
+                    onClose={() => setIsDeleteModalOpen(false)}
+                    onConfirm={handleDeleteConfirm}
+                    title="Delete Promo"
+                    message={`Are you sure you want to delete promo "${selectedPromo?.name}"? This action cannot be undone.`}
+                    confirmText="Delete Promo"
+                    cancelText="Cancel"
+                    variant="danger"
+                    loading={loading}
+                    icon={<MdDelete size={22} />}
+                />                {/* Assign Promo to Customer Modal */}
+                <FormModal
+                    isOpen={isAssignModalOpen}
+                    onClose={() => setIsAssignModalOpen(false)}
+                    onSubmit={handleAssignSubmit}
+                    title={`Assign Promo: ${selectedPromo?.name}`}
+                    submitText={loading ? 'Assigning...' : 'Assign Promo'}
+                    loading={loading}
+                    disabled={!assignFormData.customerId}                    
+                    icon={<MdPersonAdd size={22} style={{ color: '#4f46e5' }} />}
                 >
-                    <div style={{ marginBottom: '16px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-                            Select Customer*
-                        </label>
-                        <Select
-                            options={customerOptions}
-                            formatOptionLabel={formatOptionLabel}
-                            value={customerOptions.find(option => option.value === assignFormData.customerId)}
-                            onChange={(selectedOption) => {
-                                const customerId = selectedOption ? selectedOption.value : null;
-                                setAssignFormData({ customerId });
-                            }}
-                            isLoading={!customers.length && loading}
-                            placeholder="Cari atau pilih customer..."
-                            isClearable
-                            menuPosition="fixed" // ⬅️ penting agar dropdown tidak ketahan modal
-                            menuShouldScrollIntoView={false}
-                            styles={{
-                                control: (provided) => ({
-                                    ...provided,
-                                    minHeight: '44px',
-                                    borderRadius: '6px',
-                                    borderColor: '#3B82F6',
-                                    boxShadow: '0 0 0 1px #3B82F6',
-                                    '&:hover': {
-                                        borderColor: '#2563EB',
-                                    },
-                                }),
-                                option: (provided, state) => ({
-                                    ...provided,
-                                    padding: '8px 12px',
-                                    backgroundColor: state.isFocused ? '#EEF2FF' : 'white',
-                                    color: '#111827',
-                                }),
-                                menu: (provided) => ({
-                                    ...provided,
-                                    zIndex: 9999, // ⬅️ pastikan dropdown muncul di atas modal
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                                }),
-                                menuList: (provided) => ({
-                                    ...provided,
-                                    maxHeight: '250px', // batas agar tidak kepanjangan
-                                }),
-                            }}
-                        />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#374151',
+                                marginBottom: '8px'
+                            }}>
+                                Select Customer*
+                            </label>
+                            <Select
+                                options={customerOptions}
+                                formatOptionLabel={formatOptionLabel}
+                                value={customerOptions.find(option => option.value === assignFormData.customerId)}
+                                onChange={(selectedOption) => {
+                                    const customerId = selectedOption ? selectedOption.value : null;
+                                    setAssignFormData({ customerId });
+                                }}
+                                isLoading={!customers.length && loading}
+                                placeholder="Search or select a customer..."
+                                isClearable
+                                menuPosition="fixed"
+                                menuShouldBlockScroll={true}
+                                menuPortalTarget={document.body}
+                                menuPlacement="auto"
+                                styles={{
+                                    control: (provided) => ({
+                                        ...provided,
+                                        minHeight: '44px',
+                                        borderRadius: '6px',
+                                        borderColor: '#3B82F6',
+                                        boxShadow: '0 0 0 1px #3B82F6',
+                                        '&:hover': {
+                                            borderColor: '#2563EB',
+                                        },
+                                    }),
+                                    option: (provided, state) => ({
+                                        ...provided,
+                                        padding: '8px 12px',
+                                        backgroundColor: state.isFocused ? '#EEF2FF' : 'white',
+                                        color: '#111827',
+                                    }),
+                                    menu: (provided) => ({
+                                        ...provided,
+                                        zIndex: 9999,
+                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                    }),
+                                    menuList: (provided) => ({
+                                        ...provided,
+                                        maxHeight: '250px',
+                                    }),
+                                    menuPortal: (base) => ({
+                                        ...base,
+                                        zIndex: 9999
+                                    }),
+                                }}
+                            />                        </div>
+                        {error && (
+                            <div style={{
+                                backgroundColor: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                color: '#b91c1c',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                fontSize: '14px'
+                            }}>
+                                {error}
+                            </div>
+                        )}
                     </div>
-                    {/* Komentar Anda sebelumnya: 
-                    "Tambahkan juga opsi untuk remove promo from customer jika sudah ter-assign, 
-                    atau daftar customer yg sudah ter-assign"
-                    Ini bisa jadi fitur tambahan di sini, misal menampilkan daftar customer yang sudah
-                    mendapatkan promo ini dengan tombol untuk 'unassign'.
-                */}
-                </EditModal>
-
+                </FormModal>
             </div>
         </div>
     );

@@ -12,17 +12,42 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCustomerWithPurchases = exports.deleteCustomer = exports.updateCustomer = exports.createCustomer = exports.getCustomerById = exports.getAllCustomers = void 0;
 const models_1 = require("../models");
 const upload_middleware_1 = require("../middlewares/upload.middleware");
+const sequelize_1 = require("sequelize");
 /**
- * Get all customers
+ * Get all customers with pagination and filtering
  * @route GET /api/customers
  */
 const getAllCustomers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const customers = yield models_1.Customer.findAll();
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = (page - 1) * limit;
+        const search = req.query.search;
+        // Build where clause for search
+        const whereClause = {};
+        if (search) {
+            whereClause[sequelize_1.Op.or] = [
+                { firstName: { [sequelize_1.Op.iLike]: `%${search}%` } },
+                { lastName: { [sequelize_1.Op.iLike]: `%${search}%` } },
+                { email: { [sequelize_1.Op.iLike]: `%${search}%` } }
+            ];
+        }
+        const { count, rows: customers } = yield models_1.Customer.findAndCountAll({
+            where: whereClause,
+            order: [['createdAt', 'DESC']],
+            limit,
+            offset,
+            attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'city', 'state', 'totalSpent', 'purchaseCount', 'avatarUrl', 'createdAt']
+        });
         res.status(200).json({
             success: true,
-            count: customers.length,
             data: customers,
+            pagination: {
+                total: count,
+                page,
+                limit,
+                totalPages: Math.ceil(count / limit)
+            }
         });
     }
     catch (error) {

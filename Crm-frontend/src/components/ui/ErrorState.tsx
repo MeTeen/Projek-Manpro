@@ -19,50 +19,18 @@ const ErrorState: React.FC<ErrorStateProps> = ({
   icon,
   onRetry
 }) => {
-  const getVariantClasses = (variant: ErrorStateVariant) => {
+  const getIconColor = (variant: ErrorStateVariant) => {
     switch (variant) {
       case 'error':
-        return {
-          container: 'bg-red-50 border-red-200 text-red-800',
-          icon: 'text-red-500'
-        };
+        return '#ef4444';
       case 'warning':
-        return {
-          container: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-          icon: 'text-yellow-500'
-        };
+        return '#f59e0b';
       case 'info':
-        return {
-          container: 'bg-blue-50 border-blue-200 text-blue-800',
-          icon: 'text-blue-500'
-        };
+        return '#3b82f6';
       case 'success':
-        return {
-          container: 'bg-green-50 border-green-200 text-green-800',
-          icon: 'text-green-500'
-        };
+        return '#10b981';
       default:
-        return {
-          container: 'bg-red-50 border-red-200 text-red-800',
-          icon: 'text-red-500'
-        };
-    }
-  };
-
-  const variantClasses = getVariantClasses(variant);
-
-  const getButtonColor = (variant: ErrorStateVariant) => {
-    switch (variant) {
-      case 'error':
-        return 'bg-red-500 hover:bg-red-600';
-      case 'warning':
-        return 'bg-yellow-500 hover:bg-yellow-600';
-      case 'info':
-        return 'bg-blue-500 hover:bg-blue-600';
-      case 'success':
-        return 'bg-green-500 hover:bg-green-600';
-      default:
-        return 'bg-red-500 hover:bg-red-600';
+        return '#ef4444';
     }
   };
 
@@ -74,7 +42,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
       fill="none" 
       stroke="currentColor" 
       strokeWidth="2"
-      className={variantClasses.icon}
+      style={{ color: getIconColor(variant) }}
     >
       {variant === 'error' && (
         <>
@@ -105,28 +73,47 @@ const ErrorState: React.FC<ErrorStateProps> = ({
       )}
     </svg>
   );  return (
-    <div className={`border rounded-lg p-4 flex items-start gap-3 my-4 ${variantClasses.container}`}>
-      <div className="flex-shrink-0">
+    <div style={{ 
+      border: `1px solid ${variant === 'error' ? '#fecaca' : variant === 'warning' ? '#fde68a' : variant === 'info' ? '#bfdbfe' : '#bbf7d0'}`,
+      borderRadius: '8px',
+      padding: '16px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '12px',
+      margin: '16px 0',
+      backgroundColor: variant === 'error' ? '#fef2f2' : variant === 'warning' ? '#fffbeb' : variant === 'info' ? '#eff6ff' : '#f0fdf4'
+    }}>
+      <div style={{ flexShrink: 0 }}>
         {icon || defaultIcon}
       </div>
       
-      <div className="flex-1 min-w-0">
+      <div style={{ flex: 1, minWidth: 0 }}>
         {title && (
-          <h4 className="m-0 mb-1 text-sm font-semibold">
+          <h4 style={{ margin: 0, marginBottom: '4px', fontSize: '14px', fontWeight: '600' }}>
             {title}
           </h4>
         )}
         
-        <p className="m-0 text-sm leading-relaxed">
+        <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
           {message}
         </p>
         
         {(actions || onRetry) && (
-          <div className="mt-3 flex gap-2 items-center">
+          <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
             {onRetry && (
               <button
                 onClick={onRetry}
-                className={`px-3 py-1 text-white border-none rounded text-xs font-medium cursor-pointer transition-all duration-200 ${getButtonColor(variant)}`}
+                style={{
+                  padding: '4px 12px',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backgroundColor: variant === 'error' ? '#dc2626' : variant === 'warning' ? '#d97706' : variant === 'info' ? '#2563eb' : '#16a34a'
+                }}
               >
                 Try Again
               </button>

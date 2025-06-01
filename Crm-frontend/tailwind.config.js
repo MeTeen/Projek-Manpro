@@ -50,8 +50,7 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-      },
-      keyframes: {
+      },      keyframes: {
         "accordion-down": {
           from: { height: 0 },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -59,11 +58,49 @@ export default {
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
+        },        "fadeIn": {
+          from: { 
+            opacity: 0 
+          },
+          to: { 
+            opacity: 1 
+          },
+        },
+        "fadeOut": {
+          from: { 
+            opacity: 1 
+          },
+          to: { 
+            opacity: 0 
+          },
+        },
+        "slideUp": {
+          from: { 
+            opacity: 0, 
+            transform: "translateY(32px) scale(0.96)" 
+          },
+          to: { 
+            opacity: 1, 
+            transform: "translateY(0) scale(1)" 
+          },
+        },
+        "slideDown": {
+          from: { 
+            opacity: 1, 
+            transform: "translateY(0) scale(1)" 
+          },
+          to: { 
+            opacity: 0, 
+            transform: "translateY(32px) scale(0.96)" 
+          },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",        "fadeIn": "fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+        "fadeOut": "fadeOut 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        "slideUp": "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        "slideDown": "slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },
   },

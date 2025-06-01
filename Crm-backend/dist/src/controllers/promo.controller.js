@@ -39,7 +39,16 @@ const createPromo = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 exports.createPromo = createPromo;
 const getAllPromos = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const promos = yield models_1.Promo.findAll({ include: [{ model: models_1.Customer, as: 'eligibleCustomers', attributes: ['id', 'firstName', 'lastName'] }] });
+        // Optimize: Only fetch eligible customers if specifically requested
+        const includeCustomers = req.query.includeCustomers === 'true';
+        const promos = yield models_1.Promo.findAll({
+            include: includeCustomers ? [{
+                    model: models_1.Customer,
+                    as: 'eligibleCustomers',
+                    attributes: ['id', 'firstName', 'lastName']
+                }] : [],
+            order: [['createdAt', 'DESC']] // Add ordering for consistent results
+        });
         res.status(200).json({ success: true, count: promos.length, data: promos });
     }
     catch (error) {
@@ -151,7 +160,10 @@ const getAvailablePromosForCustomer = (req, res) => __awaiter(void 0, void 0, vo
             include: [{
                     model: models_1.Promo,
                     as: 'availablePromos',
-                    through: { attributes: [] }, // Tidak perlu data dari tabel junction di sini
+                    through: {
+                        attributes: [],
+                        where: { isUsed: false } // Only include unused promos
+                    },
                     where: {
                         isActive: true,
                         [sequelize_1.Op.or]: [

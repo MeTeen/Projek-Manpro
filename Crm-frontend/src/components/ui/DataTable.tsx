@@ -88,39 +88,49 @@ function DataTable<T extends Record<string, any>>({
     }
     return record[key as keyof T];
   };
-
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-10 bg-white rounded-lg shadow-sm">
-        <div className="w-6 h-6 border-[3px] border-gray-200 border-t-indigo-600 rounded-full animate-spin" />
-        <span className="ml-3 text-gray-500">Loading...</span>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+        <div style={{ width: '24px', height: '24px', border: '3px solid #e5e7eb', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <span style={{ marginLeft: '12px', color: '#6b7280' }}>Loading...</span>
       </div>
     );
   }
   return (
-    <div className="mb-8">
+    <div style={{ marginBottom: '32px' }}>
       <table 
-        className={`w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm ${className}`}
-        style={style}
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+          ...style
+        }}
+        className={className}
       >
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
           <tr>
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`px-4 py-3 text-left font-semibold text-gray-700 text-sm relative ${
-                  column.sortable ? 'cursor-pointer' : ''
-                }`}
                 style={{ 
-                  width: column.width,
-                  textAlign: column.align || 'left'
+                  padding: '12px 16px',
+                  textAlign: column.align || 'left',
+                  fontWeight: '600',
+                  color: '#374151',
+                  fontSize: '14px',
+                  position: 'relative',
+                  cursor: column.sortable ? 'pointer' : 'default',
+                  width: column.width
                 }}
                 onClick={() => column.sortable && handleSort(column.key as string)}
               >
-                <div className="flex items-center gap-1">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {column.title}
                   {column.sortable && (
-                    <span className="text-xs text-gray-400">
+                    <span style={{ fontSize: '12px', color: '#9ca3af' }}>
                       {sortConfig?.key === column.key ? (
                         sortConfig.direction === 'asc' ? '↑' : '↓'
                       ) : '↕'}
@@ -132,31 +142,50 @@ function DataTable<T extends Record<string, any>>({
           </tr>
         </thead>
         <tbody>
-          {paginatedData.length === 0 ? (
-            <tr>
+          {paginatedData.length === 0 ? (            <tr>
               <td
                 colSpan={columns.length}
-                className="px-4 py-10 text-center text-gray-500 italic"
+                style={{
+                  paddingLeft: '16px',
+                  paddingRight: '16px',
+                  paddingTop: '40px',
+                  paddingBottom: '40px',
+                  textAlign: 'center',
+                  color: '#6b7280',
+                  fontStyle: 'italic'
+                }}
               >
                 {emptyText}
               </td>
             </tr>
           ) : (
-            paginatedData.map((record, index) => (
-              <tr
+            paginatedData.map((record, index) => (              <tr
                 key={getRowKey(record, index)}
-                className={`transition-colors duration-200 ${
-                  onRowClick ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'
-                }`}
+                style={{
+                  transition: 'background-color 0.2s',
+                  cursor: onRowClick ? 'pointer' : 'default'
+                }}
+                onMouseEnter={(e) => {
+                  if (onRowClick) e.currentTarget.style.backgroundColor = '#f9fafb';
+                }}
+                onMouseLeave={(e) => {
+                  if (onRowClick) e.currentTarget.style.backgroundColor = 'transparent';
+                }}
                 onClick={() => onRowClick?.(record, index)}
               >
                 {columns.map((column, columnIndex) => {
                   const value = getValue(record, column.key);
-                  return (
-                    <td
+                  return (                    <td
                       key={columnIndex}
-                      className="px-4 py-4 text-sm border-b border-gray-100"
-                      style={{ textAlign: column.align || 'left' }}
+                      style={{
+                        paddingLeft: '16px',
+                        paddingRight: '16px',
+                        paddingTop: '16px',
+                        paddingBottom: '16px',
+                        fontSize: '14px',
+                        borderBottom: '1px solid #f3f4f6',
+                        textAlign: column.align || 'left'
+                      }}
                     >
                       {column.render ? column.render(value, record, index) : value}
                     </td>
@@ -166,36 +195,69 @@ function DataTable<T extends Record<string, any>>({
             ))
           )}
         </tbody>
-      </table>
-
-      {pagination && totalPages > 1 && (
-        <div className="flex justify-between items-center mt-4 p-4 bg-white rounded-lg shadow-sm">
-          <div className="text-sm text-gray-500">
+      </table>      {pagination && totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: '16px',
+          padding: '16px',
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+        }}>
+          <div style={{ fontSize: '14px', color: '#6b7280' }}>
             Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, data.length)} of {data.length} entries
           </div>
           
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className={`px-3 py-2 border border-gray-300 rounded text-sm ${
-                currentPage === 1 
-                  ? 'bg-gray-50 text-gray-400 cursor-not-allowed' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
-              }`}
+              style={{
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                paddingTop: '8px',
+                paddingBottom: '8px',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                fontSize: '14px',
+                backgroundColor: currentPage === 1 ? '#f9fafb' : 'white',
+                color: currentPage === 1 ? '#9ca3af' : '#374151',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                if (currentPage !== 1) e.currentTarget.style.backgroundColor = '#f9fafb';
+              }}
+              onMouseLeave={(e) => {
+                if (currentPage !== 1) e.currentTarget.style.backgroundColor = 'white';
+              }}
             >
               Previous
             </button>
-            
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`px-3 py-2 border border-gray-300 rounded text-sm cursor-pointer ${
-                  currentPage === page 
-                    ? 'bg-indigo-600 text-white font-semibold' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
+                style={{
+                  paddingLeft: '12px',
+                  paddingRight: '12px',
+                  paddingTop: '8px',
+                  paddingBottom: '8px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  backgroundColor: currentPage === page ? '#4f46e5' : 'white',
+                  color: currentPage === page ? 'white' : '#374151',
+                  fontWeight: currentPage === page ? '600' : 'normal'
+                }}
+                onMouseEnter={(e) => {
+                  if (currentPage !== page) e.currentTarget.style.backgroundColor = '#f9fafb';
+                }}
+                onMouseLeave={(e) => {
+                  if (currentPage !== page) e.currentTarget.style.backgroundColor = 'white';
+                }}
               >
                 {page}
               </button>
@@ -204,11 +266,24 @@ function DataTable<T extends Record<string, any>>({
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className={`px-3 py-2 border border-gray-300 rounded text-sm ${
-                currentPage === totalPages 
-                  ? 'bg-gray-50 text-gray-400 cursor-not-allowed' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
-              }`}
+              style={{
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                paddingTop: '8px',
+                paddingBottom: '8px',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                fontSize: '14px',
+                backgroundColor: currentPage === totalPages ? '#f9fafb' : 'white',
+                color: currentPage === totalPages ? '#9ca3af' : '#374151',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                if (currentPage !== totalPages) e.currentTarget.style.backgroundColor = '#f9fafb';
+              }}
+              onMouseLeave={(e) => {
+                if (currentPage !== totalPages) e.currentTarget.style.backgroundColor = 'white';
+              }}
             >
               Next
             </button>

@@ -7,7 +7,7 @@ interface TitleHeaderProps {
 
 const TitleHeader: React.FC<TitleHeaderProps> = ({ title, subtitle }) => {
   return (
-    <div className="title-header" style={{ marginBottom: '24px' }}>
+    <div style={{ marginBottom: '24px' }}>
       <h1 style={{ 
         fontSize: '22px', 
         fontWeight: '600', 

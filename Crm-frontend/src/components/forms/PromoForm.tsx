@@ -1,92 +1,104 @@
 // src/components/forms/PromoForm.tsx
 import React from 'react';
-import { PromoInput } from '../../services/promoService'; // Sesuaikan path
+import { PromoInput } from '../../services/promoService';
+import { FormInput, FormSelect, FormTextarea } from '../ui';
 
 interface PromoFormProps {
   formData: Partial<PromoInput>;
   onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
-  // Anda bisa tambahkan props lain jika perlu, misal isSubmitting
 }
 
 const PromoForm: React.FC<PromoFormProps> = ({ formData, onFormChange }) => {
   return (
     <>
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Name*</label>
-        <input
-          type="text"
-          name="name"
-          value={formData.name || ''}
-          onChange={onFormChange}
-          required
-          style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
-        />
-      </div>
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Description</label>
-        <textarea
-          name="description"
-          value={formData.description || ''}
-          onChange={onFormChange}
-          style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', minHeight: '80px' }}
-        />
-      </div>
+      <FormInput
+        label="Name"
+        name="name"
+        type="text"
+        value={formData.name || ''}
+        onChange={onFormChange}
+        required
+        placeholder="Enter promo name"
+      />
+      
+      <FormTextarea
+        label="Description"
+        name="description"
+        value={formData.description || ''}
+        onChange={onFormChange}
+        placeholder="Enter promo description"
+        rows={3}
+      />
+      
       <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Type*</label>
-          <select
+          <FormSelect
+            label="Type"
             name="type"
             value={formData.type || 'percentage'}
             onChange={onFormChange}
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', height: '44px' }}
+            required
           >
             <option value="percentage">Percentage (%)</option>
             <option value="fixed_amount">Fixed Amount (IDR)</option>
-          </select>
+          </FormSelect>
         </div>
+        
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Value*</label>
-          <input
-            type="number"
+          <FormInput
+            label="Value"
             name="value"
-            value={formData.value || 0}
+            type="number"
+            value={formData.value?.toString() || '0'}
             onChange={onFormChange}
-            min="0"
             required
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+            min="0"
+            placeholder="Enter value"
           />
         </div>
       </div>
+      
       <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>Start Date</label>
-          <input
-            type="date"
+          <FormInput
+            label="Start Date"
             name="startDate"
+            type="date"
             value={formData.startDate || ''}
             onChange={onFormChange}
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
           />
         </div>
+        
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>End Date</label>
-          <input
-            type="date"
+          <FormInput
+            label="End Date"
             name="endDate"
+            type="date"
             value={formData.endDate || ''}
             onChange={onFormChange}
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
           />
         </div>
       </div>
+      
       <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+        <label style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: 500,
+          color: '#374151'
+        }}>
           <input
             type="checkbox"
             name="isActive"
             checked={formData.isActive === undefined ? true : formData.isActive}
             onChange={onFormChange}
-            style={{ marginRight: '8px', height: '16px', width: '16px' }}
+            style={{ 
+              marginRight: '8px', 
+              height: '16px', 
+              width: '16px'
+            }}
           />
           Is Active
         </label>

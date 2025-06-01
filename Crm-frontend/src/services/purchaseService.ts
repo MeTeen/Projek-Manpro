@@ -77,13 +77,12 @@ class PurchaseService {
       
       if (!token) {
         throw new Error('Authentication required. Please log in again.');
-      }
-
-      // Validate and ensure the data is correctly formatted
+      }      // Validate and ensure the data is correctly formatted
       const validatedData = {
         customerId: Number(purchaseData.customerId),
         productId: Number(purchaseData.productId),
-        quantity: Number(purchaseData.quantity) || 1
+        quantity: Number(purchaseData.quantity) || 1,
+        promoId: purchaseData.promoId || null
       };
       
       // Check values
