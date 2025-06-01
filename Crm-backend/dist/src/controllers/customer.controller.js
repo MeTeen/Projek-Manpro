@@ -237,15 +237,14 @@ exports.deleteCustomer = deleteCustomer;
  */
 const getCustomerWithPurchases = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { id } = req.params;
-        // Find customer with eager loading of products
+        const { id } = req.params; // Find customer with eager loading of products
         const customer = yield models_1.Customer.findByPk(id, {
             include: [{
                     model: models_1.Product,
                     through: {
-                        attributes: ['quantity', 'purchaseDate']
+                        attributes: ['quantity', 'purchaseDate', 'price', 'promoId', 'discountAmount']
                     },
-                    as: 'products'
+                    as: 'Products' // Use capital P to match the association alias
                 }]
         });
         if (!customer) {
@@ -272,7 +271,7 @@ const getCustomerWithPurchases = (req, res) => __awaiter(void 0, void 0, void 0,
             purchaseCount: customer.purchaseCount,
             createdAt: customer.createdAt,
             updatedAt: customer.updatedAt,
-            purchases: customerWithProducts.products || []
+            purchases: customerWithProducts.Products || []
         };
         res.status(200).json({
             success: true,

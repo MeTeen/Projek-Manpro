@@ -17,7 +17,15 @@ export interface Promo { // Sesuaikan dengan atribut di backend
   startDate?: string | null; // ISO String date
   endDate?: string | null;   // ISO String date
   isActive: boolean;
-  eligibleCustomers?: { id: number, firstName: string, lastName: string }[]; // Jika di-include
+  eligibleCustomers?: { 
+    id: number; 
+    firstName: string; 
+    lastName: string;
+    promoAssignment?: {
+      isUsed: boolean;
+      usedAt: string | null;
+    };
+  }[]; // Jika di-include
   createdBy?: number;
   created_at?: string;
   updated_at?: string;

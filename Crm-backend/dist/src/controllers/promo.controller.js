@@ -45,7 +45,11 @@ const getAllPromos = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             include: includeCustomers ? [{
                     model: models_1.Customer,
                     as: 'eligibleCustomers',
-                    attributes: ['id', 'firstName', 'lastName']
+                    attributes: ['id', 'firstName', 'lastName'],
+                    through: {
+                        attributes: ['isUsed', 'usedAt'], // Include usage status
+                        as: 'promoAssignment'
+                    }
                 }] : [],
             order: [['createdAt', 'DESC']] // Add ordering for consistent results
         });

@@ -83,8 +83,10 @@ const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function*
     const t = yield models_1.sequelize.transaction();
     let transactionCompleted = false;
     try {
-        const { customerId, productId, quantity = 1, promoId } = req.body; // Ambil promoId dari body
+        const { customerId, productId, quantity = 1, promoId, promoCode } = req.body; // Ambil promoId atau promoCode dari body
         console.log('Purchase request received:', req.body);
+        console.log('PromoId received:', promoId, 'Type:', typeof promoId);
+        console.log('PromoCode received:', promoCode, 'Type:', typeof promoCode);
         const customerIdNum = parseInt(customerId, 10);
         const productIdNum = parseInt(productId, 10);
         const quantityNum = parseInt(quantity, 10);
@@ -122,8 +124,26 @@ const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         const productPrice = parseFloat(((_a = product.price) === null || _a === void 0 ? void 0 : _a.toString()) || '0');
         const basePurchaseTotal = productPrice * quantityNum;
+        // Resolve promo: if promoCode is provided, find the corresponding promoId
+        let resolvedPromoId = promoId ? parseInt(promoId, 10) : null;
+        if (promoCode && !resolvedPromoId) {
+            console.log('Looking up promo by code:', promoCode);
+            const promoByCode = yield models_1.Promo.findOne({
+                where: { name: promoCode }, // Using name field as the code
+                transaction: t
+            });
+            if (promoByCode) {
+                resolvedPromoId = promoByCode.id;
+                console.log('Found promo by code:', promoByCode.id, promoByCode.name);
+            }
+            else {
+                yield t.rollback();
+                transactionCompleted = true;
+                return res.status(400).json({ success: false, message: `Promo code '${promoCode}' not found` });
+            }
+        }
         // Validasi dan kalkulasi promo
-        const promoDetails = yield validateAndCalculatePromo(promoId ? parseInt(promoId, 10) : null, customerIdNum, basePurchaseTotal);
+        const promoDetails = yield validateAndCalculatePromo(resolvedPromoId, customerIdNum, basePurchaseTotal);
         if (!promoDetails.isValid) {
             yield t.rollback();
             transactionCompleted = true;

@@ -30,12 +30,12 @@ const PromoPage: React.FC = () => {
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
     const [formData, setFormData] = useState<Partial<PromoInput>>({});
-    const [assignFormData, setAssignFormData] = useState<{ customerId: number | null }>({ customerId: null });
-
-    const authContext = useContext(AuthContext);
+    const [assignFormData, setAssignFormData] = useState<{ customerId: number | null }>({ customerId: null });    const authContext = useContext(AuthContext);
     const currentUserRole = authContext?.user?.role; // 'admin' atau 'super_admin'
 
-    const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);    // Buat customerOptions menggunakan useMemo agar tidak dihitung ulang setiap render kecuali customers berubah
+    const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
+
+    // Buat customerOptions menggunakan useMemo agar tidak dihitung ulang setiap render kecuali customers berubah
     const customerOptions = useMemo(() => customers
         // Filter out any invalid customers
         .filter(customer => typeof customer?.id === 'number')
@@ -52,6 +52,31 @@ const PromoPage: React.FC = () => {
                 customerData: customer
             };
         }), [customers]);
+
+    // Helper function to check if a promo has been used by any customer
+    const isPromoUsed = (promo: Promo): boolean => {
+        if (!promo.eligibleCustomers) return false;
+        return promo.eligibleCustomers.some(customer => 
+            customer.promoAssignment?.isUsed === true
+        );
+    };
+
+    // Helper function to get usage status text
+    const getPromoUsageStatus = (promo: Promo): string => {
+        if (!promo.eligibleCustomers || promo.eligibleCustomers.length === 0) {
+            return 'Not assigned';
+        }
+        
+        const usedCustomers = promo.eligibleCustomers.filter(customer => 
+            customer.promoAssignment?.isUsed === true
+        );
+        
+        if (usedCustomers.length === 0) {
+            return 'Assigned but unused';
+        }
+        
+        return `Used by ${usedCustomers.length} customer(s)`;
+    };
     // Komponen kustom untuk menampilkan setiap opsi di dropdown
     const formatOptionLabel = ({ customerData }: { value: number, label: string, customerData: Customer }) => {
         // Use initials as default fallback instead of placeholder.com
@@ -126,7 +151,7 @@ const PromoPage: React.FC = () => {
                 </div>
             </div>
         );
-    };const fetchData = async () => {
+    };    const fetchData = async () => {
         try {
             setLoading(true);
             setError(null);
@@ -134,7 +159,7 @@ const PromoPage: React.FC = () => {
             const isAdminUser = currentUserRole === 'admin' || currentUserRole === 'super_admin';
             
             const promises: Promise<any>[] = [
-                promoService.getAllPromos(false), // Don't include customers for basic list
+                promoService.getAllPromos(true), // Include customers to get usage status
             ];
             
             // Only fetch customers if user has admin privileges
@@ -167,16 +192,16 @@ const PromoPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const fetchPromos = async () => {
+    };const fetchPromos = async () => {
         try {
             setLoading(true);
-            const data = await promoService.getAllPromos(false);
+            // Fetch promos with customer usage information
+            const data = await promoService.getAllPromos(true); // Include customers to get usage status
             setPromos(data);
             setError(null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load promos');        } finally {
+            setError(err instanceof Error ? err.message : 'Failed to load promos');
+        } finally {
             setLoading(false);
         }
     };
@@ -308,8 +333,7 @@ const PromoPage: React.FC = () => {
         }
     };
     // Render UI (mirip ProductPage.tsx)
-    return (
-        <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb' }}>
+    return (        <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb' }}>
             <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
             <div style={{ flex: 1, overflow: 'auto', padding: '20px 30px' }}>
                 <Header />
@@ -328,8 +352,7 @@ const PromoPage: React.FC = () => {
                 {error && <div style={{ backgroundColor: '#FEE2E2', color: '#B91C1C', padding: '12px', borderRadius: '4px', marginBottom: '20px' }}>{error}</div>}
 
                 <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-                    <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                    <div style={{ overflowX: 'auto' }}>                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                         <thead style={{ backgroundColor: '#f9fafb' }}>
                             <tr>
                                 <th style={styles.tableHeader}>Name</th>
@@ -338,38 +361,72 @@ const PromoPage: React.FC = () => {
                                 <th style={styles.tableHeader}>Active</th>
                                 <th style={styles.tableHeader}>Start Date</th>
                                 <th style={styles.tableHeader}>End Date</th>
+                                <th style={styles.tableHeader}>Usage Status</th>
                                 <th style={styles.tableHeader}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan={7} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>Loading promos...</td></tr>
+                                <tr><td colSpan={8} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>Loading promos...</td></tr>
                             ) : promos.length === 0 ? (
-                                <tr><td colSpan={7} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>No promos found.</td></tr>
+                                <tr><td colSpan={8} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>No promos found.</td></tr>
                             ) : (
-                                promos.map(promo => (
-                                    <tr key={promo.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                        <td style={styles.tableCell}>{promo.name}</td>
-                                        <td style={styles.tableCell}>{promo.type}</td>
-                                        <td style={styles.tableCell}>{promo.type === 'percentage' ? `${promo.value}%` : `Rp ${promo.value.toLocaleString('id-ID')}`}</td>
-                                        <td style={styles.tableCell}>{promo.isActive ? 'Yes' : 'No'}</td>
-                                        <td style={styles.tableCell}>{promo.startDate ? new Date(promo.startDate).toLocaleDateString() : 'N/A'}</td>
-                                        <td style={styles.tableCell}>{promo.endDate ? new Date(promo.endDate).toLocaleDateString() : 'N/A'}</td>
-                                        <td style={{ ...styles.tableCell, textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                                {(currentUserRole === 'admin' || currentUserRole === 'super_admin') && (
-                                                    <button onClick={() => handleAssignClick(promo)} title="Assign to Customer" style={{ background: 'none', border: 'none', color: '#10B981', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdPersonAdd size={18} /></button>
-                                                )}
-                                                {currentUserRole === 'super_admin' && (
-                                                    <>
-                                                        <button onClick={() => handleEditClick(promo)} title="Edit Promo" style={{ background: 'none', border: 'none', color: '#5E5CEB', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdEdit size={18} /></button>
-                                                        <button onClick={() => handleDeleteClick(promo)} title="Delete Promo" style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdDelete size={18} /></button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                promos.map(promo => {
+                                    const promoUsed = isPromoUsed(promo);
+                                    const usageStatus = getPromoUsageStatus(promo);
+                                    
+                                    return (
+                                        <tr key={promo.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                            <td style={styles.tableCell}>{promo.name}</td>
+                                            <td style={styles.tableCell}>{promo.type}</td>
+                                            <td style={styles.tableCell}>{promo.type === 'percentage' ? `${promo.value}%` : `Rp ${promo.value.toLocaleString('id-ID')}`}</td>
+                                            <td style={styles.tableCell}>{promo.isActive ? 'Yes' : 'No'}</td>
+                                            <td style={styles.tableCell}>{promo.startDate ? new Date(promo.startDate).toLocaleDateString() : 'N/A'}</td>
+                                            <td style={styles.tableCell}>{promo.endDate ? new Date(promo.endDate).toLocaleDateString() : 'N/A'}</td>
+                                            <td style={styles.tableCell}>
+                                                <span style={{
+                                                    padding: '4px 8px',
+                                                    borderRadius: '4px',
+                                                    fontSize: '12px',
+                                                    fontWeight: '500',
+                                                    backgroundColor: promoUsed ? '#FEE2E2' : usageStatus === 'Not assigned' ? '#F3F4F6' : '#DBEAFE',
+                                                    color: promoUsed ? '#B91C1C' : usageStatus === 'Not assigned' ? '#6B7280' : '#1E40AF'
+                                                }}>
+                                                    {usageStatus}
+                                                </span>
+                                            </td>
+                                            <td style={{ ...styles.tableCell, textAlign: 'right' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                                    {(currentUserRole === 'admin' || currentUserRole === 'super_admin') && (
+                                                        <button 
+                                                            onClick={() => handleAssignClick(promo)} 
+                                                            title={promoUsed ? "Promo has been used and cannot be reassigned" : "Assign to Customer"}
+                                                            disabled={promoUsed}
+                                                            style={{ 
+                                                                background: 'none', 
+                                                                border: 'none', 
+                                                                color: promoUsed ? '#9CA3AF' : '#10B981', 
+                                                                cursor: promoUsed ? 'not-allowed' : 'pointer', 
+                                                                padding: '4px 6px', 
+                                                                borderRadius: '4px', 
+                                                                transition: 'background 0.2s',
+                                                                opacity: promoUsed ? 0.5 : 1
+                                                            }}
+                                                        >
+                                                            <MdPersonAdd size={18} />
+                                                        </button>
+                                                    )}
+                                                    {currentUserRole === 'super_admin' && (
+                                                        <>
+                                                            <button onClick={() => handleEditClick(promo)} title="Edit Promo" style={{ background: 'none', border: 'none', color: '#5E5CEB', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdEdit size={18} /></button>
+                                                            <button onClick={() => handleDeleteClick(promo)} title="Delete Promo" style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdDelete size={18} /></button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>

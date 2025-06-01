@@ -38,7 +38,11 @@ export const getAllPromos = async (req: Request, res: Response) => {
       include: includeCustomers ? [{ 
         model: Customer, 
         as: 'eligibleCustomers', 
-        attributes: ['id', 'firstName', 'lastName'] 
+        attributes: ['id', 'firstName', 'lastName'],
+        through: {
+          attributes: ['isUsed', 'usedAt'], // Include usage status
+          as: 'promoAssignment'
+        }
       }] : [],
       order: [['createdAt', 'DESC']] // Add ordering for consistent results
     });
