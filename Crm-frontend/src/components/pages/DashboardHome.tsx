@@ -30,6 +30,7 @@ import activityService, { Activity } from '../../services/activityService';
 import ReusableLineChart from '../charts/ReusableLineChart'; // Sesuaikan path jika perlu
 import CustomerSection from "../dashboard/CustomerSection";
 import TaskSection from "../dashboard/TaskSection";
+import ErrorBoundary from "../common/ErrorBoundary";
 
 // Helper untuk format harga
 const formatPrice = (price: number | undefined): string => {
@@ -292,14 +293,14 @@ const DashboardHome: React.FC = () => {
                   <p>Data tren penjualan tidak tersedia.</p>
                 </div>
               )}
-            </div>
-
-            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+            </div>            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E5E7EB', paddingBottom: '12px', marginBottom: '16px' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1F2937', margin: 0 }}>Upcoming Tasks</h2>
                 <Link to="/tasksection" style={{ color: '#4F46E5', textDecoration: 'none', fontSize: '14px', fontWeight: 500 }}>View All</Link>
               </div>
-              <TaskSection />
+              <ErrorBoundary>
+                <TaskSection />
+              </ErrorBoundary>
             </div>
           </div>
 

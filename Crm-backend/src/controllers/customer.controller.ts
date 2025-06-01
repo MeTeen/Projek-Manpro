@@ -2,19 +2,44 @@ import { Request, Response } from 'express';
 import { Customer, Product, CustomerProduct } from '../models';
 import { CustomerInput } from '../models/customer.model';
 import { getAvatarUrl } from '../middlewares/upload.middleware';
+import { Op } from 'sequelize';
 
 /**
- * Get all customers
+ * Get all customers with pagination and filtering
  * @route GET /api/customers
  */
 export const getAllCustomers = async (req: Request, res: Response) => {
   try {
-    const customers = await Customer.findAll();
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
+    const search = req.query.search as string;
+
+    // Build where clause for search
+    const whereClause: any = {};
+    if (search) {
+      whereClause[Op.or] = [
+        { firstName: { [Op.iLike]: `%${search}%` } },
+        { lastName: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } }
+      ];
+    }    const { count, rows: customers } = await Customer.findAndCountAll({
+      where: whereClause,
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset,
+      attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'city', 'state', 'totalSpent', 'purchaseCount', 'avatarUrl', 'createdAt']
+    });
     
     res.status(200).json({
       success: true,
-      count: customers.length,
       data: customers,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
+      }
     });
   } catch (error) {
     res.status(500).json({

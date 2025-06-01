@@ -34,8 +34,7 @@ const getAuthToken = (): string | null => {
   return token;
 };
 
-const taskService = {
-  async getTasks(): Promise<Task[]> {
+const taskService = {  async getTasks(): Promise<Task[]> {
     try {
       // Ensure auth is initialized
       authService.initializeAuth();
@@ -47,13 +46,19 @@ const taskService = {
         throw new Error('Authentication required. Please log in again.');
       }
       
-      const response = await axios.get(`${API_URL}/tasks`, {
+      const response = await axios.get(`${API_URL}/tasks?page=1&limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
-      return response.data;
+      // Handle the new paginated response format
+      if (response.data && response.data.tasks) {
+        return response.data.tasks;
+      }
+      
+      // Fallback for old format (if backend still returns array directly)
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Error fetching tasks:', error);
       throw error;

@@ -19,16 +19,23 @@ const TaskSection: React.FC = () => {
   useEffect(() => {
     fetchTasks();
   }, []);
-
   const fetchTasks = async () => {
     try {
       setIsLoading(true);
-      const fetchedTasks = await taskService.getTasks();
-      setTasks(fetchedTasks);
       setError(null);
+      const fetchedTasks = await taskService.getTasks();
+      
+      // Ensure we have an array
+      if (Array.isArray(fetchedTasks)) {
+        setTasks(fetchedTasks);
+      } else {
+        console.warn('Tasks response is not an array:', fetchedTasks);
+        setTasks([]);
+      }
     } catch (err) {
-      setError('Failed to fetch tasks');
-      console.error(err);
+      console.error('Error fetching tasks:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch tasks');
+      setTasks([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }
@@ -109,9 +116,8 @@ const TaskSection: React.FC = () => {
                   marginBottom: '5px'
                 }}>
                   {task.content}
-                </div>
-                <div style={{ fontSize: '14px', color: '#6c757d' }}>
-                  Due: {format(new Date(task.date), 'MMM dd, yyyy')}
+                </div>                <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                  Due: {task.date ? format(new Date(task.date), 'MMM dd, yyyy') : 'No date set'}
                 </div>
               </div>
               <div style={{ 

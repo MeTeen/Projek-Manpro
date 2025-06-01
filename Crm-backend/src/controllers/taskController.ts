@@ -1,13 +1,29 @@
 import { Request, Response } from 'express';
 import { Task } from '../models/index';
 
-// Get all tasks
+// Get all tasks with pagination
 export const getTasks = async (req: Request, res: Response) => {
   try {
-    const tasks = await Task.findAll({
-      order: [['date', 'ASC']]
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
+
+    const { count, rows: tasks } = await Task.findAndCountAll({
+      order: [['date', 'ASC']],
+      limit,
+      offset,
+      attributes: ['id', 'date', 'content', 'isCompleted', 'createdAt', 'updatedAt']
     });
-    res.json(tasks);
+
+    res.json({
+      tasks,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching tasks', error });
   }

@@ -8,68 +8,80 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
     try {
         const todayStart = startOfDay(new Date());
         const todayEnd = endOfDay(new Date());
-        const sevenDaysAgoStart = startOfDay(subDays(new Date(), 6)); // 7 hari termasuk hari ini        // 1. Total Pendapatan (Net setelah diskon)
-        const revenueResult = await CustomerProduct.findOne({
-            attributes: [
-                [fn('SUM', sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'totalRevenue']
-            ],
-            raw: true,
-        });
-        const totalRevenue = parseFloat((revenueResult as any)?.totalRevenue || '0');
+        const sevenDaysAgoStart = startOfDay(subDays(new Date(), 6)); // 7 hari termasuk hari ini
 
-        // 2. Jumlah Pelanggan Total
-        const customerCount = await Customer.count();
-
-        // 3. Jumlah Transaksi Total
-        const transactionCount = await CustomerProduct.count();
-
-        // 4. Tugas Tertunda Hari Ini
-        const pendingTasksToday = await Task.count({
-            where: {
-                isCompleted: false,
-                date: { // Asumsi 'date' di Task adalah tanggal tugas, bukan timestamp created_at
-                    [Op.between]: [todayStart, todayEnd]
-                }
-            }
-        });
-
-        // 5. Jumlah Promo Aktif
-        const activePromosCount = await Promo.count({
-            where: {
-                isActive: true,
-                [Op.or]: [
-                    { endDate: null },
-                    { endDate: { [Op.gte]: todayStart } } // Masih berlaku hari ini atau di masa depan
+        // OPTIMISASI: Jalankan semua query secara parallel menggunakan Promise.all
+        const [
+            revenueResult,
+            customerCount,
+            transactionCount,
+            pendingTasksToday,
+            activePromosCount,
+            newCustomersToday,
+            salesTrendLast7Days
+        ] = await Promise.all([
+            // 1. Total Pendapatan (Net setelah diskon)
+            CustomerProduct.findOne({
+                attributes: [
+                    [fn('SUM', sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'totalRevenue']
                 ],
-                // Opsional: tambahkan startDate juga jika perlu
-                // [Op.and]: [
-                //     { startDate: { [Op.lte]: todayEnd } }, // Sudah dimulai
-                // ]
-            }
-        });
+                raw: true,
+            }),
+            
+            // 2. Jumlah Pelanggan Total
+            Customer.count(),
+            
+            // 3. Jumlah Transaksi Total
+            CustomerProduct.count(),
+            
+            // 4. Tugas Tertunda Hari Ini
+            Task.count({
+                where: {
+                    isCompleted: false,
+                    date: {
+                        [Op.between]: [todayStart, todayEnd]
+                    }
+                }
+            }),
+            
+            // 5. Jumlah Promo Aktif
+            Promo.count({
+                where: {
+                    isActive: true,
+                    [Op.or]: [
+                        { endDate: null },
+                        { endDate: { [Op.gte]: todayStart } }
+                    ]
+                }
+            }),
+            
+            // 6. Pelanggan Baru Hari Ini
+            Customer.count({
+                where: {
+                    createdAt: {
+                        [Op.between]: [todayStart, todayEnd]
+                    }
+                }
+            }),
+            
+            // 7. Tren Penjualan 7 Hari Terakhir (Pendapatan Harian)
+            CustomerProduct.findAll({
+                attributes: [
+                    [fn('TO_CHAR', col('purchase_date'), 'YYYY-MM-DD'), 'name'],
+                    [fn('SUM', sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'pendapatan']
+                ],
+                where: {
+                    purchaseDate: {
+                        [Op.between]: [sevenDaysAgoStart, todayEnd]
+                    }
+                },
+                group: ['name'],
+                order: [[col('name'), 'ASC']],
+                raw: true,
+            })
+        ]);
 
-        // 6. Pelanggan Baru Hari Ini
-        const newCustomersToday = await Customer.count({
-            where: {
-                createdAt: { // Berdasarkan kapan customer dibuat
-                    [Op.between]: [todayStart, todayEnd]
-                }
-            }
-        });        // 7. Tren Penjualan 7 Hari Terakhir (Pendapatan Harian)
-        const salesTrendLast7Days = await CustomerProduct.findAll({
-            attributes: [
-                [fn('TO_CHAR', col('purchase_date'), 'YYYY-MM-DD'), 'name'], // Format sebagai YYYY-MM-DD untuk PostgreSQL
-                [fn('SUM', sequelize.literal('("price" * "quantity") - COALESCE("discount_amount", 0)')), 'pendapatan']
-            ],
-            where: {
-                purchaseDate: {
-                    [Op.between]: [sevenDaysAgoStart, todayEnd]
-                }
-            },
-            group: ['name'],
-            order: [[col('name'), 'ASC']],
-            raw: true,
-        });
+        const totalRevenue = parseFloat((revenueResult as any)?.totalRevenue || '0');
 
         const formattedSalesTrend = salesTrendLast7Days.map(item => ({
             name: (item as any).name,
