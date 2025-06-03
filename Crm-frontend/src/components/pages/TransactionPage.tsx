@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Sidebar from '../dashboard/Sidebar';
 import Header from '../dashboard/Header';
@@ -10,6 +10,8 @@ import productService, { Product } from '../../services/productService';
 import purchaseService, { PurchaseInput, Purchase } from '../../services/purchaseService';
 import promoService, { Promo } from '../../services/promoService';
 import { MdAdd, MdShoppingCart, MdInfoOutline } from 'react-icons/md';
+import Select from 'react-select';
+import { BACKEND_URL } from '../../utils/formatters';
 
 const TransactionPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -36,10 +38,98 @@ const TransactionPage: React.FC = () => {
   const [selectedPromoObject, setSelectedPromoObject] = useState<Promo | null>(null);
   // usedPromosInSession bisa dipertimbangkan kembali jika validasi penggunaan promo sepenuhnya di backend
   // Untuk UX, mungkin masih berguna agar admin tidak memilih promo yang sama berulang kali di form yang sama sebelum submit.
-
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
   const handleAddNewClick = () => setIsDropdownOpen(true);
   const handleCustomerCreated = useCallback(() => { fetchData(); }, []);
+
+  // Create customerOptions for react-select with useMemo for performance
+  const customerOptions = useMemo(() => customers
+    .filter(customer => typeof customer?.id === 'number')
+    .map(customer => {
+      const firstName = customer.firstName || '';
+      const lastName = customer.lastName || '';
+      const label = `${firstName} ${lastName}`.trim() || 'Customer';
+      
+      return {
+        value: customer.id as number,
+        label: label,
+        customerData: customer
+      };
+    }), [customers]);
+
+  // Format option label for customer select dropdown with avatar
+  const formatOptionLabel = ({ customerData }: { value: number, label: string, customerData: Customer }) => {
+    const getInitials = () => {
+      const first = customerData.firstName ? customerData.firstName.charAt(0) : '';
+      const last = customerData.lastName ? customerData.lastName.charAt(0) : '';
+      return (first + last).toUpperCase() || 'NA';
+    };
+    
+    const createFallbackAvatar = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 40;
+      canvas.height = 40;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#E5E7EB';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillStyle = '#6B7280';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(getInitials(), canvas.width/2, canvas.height/2);
+        return canvas.toDataURL();
+      }
+      return '';
+    };
+    
+    let imageUrl = createFallbackAvatar();
+
+    if (customerData.avatarUrl) {
+      if (customerData.avatarUrl.startsWith('http://') || customerData.avatarUrl.startsWith('https://')) {
+        imageUrl = customerData.avatarUrl;
+      } else if (customerData.avatarUrl.startsWith('/')) {
+        imageUrl = `${BACKEND_URL}${customerData.avatarUrl}`;
+      } else {
+        imageUrl = `${BACKEND_URL}/uploads/avatars/${customerData.avatarUrl}`;
+      }
+    }
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', padding: '5px 0' }}>
+        <img
+          src={imageUrl}
+          alt={`${customerData.firstName} ${customerData.lastName}`}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            marginRight: '12px',
+            objectFit: 'cover',
+            border: '1px solid #eee'
+          }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).onerror = null;
+            (e.target as HTMLImageElement).src = createFallbackAvatar();
+          }}
+        />
+        <div style={{ lineHeight: '1.4' }}>
+          <div style={{ fontWeight: 'bold', color: '#333' }}>
+            {customerData.firstName} {customerData.lastName}
+          </div>
+          <div style={{ fontSize: '0.85em', color: 'grey' }}>
+            <span>Email: {customerData.email || 'N/A'}</span>
+            {customerData.phone && (
+              <>
+                <span style={{ margin: '0 5px' }}>|</span>
+                <span>Phone: {customerData.phone}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const fetchData = async () => { /* ... Sama seperti sebelumnya, pastikan mengambil Purchase yang sudah ada promoId & discountAmount ... */
     try {
@@ -336,20 +426,80 @@ const TransactionPage: React.FC = () => {
         submitText="💳 Create Transaction"
         loading={formSubmitLoading}
         disabled={!transactionData.productId}        icon={<MdShoppingCart style={{ marginRight: '8px', color: '#4f46e5' }} size={22} />}
-      >
-        <FormSelect
-          name="customerId"
-          value={transactionData.customerId}
-          onChange={handleInputChange}
-          required          label="Customer:"
-        >
-          <option value={0}>-- Select Customer --</option>
-          {customers.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.firstName} {c.lastName}
-            </option>
-          ))}
-        </FormSelect>
+      >        <div style={{ marginBottom: '16px' }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: '6px', 
+            fontWeight: 500,
+            fontSize: '14px',
+            color: '#374151'
+          }}>
+            Customer: <span style={{ color: '#EF4444', marginLeft: '4px' }}>*</span>
+          </label>
+          <Select
+            options={customerOptions}
+            formatOptionLabel={formatOptionLabel}
+            value={customerOptions.find(option => option.value === transactionData.customerId) || null}
+            onChange={(selectedOption) => {
+              const customerId = selectedOption ? selectedOption.value : 0;
+              setTransactionData(prev => ({ ...prev, customerId }));
+              
+              // Reset product selection when customer changes
+              if (customerId !== transactionData.customerId) {
+                setTransactionData(prev => ({ 
+                  ...prev, 
+                  customerId,
+                  productId: 0,
+                  promoId: null 
+                }));
+                setSelectedProduct(null);
+                setSelectedPromoObject(null);
+                setAvailablePromos([]);
+              }
+            }}
+            isLoading={loading}
+            placeholder="Search or select a customer..."
+            isClearable
+            menuPosition="fixed"
+            menuShouldBlockScroll={true}
+            menuPortalTarget={document.body}
+            menuPlacement="auto"
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                minHeight: '44px',
+                borderRadius: '6px',
+                borderColor: '#d1d5db',
+                '&:hover': {
+                  borderColor: '#9ca3af',
+                },
+                '&:focus-within': {
+                  borderColor: '#5E5CEB',
+                  boxShadow: '0 0 0 1px #5E5CEB',
+                },
+              }),
+              option: (provided, state) => ({
+                ...provided,
+                padding: '8px 12px',
+                backgroundColor: state.isFocused ? '#EEF2FF' : 'white',
+                color: '#111827',
+              }),
+              menu: (provided) => ({
+                ...provided,
+                zIndex: 9999,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+              }),
+              menuList: (provided) => ({
+                ...provided,
+                maxHeight: '250px',
+              }),
+              menuPortal: (base) => ({
+                ...base,
+                zIndex: 9999
+              }),
+            }}
+          />
+        </div>
 
         <FormSelect
           name="productId"
