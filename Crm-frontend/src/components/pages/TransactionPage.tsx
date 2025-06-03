@@ -333,7 +333,7 @@ const TransactionPage: React.FC = () => {
       <FormModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleAddSubmit}        title="🎯 Create New Transaction"
+        onSubmit={handleAddSubmit}        title="Create New Transaction"
         submitText="💳 Create Transaction"
         loading={formSubmitLoading}
         disabled={!transactionData.productId}        icon={<MdShoppingCart style={{ marginRight: '8px', color: '#4f46e5' }} size={22} />}
