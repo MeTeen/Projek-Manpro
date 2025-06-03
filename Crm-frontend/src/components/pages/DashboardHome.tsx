@@ -267,7 +267,6 @@ const DashboardHome: React.FC = () => {
             <StatCard title="Total Customers" value={kpis ? kpis.customerCount.toString() : "..."} icon={<MdPeopleOutline size={22} />} color="#3B82F6" isLoading={isLoading && !kpis} />
             <StatCard title="Total Transactions" value={kpis ? kpis.transactionCount.toString() : "..."} icon={<MdShoppingCart size={20} />} color="#F59E0B" isLoading={isLoading && !kpis} />
             <StatCard title="Active Promotions" value={kpis ? kpis.activePromosCount.toString() : "..."} icon={<MdCardMembership size={20} />} color="#8B5CF6" isLoading={isLoading && !kpis} />
-            <StatCard title="Pending Tasks (Today)" value={kpis ? kpis.pendingTasksToday.toString() : "..."} icon={<MdListAlt size={22} />} color="#EF4444" isLoading={isLoading && !kpis} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '24px', marginBottom: '32px' }}>
