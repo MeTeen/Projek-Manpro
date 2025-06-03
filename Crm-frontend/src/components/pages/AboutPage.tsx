@@ -18,7 +18,7 @@ export default function AboutPage() {
     const features = [
         { icon: '👥', title: 'Manajemen Pelanggan', description: 'Kelola data pelanggan dengan mudah dan efisien' },
         { icon: '📦', title: 'Manajemen Produk', description: 'Atur inventori dan katalog produk secara terpusat' },
-        { icon: '💰', title: 'Transaksi', description: 'Proses dan monitor semua transaksi penjualan' },
+        { icon: '💰', title: 'Transaction', description: 'Proses dan monitor semua transaksi penjualan' },
         { icon: '📊', title: 'Analytics', description: 'Analisis mendalam terhadap performa bisnis' },
         { icon: '🎯', title: 'Promosi', description: 'Kelola kampanye dan promosi produk' },
         { icon: '✅', title: 'Task Management', description: 'Organisasi tugas dan follow-up pelanggan' },

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
+import { toast } from 'react-toastify';
 
 import Header from '../dashboard/Header';
 import Sidebar from '../dashboard/Sidebar';
@@ -350,12 +351,11 @@ const CustomersPage: React.FC = () => {
         await customerService.updateCustomerWithFormData(String(selectedCustomer.id), formDataWithAvatar);
       } else {
         // Use regular update method if no avatar
-        await customerService.updateCustomer(String(selectedCustomer.id), formData);
-      }
+        await customerService.updateCustomer(String(selectedCustomer.id), formData);      }
       
       setIsEditModalOpen(false);
       fetchCustomers(); // Refresh data
-      alert('Customer updated successfully');
+      toast.success('Customer updated successfully');
     } catch (err) {
       console.error('Error updating customer:', err);
       setError(err instanceof Error ? err.message : 'Failed to update customer');
@@ -394,13 +394,12 @@ const CustomersPage: React.FC = () => {
       
       // Create new customer with FormData
       await customerService.createCustomerWithAxios(formData);
-      
-      setIsAddModalOpen(false);
+        setIsAddModalOpen(false);
       fetchCustomers(); // Refresh data
       
       // Show success message
       const customerName = `${newCustomerData.firstName} ${newCustomerData.lastName}`;
-      alert(`Customer "${customerName}" created successfully!`);
+      toast.success(`Customer "${customerName}" created successfully!`);
       
     } catch (err) {
       console.error('Error creating customer:', err);
@@ -415,11 +414,10 @@ const CustomersPage: React.FC = () => {
     if (!selectedCustomer?.id) return;
     
     try {
-      setLoading(true);
-      await customerService.deleteCustomer(String(selectedCustomer.id));
+      setLoading(true);      await customerService.deleteCustomer(String(selectedCustomer.id));
       setIsDeleteModalOpen(false);
       fetchCustomers(); // Refresh data
-      alert('Customer deleted successfully');
+      toast.success('Customer deleted successfully');
     } catch (err) {
       console.error('Error deleting customer:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete customer');

@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
     { path: '/dashboard', icon: <MdDashboard size={20} />, label: 'Dashboard' },
     { path: '/customers', icon: <MdPerson size={20} />, label: 'Customers' },
     { path: '/products', icon: <MdShoppingBag size={20} />, label: 'Products' },
-    { path: '/transaksi', icon: <MdPointOfSale size={20} />, label: 'Transaksi' },
+    { path: '/transactions', icon: <MdPointOfSale size={20} />, label: 'Transactions' },
     { path: '/promo', icon: <MdLocalOffer size={20} />, label: 'Promo' },
     { path: '/analytics', icon: <MdBarChart size={20} />, label: 'Analytics' },
     { path: '/tasksection', icon: <MdChecklist size={20} />, label: 'Task To Do' },

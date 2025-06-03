@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { toast } from 'react-toastify';
 import { MdPhotoCamera } from 'react-icons/md';
 
 interface AvatarUploadProps {
@@ -45,11 +46,10 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
     if (file) {
       if (file.type.startsWith('image/')) {
         onChange(file);
-        const reader = new FileReader();
-        reader.onloadend = () => onPreviewChange(reader.result as string);
+        const reader = new FileReader();        reader.onloadend = () => onPreviewChange(reader.result as string);
         reader.readAsDataURL(file);
       } else {
-        alert('Please select an image file');
+        toast.error('Please select an image file');
       }
     }
   };

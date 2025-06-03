@@ -46,7 +46,7 @@ function App() {
             }
           />
           <Route
-            path="/transaksi"
+            path="/transactions"
             element={
               <ProtectedRoute>
                 <TransactionPage />

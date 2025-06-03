@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 import Sidebar from '../dashboard/Sidebar';
 import Header from '../dashboard/Header';
 import AddNewDropdown from '../dashboard/AddNewDropdown';
@@ -158,11 +159,9 @@ const TransactionPage: React.FC = () => {
       setFormSubmitLoading(true);
       console.log('Submitting transaction data (with promoId if selected):', dataToSend);
 
-      await purchaseService.createPurchase(dataToSend);
-
-      setIsAddModalOpen(false);
+      await purchaseService.createPurchase(dataToSend);      setIsAddModalOpen(false);
       fetchData(); // Muat ulang semua data
-      alert('Transaksi berhasil dicatat!'); // Pesan lebih netral
+      toast.success('Transaksi berhasil dicatat!'); // Pesan lebih netral
     } catch (err) {
       console.error('Error creating transaction:', err);
       const errorMessage = err instanceof Error ? err.message : 'Gagal mencatat transaksi.';

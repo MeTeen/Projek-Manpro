@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 import Header from '../dashboard/Header';
 import Sidebar from '../dashboard/Sidebar';
@@ -128,10 +129,9 @@ const ProductPage: React.FC = () => {
       console.log('Updating product with ID:', selectedProduct.id, formData);
       
       await productService.updateProduct(selectedProduct.id, formData);
-      
-      setIsEditModalOpen(false);
+        setIsEditModalOpen(false);
       fetchProducts(); // Refresh data
-      alert('Product updated successfully');
+      toast.success('Product updated successfully');
     } catch (err) {
       console.error('Error updating product:', err);
       setError(err instanceof Error ? err.message : 'Failed to update product');
@@ -149,10 +149,9 @@ const ProductPage: React.FC = () => {
       console.log('Creating new product:', newProductData);
       
       await productService.createProduct(newProductData);
-      
-      setIsAddModalOpen(false);
+        setIsAddModalOpen(false);
       fetchProducts(); // Refresh data
-      alert('Product created successfully');
+      toast.success('Product created successfully');
     } catch (err) {
       console.error('Error creating product:', err);
       setError(err instanceof Error ? err.message : 'Failed to create product');
@@ -168,9 +167,8 @@ const ProductPage: React.FC = () => {
     try {
       setLoading(true);
       await productService.deleteProduct(selectedProduct.id);
-      setIsDeleteModalOpen(false);
-      fetchProducts(); // Refresh data
-      alert('Product deleted successfully');
+      setIsDeleteModalOpen(false);      fetchProducts(); // Refresh data
+      toast.success('Product deleted successfully');
     } catch (err) {
       console.error('Error deleting product:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete product');

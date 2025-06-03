@@ -1,5 +1,6 @@
 // src/pages/PromoPage.tsx (Contoh Struktur Dasar)
 import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { toast } from 'react-toastify';
 import Header from '../dashboard/Header'; // Sesuaikan path
 import Sidebar from '../dashboard/Sidebar'; // Sesuaikan path
 import { ConfirmModal, FormModal } from '../ui'; // Updated imports
@@ -285,12 +286,10 @@ const PromoPage: React.FC = () => {
         setSelectedPromo(promo);
         setAssignFormData({ customerId: null });
         setIsAssignModalOpen(true);
-    };
-
-    const handleAddEditSubmit = async (e: React.FormEvent) => {
+    };    const handleAddEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name || !formData.type || formData.value === undefined) {
-            alert("Name, type, and value are required.");
+            toast.error("Name, type, and value are required.");
             return;
         }
 
@@ -303,14 +302,13 @@ const PromoPage: React.FC = () => {
         } as PromoInput;
 
 
-        try {
-            setLoading(true);
+        try {            setLoading(true);
             if (selectedPromo?.id) { // Update
                 await promoService.updatePromo(selectedPromo.id, payload);
-                alert('Promo updated successfully');
+                toast.success('Promo updated successfully');
             } else { // Create
                 await promoService.createPromo(payload);
-                alert('Promo created successfully');
+                toast.success('Promo created successfully');
             }
             setIsAddEditModalOpen(false);
             fetchPromos();
@@ -324,11 +322,10 @@ const PromoPage: React.FC = () => {
     const handleDeleteConfirm = async () => {
         if (!selectedPromo?.id) return;
         try {
-            setLoading(true);
-            await promoService.deletePromo(selectedPromo.id);
+            setLoading(true);            await promoService.deletePromo(selectedPromo.id);
             setIsDeleteModalOpen(false);
             fetchPromos();
-            alert('Promo deleted successfully');
+            toast.success('Promo deleted successfully');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to delete promo');
         } finally {
@@ -340,19 +337,17 @@ const PromoPage: React.FC = () => {
             setError("No promo selected. Please try again.");
             return;
         }
-        
-        if (!assignFormData.customerId) {
-            alert("Please select a customer.");
+          if (!assignFormData.customerId) {
+            toast.error("Please select a customer.");
             return;
         }
         
         try {
             setLoading(true);
-            await promoService.assignPromoToCustomer({ 
-                promoId: selectedPromo.id, 
+            await promoService.assignPromoToCustomer({                promoId: selectedPromo.id, 
                 customerId: assignFormData.customerId 
             });
-            alert('Promo assigned successfully');
+            toast.success('Promo assigned successfully');
             setIsAssignModalOpen(false);
             fetchPromos(); // Refresh to see updated eligibleCustomers (if displayed)
         } catch (err) {
