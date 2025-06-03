@@ -29,7 +29,7 @@ export const getAllCustomers = async (req: Request, res: Response) => {
       order: [['createdAt', 'DESC']],
       limit,
       offset,
-      attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'city', 'state', 'totalSpent', 'purchaseCount', 'avatarUrl', 'createdAt']
+      attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode', 'totalSpent', 'purchaseCount', 'avatarUrl', 'createdAt']
     });
     
     res.status(200).json({

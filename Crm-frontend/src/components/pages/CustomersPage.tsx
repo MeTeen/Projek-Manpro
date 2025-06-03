@@ -323,7 +323,6 @@ const CustomersPage: React.FC = () => {
       setError(null);
     }
   };
-
   // Submit edit form
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -331,34 +330,50 @@ const CustomersPage: React.FC = () => {
     
     try {
       setLoading(true);
+      setError(null);
 
-      // Create FormData if there's an avatar to upload
+      console.log('🔄 Updating customer ID:', selectedCustomer.id);
+      console.log('📝 Form data to update:', formData);
+
+      // Always use FormData to ensure all fields are sent properly
+      const formDataToSend = new FormData();
+      
+      // Add all form fields to FormData, ensuring address fields are included
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          const stringValue = value.toString().trim();
+          formDataToSend.append(key, stringValue);
+          console.log(`📎 Adding field ${key}: "${stringValue}"`);
+        }
+      });
+      
+      // Add avatar file if there's one
       if (avatar) {
-        const formDataWithAvatar = new FormData();
-        
-        // Add all form fields to FormData
-        Object.entries(formData).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            formDataWithAvatar.append(key, value.toString());
-          }
-        });
-        
-        // Add avatar file
-        formDataWithAvatar.append('avatar', avatar);
-        console.log('Updating customer with avatar, ID:', selectedCustomer.id);
-        
-        // Use updateCustomerWithFormData method for updating with avatar
-        await customerService.updateCustomerWithFormData(String(selectedCustomer.id), formDataWithAvatar);
-      } else {
-        // Use regular update method if no avatar
-        await customerService.updateCustomer(String(selectedCustomer.id), formData);      }
+        formDataToSend.append('avatar', avatar);
+        console.log('📸 Adding avatar file');
+      }
+
+      console.log('🚀 Sending update request...');
+      
+      // Always use FormData method for consistency
+      await customerService.updateCustomerWithFormData(String(selectedCustomer.id), formDataToSend);
+      
+      console.log('✅ Customer updated successfully');
       
       setIsEditModalOpen(false);
-      fetchCustomers(); // Refresh data
+      
+      // Reset form states
+      setAvatar(null);
+      setAvatarPreview(null);
+      
+      // Refresh data
+      await fetchCustomers();
+      
       toast.success('Customer updated successfully');
     } catch (err) {
-      console.error('Error updating customer:', err);
+      console.error('❌ Error updating customer:', err);
       setError(err instanceof Error ? err.message : 'Failed to update customer');
+      toast.error('Failed to update customer');
     } finally {
       setLoading(false);
     }
@@ -567,9 +582,15 @@ const CustomersPage: React.FC = () => {
                         {customer.firstName} {customer.lastName}
                       </td>
                       <td style={{ padding: '16px', fontSize: '14px' }}>{customer.email}</td>
-                      <td style={{ padding: '16px', fontSize: '14px' }}>{customer.phone || 'N/A'}</td>
-                      <td style={{ padding: '16px', fontSize: '14px' }}>
-                        {customer.city ? `${customer.city}, ${customer.state}` : 'N/A'}
+                      <td style={{ padding: '16px', fontSize: '14px' }}>{customer.phone || 'N/A'}</td>                      <td style={{ padding: '16px', fontSize: '14px' }}>
+                        {customer.address || customer.city ? 
+                          [
+                            customer.address,
+                            customer.city && customer.state ? `${customer.city}, ${customer.state}` : customer.city || customer.state,
+                            customer.zipCode
+                          ].filter(Boolean).join(', ') 
+                          : 'N/A'
+                        }
                       </td>
                       <td style={{ padding: '16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
