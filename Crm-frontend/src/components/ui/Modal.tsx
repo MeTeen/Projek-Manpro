@@ -48,7 +48,6 @@ const Modal: React.FC<ModalProps> = ({
       default: return { maxWidth: '500px' };
     }
   };
-
   const modalContent = (
     <div 
       style={{
@@ -62,28 +61,33 @@ const Modal: React.FC<ModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        padding: '16px'
+        padding: '16px',
+        overflowY: 'auto'
       }}
       onClick={onClose}
-    >
-      <div 
+    >      <div 
         style={{
           backgroundColor: 'white',
           borderRadius: '8px',
           width: '100%',
           ...getSizeClasses(),
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          position: 'relative'
+          position: 'relative',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          margin: 'auto',
+          overflow: 'hidden'
         }}
         onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
+      >{/* Header */}
         <div style={{
           padding: '20px 24px',
           borderBottom: '1px solid #e5e7eb',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          flexShrink: 0
         }}>
           <h2 style={{
             fontSize: '18px',
@@ -120,9 +124,15 @@ const Modal: React.FC<ModalProps> = ({
             </button>
           )}
         </div>
-        
-        {/* Body */}
-        <div style={{ padding: '24px' }}>
+          {/* Body */}
+        <div style={{ 
+          padding: '24px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          flex: 1,
+          minHeight: 0,
+          wordWrap: 'break-word'
+        }}>
           {children}
         </div>
       </div>

@@ -40,23 +40,35 @@ const FormModal: React.FC<FormModalProps> = ({
       <span>{title}</span>
     </div>
   ) : title;
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={titleWithIcon}
       size={size}
-    >
-      <form id="modal-form" onSubmit={handleSubmit} style={{ padding: 0 }}>
-        {children}
+    >      <form id="modal-form" onSubmit={handleSubmit} style={{ 
+        padding: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden'
+      }}>
+        <div style={{ 
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          paddingBottom: '16px'
+        }}>
+          {children}
+        </div>
         <div style={{ 
           display: 'flex', 
           justifyContent: 'flex-end', 
           gap: '12px', 
-          paddingTop: '24px',
-          marginTop: '24px',
-          borderTop: '1px solid #e5e7eb'
+          paddingTop: '16px',
+          borderTop: '1px solid #e5e7eb',
+          flexShrink: 0,
+          backgroundColor: 'white'
         }}>
           <Button
             variant="secondary"

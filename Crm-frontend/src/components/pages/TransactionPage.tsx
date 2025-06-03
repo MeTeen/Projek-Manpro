@@ -213,21 +213,23 @@ const TransactionPage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0' }}>            <div style={{ padding: '0 0px 0 5px' }}>
               <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Transaction History</h1>
               <p style={{ color: '#6b7280', marginTop: '8px' }}>View and manage customer transactions with promo tracking</p>
-            </div>
-            <button onClick={handleAddTransactionClick} style={{ backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            </div>            <button onClick={handleAddTransactionClick} style={{ backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
               <MdAdd size={20} /> <span style={{ marginLeft: '5px' }}>Tambah Transaksi</span>
             </button>
           </div>
-          {error && !isAddModalOpen && <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>{error}</div>}
-
-          <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+          {error && !isAddModalOpen && <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>{error}</div>}          <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                <thead style={{ backgroundColor: '#f9fafb' }}>
-                  <tr>
-                    {['Transaction ID', 'Customer', 'Product', 'Qty', 'Unit Price', 'Discount', 'Total Paid', 'Date', 'Promo Used'].map((header) => (
-                      <th key={header} style={{ padding: '12px 16px', textAlign: header === 'Qty' || header.includes('Harga') || header === 'Diskon' || header === 'Total Bayar' ? 'right' : 'left', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>                <thead style={{ backgroundColor: '#f9fafb' }}>
+                  <tr>                    {['Transaction ID', 'Customer', 'Product', 'Qty', 'Unit Price', 'Discount', 'Total Paid', 'Date', 'Promo Used'].map((header) => (
+                      <th key={header} style={{ 
+                        padding: '12px 16px', 
+                        textAlign: header === 'Qty' || header.includes('Price') || header === 'Discount' || header.includes('Total') ? 'right' : 'left', 
+                        borderBottom: '1px solid #e5e7eb', 
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        minWidth: header === 'Discount' ? '120px' : 'auto'
+                      }}>
                         {header}
                       </th>
                     ))}
@@ -264,12 +266,14 @@ const TransactionPage: React.FC = () => {
                             textAlign: 'right',
                             color: (purchase.discountAmount || 0) > 0 ? '#dc2626' : '#6b7280',
                             fontWeight: (purchase.discountAmount || 0) > 0 ? '600' : '400',
+                            whiteSpace: 'nowrap',
+                            minWidth: '120px'
                           }}>
                             {(purchase.discountAmount || 0) > 0 
                               ? `- ${formatPrice(purchase.discountAmount || 0)}` 
                               : '-'
                             }
-                          </td>                          <td style={{ 
+                          </td><td style={{ 
                             padding: '12px 16px', 
                             textAlign: 'right', 
                             color: '#059669',
@@ -329,8 +333,8 @@ const TransactionPage: React.FC = () => {
       <FormModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleAddSubmit}        title="Create New Transaction"
-        submitText="Create Transaction"
+        onSubmit={handleAddSubmit}        title="🎯 Create New Transaction"
+        submitText="💳 Create Transaction"
         loading={formSubmitLoading}
         disabled={!transactionData.productId}        icon={<MdShoppingCart style={{ marginRight: '8px', color: '#4f46e5' }} size={22} />}
       >
@@ -409,9 +413,7 @@ const TransactionPage: React.FC = () => {
                 ))}
               </FormSelect>            </div>
           </div>
-        )}
-
-        {/* No Promo Available Message */}
+        )}        {/* No Promo Available Message */}
         {transactionData.customerId > 0 && transactionData.productId > 0 && availablePromos.length === 0 && (
           <div style={{ 
             marginBottom: '16px',
@@ -425,6 +427,50 @@ const TransactionPage: React.FC = () => {
             color: '#92400e'
           }}>
             ℹ️ No promos available for this customer
+          </div>
+        )}
+
+        {/* Customer Selection Info */}
+        {transactionData.customerId > 0 && (
+          <div style={{ 
+            marginBottom: '16px',
+            backgroundColor: '#f0f9ff', 
+            border: '1px solid #0ea5e9', 
+            borderRadius: '6px', 
+            padding: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            fontSize: '14px',
+            color: '#0369a1'
+          }}>
+            👤 Customer selected: <strong style={{ marginLeft: '8px' }}>
+              {customers.find(c => c.id === transactionData.customerId)?.firstName} {customers.find(c => c.id === transactionData.customerId)?.lastName}
+            </strong>
+          </div>
+        )}
+
+        {/* Product Selection Info */}
+        {selectedProduct && (
+          <div style={{ 
+            marginBottom: '16px',
+            backgroundColor: '#f0f9ff', 
+            border: '1px solid #0ea5e9', 
+            borderRadius: '6px', 
+            padding: '12px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              fontSize: '14px',
+              color: '#0369a1',
+              fontWeight: '600',
+              marginBottom: '8px'
+            }}>
+              📦 Product Information
+            </div>
+            <div style={{ fontSize: '13px', color: '#0369a1' }}>
+              <strong>{selectedProduct.name}</strong> - Stock Available: {selectedProduct.stock} units
+            </div>
           </div>
         )}
 
@@ -468,23 +514,36 @@ const TransactionPage: React.FC = () => {
             }}>
               <span>Subtotal ({transactionData.quantity} item{transactionData.quantity > 1 ? 's' : ''}):</span>
               <span style={{ fontWeight: '500' }}>{formatPrice(priceDetails.subTotal)}</span>
-            </div>
-              {selectedPromoObject && (
-              <div style={{ 
+            </div>              {selectedPromoObject && (              <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
+                alignItems: 'center',
                 fontSize: '14px', 
                 color: '#dc2626',
                 marginBottom: '8px',
                 padding: '8px',
                 backgroundColor: '#fef2f2',
                 borderRadius: '4px',
-                border: '1px dashed #fca5a5'
-              }}>
-                <span style={{ fontWeight: '500' }}>
-                  🎯 Promo Applied ({selectedPromoObject.name}):
+                border: '1px dashed #fca5a5',
+                flexWrap: 'nowrap',
+                minWidth: 0,
+                overflow: 'hidden',
+                width: '100%'
+              }}>                <span style={{ 
+                  fontWeight: '500',
+                  flex: '1',
+                  marginRight: '8px',
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap'
+                }}>
+                  🎯 Promo: {selectedPromoObject.name}
                 </span>
-                <span style={{ fontWeight: '600' }}>- {formatPrice(priceDetails.discountValue)}</span>
+                <span style={{ 
+                  fontWeight: '600', 
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}>- {formatPrice(priceDetails.discountValue)}</span>
               </div>
             )}
             

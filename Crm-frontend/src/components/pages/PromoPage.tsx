@@ -59,23 +59,53 @@ const PromoPage: React.FC = () => {
         return promo.eligibleCustomers.some(customer => 
             customer.promoAssignment?.isUsed === true
         );
-    };
-
-    // Helper function to get usage status text
-    const getPromoUsageStatus = (promo: Promo): string => {
+    };    // Helper function to get comprehensive status
+    const getPromoStatus = (promo: Promo): string => {
+        const now = new Date();
+        const startDate = promo.startDate ? new Date(promo.startDate) : null;
+        const endDate = promo.endDate ? new Date(promo.endDate) : null;
+        
+        // Priority 1: Check usage status first - HIGHEST PRIORITY
+        if (promo.eligibleCustomers && promo.eligibleCustomers.length > 0) {
+            const usedCustomers = promo.eligibleCustomers.filter(customer => 
+                customer.promoAssignment?.isUsed === true
+            );
+            
+            // If all assigned customers have used it
+            if (usedCustomers.length === promo.eligibleCustomers.length) {
+                return 'Fully Used';
+            }
+            
+            // If some customers have used it
+            if (usedCustomers.length > 0) {
+                return 'Partially Used';
+            }
+            
+            // If assigned but none have used it yet, continue to other checks
+        }
+        
+        // Priority 2: Check if promo is expired (end date passed)
+        if (endDate && now > endDate) {
+            return 'Expired';
+        }
+        
+        // Priority 3: Check if promo is not active
+        if (!promo.isActive) {
+            return 'Inactive';
+        }
+        
+        // Priority 4: Check if promo hasn't started yet
+        if (startDate && now < startDate) {
+            return 'Scheduled';
+        }
+        
+        // Priority 5: Check assignment status
         if (!promo.eligibleCustomers || promo.eligibleCustomers.length === 0) {
-            return 'Not assigned';
+            return 'Available';
         }
         
-        const usedCustomers = promo.eligibleCustomers.filter(customer => 
-            customer.promoAssignment?.isUsed === true
-        );
-        
-        if (usedCustomers.length === 0) {
-            return 'Assigned but unused';
-        }
-        
-        return `Used by ${usedCustomers.length} customer(s)`;
+        // If we reach here, it means promo is assigned but not used yet
+        return 'Assigned';
     };
     // Komponen kustom untuk menampilkan setiap opsi di dropdown
     const formatOptionLabel = ({ customerData }: { value: number, label: string, customerData: Customer }) => {
@@ -361,7 +391,7 @@ const PromoPage: React.FC = () => {
                                 <th style={styles.tableHeader}>Active</th>
                                 <th style={styles.tableHeader}>Start Date</th>
                                 <th style={styles.tableHeader}>End Date</th>
-                                <th style={styles.tableHeader}>Usage Status</th>
+                                <th style={styles.tableHeader}>Status</th>
                                 <th style={styles.tableHeader}>Actions</th>
                             </tr>
                         </thead>
@@ -370,56 +400,145 @@ const PromoPage: React.FC = () => {
                                 <tr><td colSpan={8} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>Loading promos...</td></tr>
                             ) : promos.length === 0 ? (
                                 <tr><td colSpan={8} style={{ padding: '16px', textAlign: 'center', color: '#6b7280' }}>No promos found.</td></tr>
-                            ) : (
-                                promos.map(promo => {
+                            ) : (                                promos.map(promo => {
                                     const promoUsed = isPromoUsed(promo);
-                                    const usageStatus = getPromoUsageStatus(promo);
+                                    const status = getPromoStatus(promo);
                                     
                                     return (
                                         <tr key={promo.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                            <td style={styles.tableCell}>{promo.name}</td>
-                                            <td style={styles.tableCell}>{promo.type}</td>
-                                            <td style={styles.tableCell}>{promo.type === 'percentage' ? `${promo.value}%` : `Rp ${promo.value.toLocaleString('id-ID')}`}</td>
+                                            <td style={styles.tableCell}>{promo.name}</td>                                            <td style={styles.tableCell}>{promo.type}</td>                                            <td style={styles.tableCell}>
+                                                {promo.type === 'percentage' 
+                                                    ? `${promo.value}%` 
+                                                    : `Rp ${Math.round(promo.value).toLocaleString('id-ID')}`
+                                                }
+                                            </td>
                                             <td style={styles.tableCell}>{promo.isActive ? 'Yes' : 'No'}</td>
                                             <td style={styles.tableCell}>{promo.startDate ? new Date(promo.startDate).toLocaleDateString() : 'N/A'}</td>
-                                            <td style={styles.tableCell}>{promo.endDate ? new Date(promo.endDate).toLocaleDateString() : 'N/A'}</td>
-                                            <td style={styles.tableCell}>
+                                            <td style={styles.tableCell}>{promo.endDate ? new Date(promo.endDate).toLocaleDateString() : 'N/A'}</td>                                            <td style={styles.tableCell}>
                                                 <span style={{
                                                     padding: '4px 8px',
                                                     borderRadius: '4px',
                                                     fontSize: '12px',
-                                                    fontWeight: '500',
-                                                    backgroundColor: promoUsed ? '#FEE2E2' : usageStatus === 'Not assigned' ? '#F3F4F6' : '#DBEAFE',
-                                                    color: promoUsed ? '#B91C1C' : usageStatus === 'Not assigned' ? '#6B7280' : '#1E40AF'
+                                                    fontWeight: '500',                                                    backgroundColor: (() => {
+                                                        switch (status) {
+                                                            case 'Active': case 'Available': return '#D1FAE5'; // Light green
+                                                            case 'Assigned': return '#DBEAFE'; // Light blue
+                                                            case 'Partially Used': return '#FEF3C7'; // Light yellow
+                                                            case 'Fully Used': return '#E0E7FF'; // Light purple
+                                                            case 'Expired': return '#FEE2E2'; // Light red
+                                                            case 'Inactive': return '#F3F4F6'; // Light gray
+                                                            case 'Scheduled': return '#E0F2FE'; // Light sky blue
+                                                            default: return '#F3F4F6';
+                                                        }
+                                                    })(),
+                                                    color: (() => {
+                                                        switch (status) {
+                                                            case 'Active': case 'Available': return '#065F46'; // Dark green
+                                                            case 'Assigned': return '#1E40AF'; // Dark blue
+                                                            case 'Partially Used': return '#92400E'; // Dark amber
+                                                            case 'Fully Used': return '#5B21B6'; // Dark purple
+                                                            case 'Expired': return '#B91C1C'; // Dark red
+                                                            case 'Inactive': return '#6B7280'; // Dark gray
+                                                            case 'Scheduled': return '#0369A1'; // Dark sky blue
+                                                            default: return '#6B7280';
+                                                        }
+                                                    })()
                                                 }}>
-                                                    {usageStatus}
+                                                    {status}
                                                 </span>
                                             </td>
                                             <td style={{ ...styles.tableCell, textAlign: 'right' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                                    {(currentUserRole === 'admin' || currentUserRole === 'super_admin') && (
-                                                        <button 
+                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>                                                    {(currentUserRole === 'admin' || currentUserRole === 'super_admin') && (                                                        <button 
                                                             onClick={() => handleAssignClick(promo)} 
-                                                            title={promoUsed ? "Promo has been used and cannot be reassigned" : "Assign to Customer"}
-                                                            disabled={promoUsed}
+                                                            title={
+                                                                status === 'Expired' ? "Promo has expired and cannot be assigned" :
+                                                                status === 'Inactive' ? "Promo is inactive and cannot be assigned" :
+                                                                promoUsed ? "Promo has been used and cannot be reassigned" : 
+                                                                "Assign to Customer"
+                                                            }
+                                                            disabled={status === 'Expired' || status === 'Inactive' || promoUsed}
                                                             style={{ 
                                                                 background: 'none', 
                                                                 border: 'none', 
-                                                                color: promoUsed ? '#9CA3AF' : '#10B981', 
-                                                                cursor: promoUsed ? 'not-allowed' : 'pointer', 
-                                                                padding: '4px 6px', 
-                                                                borderRadius: '4px', 
-                                                                transition: 'background 0.2s',
-                                                                opacity: promoUsed ? 0.5 : 1
+                                                                color: (status === 'Expired' || status === 'Inactive' || promoUsed) ? '#9CA3AF' : '#10B981', 
+                                                                cursor: (status === 'Expired' || status === 'Inactive' || promoUsed) ? 'not-allowed' : 'pointer', 
+                                                                padding: '6px 8px', 
+                                                                borderRadius: '6px', 
+                                                                transition: 'all 0.2s ease',
+                                                                opacity: (status === 'Expired' || status === 'Inactive' || promoUsed) ? 0.5 : 1,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                if (!(status === 'Expired' || status === 'Inactive' || promoUsed)) {
+                                                                    e.currentTarget.style.backgroundColor = '#D1FAE5';
+                                                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                                                }
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                if (!(status === 'Expired' || status === 'Inactive' || promoUsed)) {
+                                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                                    e.currentTarget.style.transform = 'scale(1)';
+                                                                }
                                                             }}
                                                         >
                                                             <MdPersonAdd size={18} />
                                                         </button>
                                                     )}
                                                     {currentUserRole === 'super_admin' && (
-                                                        <>
-                                                            <button onClick={() => handleEditClick(promo)} title="Edit Promo" style={{ background: 'none', border: 'none', color: '#5E5CEB', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdEdit size={18} /></button>
-                                                            <button onClick={() => handleDeleteClick(promo)} title="Delete Promo" style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px', transition: 'background 0.2s' }}><MdDelete size={18} /></button>
+                                                        <>                                                            <button 
+                                                                onClick={() => handleEditClick(promo)} 
+                                                                title="Edit Promo" 
+                                                                style={{ 
+                                                                    background: 'none', 
+                                                                    border: 'none', 
+                                                                    color: '#5E5CEB', 
+                                                                    cursor: 'pointer', 
+                                                                    padding: '6px 8px', 
+                                                                    borderRadius: '6px', 
+                                                                    transition: 'all 0.2s ease',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.backgroundColor = '#EEF2FF';
+                                                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                                    e.currentTarget.style.transform = 'scale(1)';
+                                                                }}
+                                                            >
+                                                                <MdEdit size={18} />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleDeleteClick(promo)} 
+                                                                title="Delete Promo" 
+                                                                style={{ 
+                                                                    background: 'none', 
+                                                                    border: 'none', 
+                                                                    color: '#EF4444', 
+                                                                    cursor: 'pointer', 
+                                                                    padding: '6px 8px', 
+                                                                    borderRadius: '6px', 
+                                                                    transition: 'all 0.2s ease',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.backgroundColor = '#FEE2E2';
+                                                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                                    e.currentTarget.style.transform = 'scale(1)';
+                                                                }}
+                                                            >
+                                                                <MdDelete size={18} />
+                                                            </button>
                                                         </>
                                                     )}
                                                 </div>

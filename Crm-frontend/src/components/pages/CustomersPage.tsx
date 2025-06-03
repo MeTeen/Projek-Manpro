@@ -26,8 +26,7 @@ const CustomersPage: React.FC = () => {
     city: '',
     state: '',
     zipCode: ''
-  });
-  const [newCustomerData, setNewCustomerData] = useState<Partial<Customer>>({
+  });  const [newCustomerData, setNewCustomerData] = useState<Partial<Customer>>({
     firstName: '',
     lastName: '',
     email: '',
@@ -37,6 +36,8 @@ const CustomersPage: React.FC = () => {
     state: '',
     zipCode: ''
   });
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [isFormValid, setIsFormValid] = useState(false);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [newAvatar, setNewAvatar] = useState<File | null>(null);
@@ -115,7 +116,6 @@ const CustomersPage: React.FC = () => {
     setSelectedCustomer(customer);
     setIsDeleteModalOpen(true);
   };
-
   // Open add customer modal
   const handleAddCustomerClick = () => {
     // Reset form fields
@@ -131,6 +131,9 @@ const CustomersPage: React.FC = () => {
     });
     setNewAvatar(null);
     setNewAvatarPreview(null);
+    setValidationErrors({});
+    setIsFormValid(false);
+    setError(null);
     setIsAddModalOpen(true);
   };
 
@@ -163,35 +166,160 @@ const CustomersPage: React.FC = () => {
         setError('Please select an image file');
       }
     }
+  };  // Validation function
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'firstName':
+      case 'lastName':
+        if (!value.trim()) return `${name === 'firstName' ? 'First' : 'Last'} name is required`;
+        if (value.length < 2) return `${name === 'firstName' ? 'First' : 'Last'} name must be at least 2 characters`;
+        if (!/^[a-zA-Z\s'-]+$/.test(value)) return `${name === 'firstName' ? 'First' : 'Last'} name can only contain letters, spaces, hyphens, and apostrophes`;
+        return '';
+      case 'email':
+        if (!value.trim()) return 'Email is required';
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) return 'Please enter a valid email address';
+        return '';
+      case 'phone':
+        if (value && !/^\+?[\d\s\-\(\)]+$/.test(value)) return 'Please enter a valid phone number';
+        return '';
+      case 'zipCode':
+        if (value && !/^\d{5}(-\d{4})?$/.test(value)) return 'Please enter a valid ZIP code (e.g., 12345 or 12345-6789)';
+        return '';
+      default:
+        return '';
+    }
+  };  // Calculate form completion progress
+  const calculateFormProgress = (): number => {
+    const fields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
+    const filledFields = fields.filter(field => 
+      newCustomerData[field as keyof Customer] && 
+      (newCustomerData[field as keyof Customer] as string).trim() !== ''
+    );
+    const avatarBonus = newAvatar ? 1 : 0;
+    return Math.round(((filledFields.length + avatarBonus) / (fields.length + 1)) * 100);
   };
-  // Handle new customer form input changes
+
+  const formProgress = calculateFormProgress();
+
+  // Validate all required fields
+  const validateForm = (data: Partial<Customer>): boolean => {
+    const errors: {[key: string]: string} = {};
+    const requiredFields = ['firstName', 'lastName', 'email'];
+    
+    requiredFields.forEach(field => {
+      const error = validateField(field, data[field as keyof Customer] as string || '');
+      if (error) errors[field] = error;
+    });
+
+    // Validate optional fields if they have values
+    const optionalFields = ['phone', 'zipCode'];
+    optionalFields.forEach(field => {
+      const value = data[field as keyof Customer] as string || '';
+      if (value) {
+        const error = validateField(field, value);
+        if (error) errors[field] = error;
+      }
+    });
+
+    setValidationErrors(errors);
+    const isValid = Object.keys(errors).length === 0;
+    setIsFormValid(isValid);
+    return isValid;
+  };
+
+  // Handle new customer form input changes with validation
   const handleNewInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewCustomerData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Format phone number as user types
+    let formattedValue = value;
+    if (name === 'phone') {
+      // Remove all non-digits
+      const digits = value.replace(/\D/g, '');
+      // Format as (XXX) XXX-XXXX
+      if (digits.length >= 6) {
+        formattedValue = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+      } else if (digits.length >= 3) {
+        formattedValue = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      } else {
+        formattedValue = digits;
+      }
+    }
+
+    // Format ZIP code
+    if (name === 'zipCode') {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length > 5) {
+        formattedValue = `${digits.slice(0, 5)}-${digits.slice(5, 9)}`;
+      } else {
+        formattedValue = digits;
+      }
+    }
+
+    // Capitalize names
+    if (name === 'firstName' || name === 'lastName') {
+      formattedValue = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+    }
+
+    // Update state
+    const updatedData = {
+      ...newCustomerData,
+      [name]: formattedValue
+    };
+    
+    setNewCustomerData(updatedData);
+
+    // Clear validation error for this field if it was previously invalid
+    if (validationErrors[name]) {
+      const newErrors = { ...validationErrors };
+      delete newErrors[name];
+      setValidationErrors(newErrors);
+    }
+
+    // Validate the field in real-time
+    const fieldError = validateField(name, formattedValue);
+    if (fieldError) {
+      setValidationErrors(prev => ({ ...prev, [name]: fieldError }));
+    }
+
+    // Update form validity
+    validateForm(updatedData);
   };
 
   // Handle new avatar click to open file dialog
   const handleNewAvatarClick = () => {
     newFileInputRef.current?.click();
   };
-
-  // Handle new avatar file selection
+  // Handle new avatar file selection with enhanced validation
   const handleNewAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type.startsWith('image/')) {
-        setNewAvatar(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setNewAvatarPreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setError('Please select an image file');
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file (JPG, PNG, GIF)');
+        return;
       }
+      
+      // Validate file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        setError('Image size must be less than 5MB');
+        return;
+      }
+      
+      setNewAvatar(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewAvatarPreview(reader.result as string);
+      };
+      reader.onerror = () => {
+        setError('Failed to read the image file');
+      };
+      reader.readAsDataURL(file);
+      
+      // Clear any existing errors
+      setError(null);
     }
   };
 
@@ -235,13 +363,19 @@ const CustomersPage: React.FC = () => {
       setLoading(false);
     }
   };
-
   // Submit new customer form
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate form before submission
+    if (!validateForm(newCustomerData)) {
+      setError('Please fix the validation errors before submitting');
+      return;
+    }
+    
     try {
       setLoading(true);
+      setError(null);
 
       // Create FormData for the new customer
       const formData = new FormData();
@@ -249,7 +383,7 @@ const CustomersPage: React.FC = () => {
       // Add all form fields to FormData
       Object.entries(newCustomerData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          formData.append(key, value.toString());
+          formData.append(key, value.toString().trim());
         }
       });
       
@@ -263,7 +397,11 @@ const CustomersPage: React.FC = () => {
       
       setIsAddModalOpen(false);
       fetchCustomers(); // Refresh data
-      alert('Customer created successfully');
+      
+      // Show success message
+      const customerName = `${newCustomerData.firstName} ${newCustomerData.lastName}`;
+      alert(`Customer "${customerName}" created successfully!`);
+      
     } catch (err) {
       console.error('Error creating customer:', err);
       setError(err instanceof Error ? err.message : 'Failed to create customer');
@@ -545,24 +683,31 @@ const CustomersPage: React.FC = () => {
         }}>
           Click to upload profile picture
         </p>
-      </div>{/* First Name */}      <FormInput
-        type="text"
-        name="firstName"
-        value={formData.firstName || ''}
-        onChange={handleInputChange}
-        required
-        label="First Name"
-      />
-
-      {/* Last Name */}
-      <FormInput
-        type="text"
-        name="lastName"
-        value={formData.lastName || ''}
-        onChange={handleInputChange}
-        required
-        label="Last Name"
-      />      {/* Email */}
+      </div>      {/* First Name and Last Name */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <FormInput
+            type="text"
+            name="firstName"
+            value={formData.firstName || ''}
+            onChange={handleInputChange}
+            required
+            label="First Name"
+            fullWidth={true}
+          />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <FormInput
+            type="text"
+            name="lastName"
+            value={formData.lastName || ''}
+            onChange={handleInputChange}
+            required
+            label="Last Name"
+            fullWidth={true}
+          />
+        </div>
+      </div>{/* Email */}
       <FormInput
         type="email"
         name="email"
@@ -588,7 +733,7 @@ const CustomersPage: React.FC = () => {
         label="Address"
       />      {/* City, State, Zip */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <FormInput
             type="text"
             name="city"
@@ -598,7 +743,7 @@ const CustomersPage: React.FC = () => {
             fullWidth={true}
           />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <FormInput
             type="text"
             name="state"
@@ -608,7 +753,7 @@ const CustomersPage: React.FC = () => {
             fullWidth={true}
           />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <FormInput
             type="text"
             name="zipCode"
@@ -619,22 +764,88 @@ const CustomersPage: React.FC = () => {
           />
         </div>
       </div>
-      </FormModal>        {/* Add Customer Modal */}
-      <FormModal
+      </FormModal>        {/* Add Customer Modal */}      <FormModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={handleAddSubmit}
         title="Add New Customer"
         loading={loading}
+        disabled={!isFormValid}
         submitText="Create Customer"
         cancelText="Cancel"
         size="lg"
-      >        {/* Avatar Section */}
+        icon={<MdPersonAdd size={20} style={{ color: '#4f46e5' }} />}
+      >
+        {/* Form Progress Indicator */}
         <div style={{ 
-          marginBottom: '20px', 
+          marginBottom: '24px',
+          padding: '16px',
+          backgroundColor: '#f8fafc',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '8px'
+          }}>
+            <span style={{ 
+              fontSize: '14px', 
+              fontWeight: '500', 
+              color: '#374151' 
+            }}>
+              Form Completion
+            </span>
+            <span style={{ 
+              fontSize: '14px', 
+              fontWeight: '600', 
+              color: formProgress === 100 ? '#059669' : '#4f46e5' 
+            }}>
+              {formProgress}%
+            </span>
+          </div>
+          <div style={{ 
+            width: '100%', 
+            height: '8px', 
+            backgroundColor: '#e5e7eb', 
+            borderRadius: '4px',
+            overflow: 'hidden'
+          }}>
+            <div style={{ 
+              width: `${formProgress}%`, 
+              height: '100%', 
+              backgroundColor: formProgress === 100 ? '#059669' : '#4f46e5',
+              borderRadius: '4px',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+          {formProgress === 100 && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              marginTop: '8px',
+              color: '#059669',
+              fontSize: '12px',
+              fontWeight: '500'
+            }}>
+              <svg style={{ width: '16px', height: '16px' }} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Ready to submit!
+            </div>
+          )}
+        </div>{/* Avatar Section - Enhanced */}
+        <div style={{ 
+          marginBottom: '24px', 
           display: 'flex', 
           flexDirection: 'column', 
-          alignItems: 'center' 
+          alignItems: 'center',
+          padding: '20px',
+          backgroundColor: '#f8fafc',
+          borderRadius: '12px',
+          border: '2px dashed #e2e8f0'
         }}>
           <input 
             type="file" 
@@ -646,122 +857,177 @@ const CustomersPage: React.FC = () => {
           <div 
             onClick={handleNewAvatarClick}
             style={{
-              width: '96px',
-              height: '96px',
+              width: '120px',
+              height: '120px',
               borderRadius: '50%',
-              backgroundColor: '#f3f4f6',
+              backgroundColor: newAvatarPreview ? 'transparent' : '#f3f4f6',
               cursor: 'pointer',
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              border: '2px dashed #d1d5db',
-              marginBottom: '12px',
+              border: newAvatarPreview ? '4px solid #4f46e5' : '3px dashed #d1d5db',
+              marginBottom: '16px',
               position: 'relative',
               backgroundImage: newAvatarPreview ? `url(${newAvatarPreview})` : 'none',
+              transition: 'all 0.3s ease',
+              boxShadow: newAvatarPreview ? '0 8px 25px rgba(79, 70, 229, 0.15)' : 'none'
+            }}
+            onMouseEnter={(e) => {
+              if (!newAvatarPreview) {
+                e.currentTarget.style.backgroundColor = '#e5e7eb';
+                e.currentTarget.style.borderColor = '#9ca3af';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!newAvatarPreview) {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }
             }}
           >
             {!newAvatarPreview && (
-              <MdPhotoCamera size={32} style={{ color: '#6b7280' }} />
+              <div style={{ textAlign: 'center', color: '#6b7280' }}>
+                <MdPhotoCamera size={40} style={{ marginBottom: '8px' }} />
+                <div style={{ fontSize: '12px', fontWeight: '500' }}>Add Photo</div>
+              </div>
             )}
             
-            {/* Camera icon overlay */}
+            {/* Enhanced camera icon overlay */}
             <div style={{
               position: 'absolute',
-              bottom: 0,
-              right: 0,
+              bottom: '8px',
+              right: '8px',
               backgroundColor: '#4f46e5',
               borderRadius: '50%',
-              width: '28px',
-              height: '28px',
+              width: '36px',
+              height: '36px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-            }}>
-              <MdPhotoCamera size={16} style={{ color: 'white' }} />
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              border: '3px solid white',
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            >
+              <MdPhotoCamera size={18} style={{ color: 'white' }} />
             </div>
           </div>
-          <p style={{ 
-            fontSize: '14px', 
-            color: '#6b7280', 
-            margin: 0 
-          }}>
-            Click to upload profile picture
-          </p>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ 
+              fontSize: '14px', 
+              color: '#4b5563', 
+              margin: '0 0 4px 0',
+              fontWeight: '500'
+            }}>
+              {newAvatarPreview ? 'Click to change profile picture' : 'Click to upload profile picture'}
+            </p>
+            <p style={{ 
+              fontSize: '12px', 
+              color: '#6b7280', 
+              margin: 0 
+            }}>
+              Supports JPG, PNG, GIF up to 5MB
+            </p>
+          </div>
+        </div><div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <FormInput
+              label="First Name"
+              type="text"
+              name="firstName"
+              value={newCustomerData.firstName || ''}
+              onChange={handleNewInputChange}
+              required
+              fullWidth={true}
+              placeholder="Enter first name"
+              error={validationErrors.firstName}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <FormInput
+              label="Last Name"
+              type="text"
+              name="lastName"
+              value={newCustomerData.lastName || ''}
+              onChange={handleNewInputChange}
+              required
+              fullWidth={true}
+              placeholder="Enter last name"
+              error={validationErrors.lastName}
+            />
+          </div>
         </div>
-        <FormInput
-          label="First Name"
-          type="text"
-          name="firstName"
-          value={newCustomerData.firstName || ''}
-          onChange={handleNewInputChange}
-          required
-        />
         
         <FormInput
-          label="Last Name"
-          type="text"
-          name="lastName"
-          value={newCustomerData.lastName || ''}
-          onChange={handleNewInputChange}
-          required
-        />
-        
-        <FormInput
-          label="Email"
+          label="Email Address"
           type="email"
           name="email"
           value={newCustomerData.email || ''}
           onChange={handleNewInputChange}
           required
+          placeholder="Enter email address"
+          error={validationErrors.email}
         />
         
         <FormInput
-          label="Phone"
-          type="text"
+          label="Phone Number"
+          type="tel"
           name="phone"
           value={newCustomerData.phone || ''}
           onChange={handleNewInputChange}
+          placeholder="(123) 456-7890"
+          error={validationErrors.phone}
         />
         
         <FormInput
-          label="Address"
+          label="Street Address"
           type="text"
           name="address"
           value={newCustomerData.address || ''}
           onChange={handleNewInputChange}
-        />
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-          <div style={{ flex: 1 }}>
+          placeholder="Enter street address"
+        />          <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <FormInput
               label="City"
               type="text"
               name="city"
               value={newCustomerData.city || ''}
               onChange={handleNewInputChange}
-              fullWidth={false}
+              fullWidth={true}
+              placeholder="Enter city"
             />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <FormInput
               label="State"
               type="text"
               name="state"
               value={newCustomerData.state || ''}
               onChange={handleNewInputChange}
-              fullWidth={false}
+              fullWidth={true}
+              placeholder="Enter state"
             />
           </div>
-          <div style={{ flex: '1' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <FormInput
-              label="Zip Code"
+              label="ZIP Code"
               type="text"
               name="zipCode"
               value={newCustomerData.zipCode || ''}
               onChange={handleNewInputChange}
-              fullWidth={false}
+              fullWidth={true}
+              placeholder="12345 or 12345-6789"
+              error={validationErrors.zipCode}
             />
           </div>
         </div>

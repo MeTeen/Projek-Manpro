@@ -1,4 +1,3 @@
-
 ---
 
 # Project-Manpro CRM 💼
@@ -9,22 +8,22 @@ This is a **Customer Relationship Management (CRM)** application designed to hel
 
 ## 💡 Main Features
 
-* Customer Management
-* Product Management
-* Purchase/Transaction Management
-* Promo Management
-* Task Management
-* Role-based Admin Management
-* Analytics Dashboard
+* **Customer Management** - Complete customer profiles and tracking
+* **Product Management** - Inventory with customer assignments
+* **Purchase/Transaction Management** - Transaction processing and history
+* **Promo Management** - Advanced promotional campaigns with status tracking
+* **Task Management** - Team collaboration and workflow
+* **Role-based Admin Management** - JWT authentication with user roles
+* **Analytics Dashboard** - Real-time KPIs with interactive charts
 
 ---
 
 ## 🧰 Tech Stack
 
-* **Backend**: Node.js, Express.js, Sequelize ORM, MySQL
-* **Frontend**: React, TypeScript, Vite
-* **Others**: Axios
-* **Database**: MySQL
+* **Backend**: Node.js, Express.js, TypeScript, Sequelize ORM, PostgreSQL/Supabase
+* **Frontend**: React, TypeScript, Vite, Material-UI, Recharts
+* **Others**: Axios, JWT Authentication, Docker
+* **Database**: PostgreSQL with Supabase integration
 
 ---
 
@@ -32,7 +31,7 @@ This is a **Customer Relationship Management (CRM)** application designed to hel
 
 ### ✅ Step 0: Create the Database
 
-Make sure your MySQL server is running, then create the `crm_db` database (or the name used in your `.env` file):
+Make sure your PostgreSQL server is running, then create the `crm_db` database (or use Supabase):
 
 ```sql
 CREATE DATABASE crm_db;
@@ -99,13 +98,14 @@ npm run dev
 
 ## 🌐 API Endpoints (Examples)
 
-* `POST /api/auth/login`
-* `POST /api/auth/signup`
-* `GET /api/customers`
-* `GET /api/products`
-* `POST /api/purchases`
-* `GET /api/analytics`
-* etc.
+* `POST /api/auth/login` - User authentication
+* `POST /api/auth/signup` - User registration
+* `GET /api/customers` - Customer management
+* `GET /api/products` - Product catalog
+* `GET /api/promos` - Promotional campaigns
+* `POST /api/purchases` - Transaction processing
+* `GET /api/tasks` - Task management
+* `GET /api/analytics` - Dashboard analytics
 
 ---
 
@@ -137,6 +137,41 @@ Projek-Manpro/
 │   ├── package.json (frontend)
 │   └── tsconfig.json
 └── package.json (root)
+```
+
+---
+
+## 🎯 Key Features
+
+### Promotional System
+* **Status Tracking**: Expired, Inactive, Scheduled, Available, Assigned, Partially Used, Fully Used
+* **Color-coded Badges**: Visual status indicators
+* **Customer Assignment**: Track promo allocations and usage
+
+### Analytics Dashboard
+* **Interactive Charts**: Line, Bar, Pie, and Area charts using Recharts
+* **Real-time KPIs**: Customer metrics, revenue tracking, product performance
+* **Performance Analytics**: Comprehensive business insights
+
+### Advanced Features
+* **File Uploads**: Avatar and document management
+* **Role-based Access**: Admin and user permissions
+* **Performance Optimization**: Caching and database indexing
+* **Docker Support**: Containerized deployment
+
+---
+
+## 🐳 Docker Deployment
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
 ```
 
 ---

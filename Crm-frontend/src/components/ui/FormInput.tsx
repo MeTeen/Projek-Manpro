@@ -14,9 +14,10 @@ const FormInput: React.FC<FormInputProps> = ({
   fullWidth = true,
   className = '',
   ...props 
-}) => {
-  const baseInputStyles = {
+}) => {  const baseInputStyles = {
     width: fullWidth ? '100%' : 'auto',
+    minWidth: fullWidth ? 'auto' : '120px',
+    maxWidth: '100%',
     padding: '10px',
     border: error ? '1px solid #EF4444' : '1px solid #ddd',
     borderRadius: '4px',
@@ -24,22 +25,30 @@ const FormInput: React.FC<FormInputProps> = ({
     outline: 'none',
     transition: 'border-color 0.2s ease',
     fontFamily: 'inherit',
+    boxSizing: 'border-box' as const,
   };
 
   const focusStyles = {
     borderColor: '#5E5CEB',
     boxShadow: '0 0 0 1px #5E5CEB',
   };
-
   return (
-    <div style={{ marginBottom: '8px' }}>
+    <div style={{ 
+      marginBottom: '8px',
+      width: fullWidth ? '100%' : 'auto',
+      minWidth: fullWidth ? 'auto' : '0',
+      overflow: 'hidden'
+    }}>
       {label && (
         <label style={{ 
           display: 'block', 
           marginBottom: '6px', 
           fontWeight: 500,
           fontSize: '14px',
-          color: '#374151'
+          color: '#374151',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
         }}>
           {label}{required && <span style={{ color: '#EF4444', marginLeft: '4px' }}>*</span>}
         </label>
