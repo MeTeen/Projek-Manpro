@@ -11,6 +11,7 @@ import ProductPage from './components/pages/ProductPage';
 import TaskSectionPage from './components/pages/TaskSectionPage';
 import PromoPage from './components/pages/PromoPage';
 import AnalyticsPage from './components/pages/AnalyticsPage';
+import AboutPage from './components/pages/AboutPage';
 import ApiDebugger from './components/ApiDebugger';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
@@ -74,12 +75,19 @@ function App() {
                 <PromoPage />
               </ProtectedRoute>
             }
-          />
-          <Route
+          />          <Route
             path="/analytics"
             element={
               <ProtectedRoute>
                 <AnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <ProtectedRoute>
+                <AboutPage />
               </ProtectedRoute>
             }
           />

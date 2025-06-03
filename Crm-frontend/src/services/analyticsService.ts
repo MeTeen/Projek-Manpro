@@ -6,13 +6,13 @@ import { API_CONFIG } from '../config/api';
 // Use centralized API configuration
 const API_BASE_URL = `${API_CONFIG.BASE_URL}/analytics`;
 
-// Helper function untuk mendapatkan token (jika endpoint dilindungi)
+// Helper function to get token (if endpoint is protected)
 const getAuthToken = (): string | null => {
-  return authService.getToken(); // Atau cara Anda mendapatkan token
+  return authService.getToken(); // Or your way of getting token
 };
 
-// Contoh tipe data yang diharapkan dari backend
-// Anda perlu menyesuaikan ini dengan apa yang sebenarnya dikembalikan oleh backend Anda
+// Example data types expected from backend
+// You need to adjust this according to what is actually returned by your backend
 interface SalesTrendItem {
   name: string; // Misal: 'Jan', 'Feb', 'Minggu 1'
   pendapatan?: number;

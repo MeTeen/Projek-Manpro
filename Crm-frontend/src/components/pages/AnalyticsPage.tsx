@@ -42,12 +42,10 @@ const AnalyticsPage: React.FC = () => {
                 setKpiData(kpis);
                 setSalesTrendData(trend);
                 setProductSalesData(products);
-                setTopCustomersData(customers);
-
-            } catch (err) {
-                setError('Gagal memuat data analitik. Pastikan backend berjalan dan endpoint tersedia.');
+                setTopCustomersData(customers);            } catch (err) {
+                setError('Failed to load analytics data. Please ensure the backend is running and endpoints are available.');
                 console.error(err);
-                // Set state data ke array kosong agar chart tidak error jika data tidak ter-load
+                // Set state data to empty arrays so charts don't error if data fails to load
                 setKpiData(null);
                 setSalesTrendData([]);
                 setProductSalesData([]);
@@ -75,7 +73,7 @@ const AnalyticsPage: React.FC = () => {
             <div style={{ display: 'flex', height: '100vh' }}>
                 <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
                 <div style={{ flex: 1, padding: '20px', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <p>Memuat data analitik...</p> {/* Ganti dengan komponen spinner/skeleton jika ada */}
+                    <p>Loading analytics data...</p> {/* Replace with spinner/skeleton component if available */}
                 </div>
             </div>
         );
@@ -87,16 +85,14 @@ const AnalyticsPage: React.FC = () => {
                 <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
                 <div style={{ flex: 1, padding: '20px', color: 'red', textAlign: 'center' }}>
                     <p>Error: {error}</p>
-                    <p>Silakan coba refresh halaman atau hubungi administrator.</p>
+                    <p>Please try refreshing the page or contact the administrator.</p>
                 </div>
             </div>
         );
     }
-
-
     const salesTrendLines = [
-        { key: 'pendapatan', color: '#8884d8', name: 'Pendapatan (Rp)', yAxisId: 'left' }, // Sumbu kiri untuk pendapatan
-        { key: 'transaksi', color: '#82ca9d', name: 'Jumlah Transaksi', yAxisId: 'right' } // Sumbu kanan untuk transaksi
+        { key: 'pendapatan', color: '#8884d8', name: 'Revenue (Rp)', yAxisId: 'left' }, // Left axis for revenue
+        { key: 'transaksi', color: '#82ca9d', name: 'Transaction Count', yAxisId: 'right' } // Right axis for transactions
     ];
 
     return (
@@ -106,30 +102,28 @@ const AnalyticsPage: React.FC = () => {
             <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
             <div style={{ flex: 1, overflowY: 'auto', position: 'relative', padding: '20px 30px' }}>
                 <Header />
-                <div style={{ padding: '20px 10px' }}>
-                    <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '20px', color: '#1F2937' }}>
-                        Analitik Penjualan
+                <div style={{ padding: '20px 10px' }}>                    <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '20px', color: '#1F2937' }}>
+                        Sales Analytics
                     </h1>
-                    {error && <p style={{ color: 'orange', marginBottom: '15px' }}>Sebagian data mungkin gagal dimuat: {error}</p>}
+                    {error && <p style={{ color: 'orange', marginBottom: '15px' }}>Some data may have failed to load: {error}</p>}
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-                        <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                            <h4 style={{ margin: '0 0 10px 0', color: '#6B7280', fontSize: '14px' }}>Total Pendapatan</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>                        <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                            <h4 style={{ margin: '0 0 10px 0', color: '#6B7280', fontSize: '14px' }}>Total Revenue</h4>
                             <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#10B981' }}>
-                                {kpiData ? formatKpiCurrency(kpiData.totalRevenue) : 'Memuat...'}
+                                {kpiData ? formatKpiCurrency(kpiData.totalRevenue) : 'Loading...'}
                             </p>
                         </div>
                         <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                            <h4 style={{ margin: '0 0 10px 0', color: '#6B7280', fontSize: '14px' }}>Total Transaksi</h4>
+                            <h4 style={{ margin: '0 0 10px 0', color: '#6B7280', fontSize: '14px' }}>Total Transactions</h4>
                             <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#3B82F6' }}>
-                                {kpiData ? formatKpiNumber(kpiData.totalTransactions) : 'Memuat...'}
+                                {kpiData ? formatKpiNumber(kpiData.totalTransactions) : 'Loading...'}
                             </p>
                         </div>
-                        {/* Contoh KPI tambahan */}
+                        {/* Additional KPI example */}
                         <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                            <h4 style={{ margin: '0 0 10px 0', color: '#6B7280', fontSize: '14px' }}>Pelanggan Baru (Hari Ini)</h4>
+                            <h4 style={{ margin: '0 0 10px 0', color: '#6B7280', fontSize: '14px' }}>New Customers (Today)</h4>
                             <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#F59E0B' }}>
-                                {kpiData ? formatKpiNumber(kpiData.newCustomersToday) : 'Memuat...'}
+                                {kpiData ? formatKpiNumber(kpiData.newCustomersToday) : 'Loading...'}
                             </p>
                         </div>
                     </div>
@@ -139,21 +133,16 @@ const AnalyticsPage: React.FC = () => {
                         <ReusableLineChart
                             data={salesTrendData}
                             xAxisKey="name"
-                            lines={salesTrendLines}
-                            title="Tren Pendapatan & Transaksi (Bulanan)"
+                            lines={salesTrendLines}                            title="Revenue & Transaction Trend (Monthly)"
                         />
-                    ) : !loading && <p>Data tren penjualan bulanan tidak tersedia.</p>}
-
-
-
-                    <div style={{ padding: '100px 20px 20px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px', marginTop: '30px' }}>
+                    ) : !loading && <p>Monthly sales trend data is not available.</p>}                    <div style={{ padding: '100px 20px 20px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px', marginTop: '30px' }}>
                         {productSalesData.length > 0 ? (
-                            <ReusablePieChart data={productSalesData} title="Distribusi Penjualan per Produk (berdasarkan nilai)" />
-                        ) : !loading && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', textAlign: 'center' }}><p>Data penjualan produk tidak tersedia.</p></div>}
+                            <ReusablePieChart data={productSalesData} title="Sales Distribution by Product (by value)" />
+                        ) : !loading && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', textAlign: 'center' }}><p>Product sales data is not available.</p></div>}
 
                         {topCustomersData.length > 0 ? (
                             <ReusableBarChart data={topCustomersData} xAxisKey="name" dataKey="value" barColor="#82ca9d" title="Top Customers by Spend" />
-                        ) : !loading && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', textAlign: 'center' }}><p>Data top customer tidak tersedia.</p></div>}
+                        ) : !loading && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', textAlign: 'center' }}><p>Top customer data is not available.</p></div>}
                     </div>
                 </div>
             </div>

@@ -10,7 +10,8 @@ import {
   MdChevronLeft,
   MdChevronRight,
   MdPointOfSale,
-  MdLocalOffer
+  MdLocalOffer,
+  MdInfo
 } from 'react-icons/md';
 
 interface SidebarProps {
@@ -31,7 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
     { path: '/analytics', icon: <MdBarChart size={20} />, label: 'Analytics' },
     { path: '/tasksection', icon: <MdChecklist size={20} />, label: 'Task To Do' },
     { path: '/settings', icon: <MdSettings size={20} />, label: 'Settings' },
-    { path: '/about', icon: <MdSettings size={20} />, label: 'Tentang' } // ✅ Tambahan menu baru
+    { path: '/about', icon: <MdInfo size={20} />, label: 'About' } // ✅ Updated menu item
   ];
 
   const isActiveRoute = (path: string) => {

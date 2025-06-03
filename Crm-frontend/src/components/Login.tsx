@@ -11,7 +11,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { debugLog, debugError } from '../utils/debug';
 
 interface LoginError {
@@ -31,19 +31,23 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const checkAuthAndRedirect = () => {
       debugLog('Login', 'Checking authentication state, isAuthenticated:', isAuthenticated);
       if (isAuthenticated) {
-        debugLog('Login', 'User is authenticated, redirecting to dashboard...');
-        navigate('/dashboard', { replace: true });
+        debugLog('Login', 'User is authenticated, redirecting...');
+        
+        // Get the page user was trying to access before being redirected to login
+        const from = (location.state as any)?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
       }
     };
     
     // Check on mount and when auth state changes
     checkAuthAndRedirect();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,12 +57,25 @@ const Login: React.FC = () => {
     }
     
     setError('');
-    setIsLoading(true);
-
-    try {
+    setIsLoading(true);    try {
       debugLog('Login', 'Attempting login...');
       await login(email, password);
-      toast.success('Login Successfull!')
+        // Success toast with information about redirect
+      const from = (location.state as any)?.from?.pathname;
+      if (from && from !== '/dashboard') {
+        const routeNames: { [key: string]: string } = {
+          '/customers': 'customers page',
+          '/products': 'products page', 
+          '/transactions': 'transactions page',
+          '/tasksection': 'task page',
+          '/promo': 'promo page',
+          '/analytics': 'analytics page'
+        };
+        const routeName = routeNames[from] || 'the requested page';
+        toast.success(`Login successful! Redirecting to ${routeName}...`);
+      } else {
+        toast.success('Login successful! Welcome back.');
+      }
     } catch (error) {
       debugError('Login', 'Login error:', error);
       const loginError = error as LoginError;
@@ -76,7 +93,6 @@ const Login: React.FC = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <Container component="main" maxWidth="xs">
       <Box
@@ -97,6 +113,24 @@ const Login: React.FC = () => {
             width: '100%',
           }}
         >
+          {/* Show info message if user was redirected from a protected route */}
+          {(location.state as any)?.from?.pathname && (location.state as any)?.from?.pathname !== '/dashboard' && (
+            <Box
+              sx={{
+                width: '100%',
+                mb: 2,
+                p: 2,
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                borderRadius: 1,
+                color: '#856404'
+              }}
+            >              <Typography variant="body2" align="center">
+                Please login to access the requested page
+              </Typography>
+            </Box>
+          )}
+          
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
