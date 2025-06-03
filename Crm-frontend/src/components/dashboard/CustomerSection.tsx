@@ -7,7 +7,6 @@ import { API_CONFIG } from '../../config/api';
 
 
 const API_URL = API_CONFIG.ROOT_URL;
-console.log("API URL:", API_URL); // Debugging untuk memastikan URL API benar
 
 // Definisikan interface Props untuk CustomerSection
 export interface CustomerSectionProps {
@@ -138,7 +137,7 @@ const CustomerSection: React.FC<CustomerSectionProps> = ({ refreshTrigger, limit
                 <img
                   src={
                     customer.avatarUrl
-                      ? `${API_URL}${customer.avatarUrl}`
+                      ? `${customer.avatarUrl}`
                       : `https://ui-avatars.com/api/?name=${customer.firstName}+${customer.lastName}&background=random&size=128`
                   }
                   alt={`${customer.firstName} ${customer.lastName}`}

@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { Customer, Product, CustomerProduct, Promo } from '../models';
 import { CustomerInput } from '../models/customer.model';
-import { getAvatarUrl } from '../middlewares/upload.middleware';
+import { isSupabaseUrl } from '../middlewares/upload.middleware';
+import SupabaseStorageService from '../services/supabase-storage.service';
 import { Op } from 'sequelize';
 
 /**
@@ -114,9 +115,27 @@ export const createCustomer = async (req: Request, res: Response) => {
         message: `Customer with email ${email} already exists`,
       });
     }
+      // Handle avatar upload to Supabase
+    let avatarUrl: string | null = null;
     
-    // Get avatar URL from uploaded file
-    const avatarUrl = req.file ? getAvatarUrl(req.file.filename) : null;
+    if (req.file) {
+      try {
+        const fileName = SupabaseStorageService.generateAvatarFileName(req.file.originalname);
+        const uploadResult = await SupabaseStorageService.uploadFile(
+          req.file.buffer,
+          fileName,
+          req.file.mimetype
+        );
+        avatarUrl = uploadResult.publicUrl;
+      } catch (uploadError) {
+        console.error('Avatar upload failed:', uploadError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to upload avatar',
+          error: (uploadError as Error).message,
+        });
+      }
+    }
     
     // Create customer with default values for totalSpent and purchaseCount
     const customer = await Customer.create({
@@ -189,11 +208,41 @@ export const updateCustomer = async (req: Request, res: Response) => {
         });
       }
     }
+      // Handle avatar upload to Supabase
+    let avatarUrl = customer.avatarUrl; // Keep existing avatar by default
     
-    // Get avatar URL from uploaded file, or keep existing
-    const avatarUrl = req.file 
-      ? getAvatarUrl(req.file.filename) 
-      : customer.avatarUrl;
+    if (req.file) {
+      try {
+        // Delete old avatar if it exists and is a Supabase URL
+        if (customer.avatarUrl && isSupabaseUrl(customer.avatarUrl)) {
+          const oldFileName = SupabaseStorageService.extractFileNameFromUrl(customer.avatarUrl);
+          if (oldFileName) {
+            try {
+              await SupabaseStorageService.deleteFile(oldFileName);
+            } catch (deleteError) {
+              console.warn('Failed to delete old avatar:', deleteError);
+              // Continue with upload even if deletion fails
+            }
+          }
+        }
+        
+        // Upload new avatar
+        const fileName = SupabaseStorageService.generateAvatarFileName(req.file.originalname, id);
+        const uploadResult = await SupabaseStorageService.uploadFile(
+          req.file.buffer,
+          fileName,
+          req.file.mimetype
+        );
+        avatarUrl = uploadResult.publicUrl;
+      } catch (uploadError) {
+        console.error('Avatar upload failed:', uploadError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to upload avatar',
+          error: (uploadError as Error).message,
+        });
+      }
+    }
     
     // Update customer
     await customer.update({
