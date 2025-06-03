@@ -167,70 +167,74 @@ const TaskSectionPage: React.FC = () => {
       </h3>
     </div>
   );
-
   if (isLoading && tasks.length === 0) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F3F4F6' }}>
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <Header 
-            onAddNewClick={() => {}} 
-            onCustomerCreated={() => {}}
-          />
-          <main style={{ padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 100px)' }}>
-            <LoadingSpinner size="lg" text="Loading tasks..." />
-          </main>
+          <div style={{ padding: '20px 30px' }}>
+            <Header 
+              onAddNewClick={() => {}} 
+              onCustomerCreated={() => {}}
+            />
+            <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 100px)' }}>
+              <LoadingSpinner size="lg" text="Loading tasks..." />
+            </main>
+          </div>
         </div>
       </div>
     );
   }
-
   if (error && tasks.length === 0) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F3F4F6' }}>
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <Header 
-            onAddNewClick={() => {}} 
-            onCustomerCreated={() => {}}
-          />
-          <main style={{ padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 100px)' }}>
-            <ErrorState
-              variant="error"
-              message={error}
-              actions={
-                <Button variant="primary" onClick={fetchTasks}>
-                  Try Again
-                </Button>
-              }
+          <div style={{ padding: '20px 30px' }}>
+            <Header 
+              onAddNewClick={() => {}} 
+              onCustomerCreated={() => {}}
             />
-          </main>
+            <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 100px)' }}>
+              <ErrorState
+                variant="error"
+                message={error}
+                actions={
+                  <Button variant="primary" onClick={fetchTasks}>
+                    Try Again
+                  </Button>
+                }
+              />
+            </main>
+          </div>
         </div>
       </div>
     );
   }
-
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F3F4F6' }}>
       <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <Header 
-          onAddNewClick={() => {}} 
-          onCustomerCreated={() => {}}
-        />
-        
-        <main style={{ padding: '24px' }}>
+        <div style={{ padding: '20px 30px' }}>
+          <Header 
+            onAddNewClick={() => {}} 
+            onCustomerCreated={() => {}}
+          />
+          
           {/* Page Title */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
-            marginBottom: '24px'
+            marginBottom: '24px',
+            marginTop: '24px'
           }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
-              Task Management
-            </h1>
+            <div style={{ padding: '0 0px 0 5px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
+                Task Management
+              </h1>
+            </div>
           </div>
           
           {/* Task Stats Cards */}
@@ -383,7 +387,7 @@ const TaskSectionPage: React.FC = () => {
                   ))}              </div>
             )}
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );

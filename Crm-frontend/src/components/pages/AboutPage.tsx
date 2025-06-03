@@ -18,16 +18,17 @@ export default function AboutPage() {
         { icon: '📊', title: 'Analytics', description: 'Deep analysis of business performance' },
         { icon: '🎯', title: 'Promotion', description: 'Manage campaigns and product promotions' },
         { icon: '✅', title: 'Task Management', description: 'Organize tasks and customer follow-ups' },
-    ];return (
+    ];    return (
         <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb' }}>
             <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
             <div style={{ flex: 1, overflowY: 'auto' }}>
-                <Header 
-                    onAddNewClick={() => {}} 
-                    onCustomerCreated={() => {}}
-                />
-                <main style={{ padding: '24px' }}>
-                    <div style={{ maxWidth: '896px', margin: '0 auto' }}>
+                <div style={{ padding: '20px 30px' }}>
+                    <Header 
+                        onAddNewClick={() => {}} 
+                        onCustomerCreated={() => {}}
+                    />
+                    <main>
+                        <div style={{ maxWidth: '896px', margin: '0 auto' }}>
                         {/* Hero Section */}
                         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
                             <h1 style={{ 
@@ -232,11 +233,11 @@ export default function AboutPage() {
                                 </Button>
                                 <Button variant="outline">
                                     📚 Documentation
-                                </Button>
-                            </div>
+                                </Button>                            </div>
                         </div>
                     </div>
                 </main>
+                </div>
             </div>
         </div>
     );

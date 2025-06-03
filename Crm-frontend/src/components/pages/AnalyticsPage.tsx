@@ -95,17 +95,18 @@ const AnalyticsPage: React.FC = () => {
         { key: 'transaksi', color: '#82ca9d', name: 'Transaction Count', yAxisId: 'right' } // Right axis for transactions
     ];
 
-    return (
-
-
-        <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb' }}>
+    return (        <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f9fafb' }}>
             <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-            <div style={{ flex: 1, overflowY: 'auto', position: 'relative', padding: '20px 30px' }}>
-                <Header />
-                <div style={{ padding: '20px 10px' }}>                    <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '20px', color: '#1F2937' }}>
-                        Sales Analytics
-                    </h1>
-                    {error && <p style={{ color: 'orange', marginBottom: '15px' }}>Some data may have failed to load: {error}</p>}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+                <div style={{ padding: '20px 30px' }}>
+                    <Header />
+                    <div style={{ marginTop: '24px' }}>
+                        <div style={{ padding: '0 0px 0 5px' }}>
+                            <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '20px', color: '#1F2937' }}>
+                                Sales Analytics
+                            </h1>
+                        </div>
+                        {error && <p style={{ color: 'orange', marginBottom: '15px' }}>Some data may have failed to load: {error}</p>}
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>                        <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                             <h4 style={{ margin: '0 0 10px 0', color: '#6B7280', fontSize: '14px' }}>Total Revenue</h4>
@@ -141,9 +142,9 @@ const AnalyticsPage: React.FC = () => {
                         ) : !loading && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', textAlign: 'center' }}><p>Product sales data is not available.</p></div>}
 
                         {topCustomersData.length > 0 ? (
-                            <ReusableBarChart data={topCustomersData} xAxisKey="name" dataKey="value" barColor="#82ca9d" title="Top Customers by Spend" />
-                        ) : !loading && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', textAlign: 'center' }}><p>Top customer data is not available.</p></div>}
+                            <ReusableBarChart data={topCustomersData} xAxisKey="name" dataKey="value" barColor="#82ca9d" title="Top Customers by Spend" />                    ) : !loading && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', textAlign: 'center' }}><p>Top customer data is not available.</p></div>}
                     </div>
+                </div>
                 </div>
             </div>
         </div>

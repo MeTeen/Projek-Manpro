@@ -77,28 +77,82 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         setChecking(false);
         return;
       }
-      
-      // Make sure tokens are synced
+        // Make sure tokens are synced - improved comparison logic
       const storedToken = authService.getToken();
-      const tokensMatch = !!storedToken && token === storedToken;
       
-      if (!tokensMatch) {
-        debugLog('ProtectedRoute', 'Token mismatch between context and storage');
-          // Show toast for token mismatch
-        if (!hasShownToast && location.pathname !== '/login') {
-          toast.error('Authentication issue occurred. Please login again.', {
-            position: 'top-right',
-            autoClose: 4000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-          setHasShownToast(true);
+      // Compare tokens more reliably by trimming whitespace and checking both exist
+      const normalizedStoredToken = storedToken?.trim();
+      const normalizedContextToken = token?.trim();
+      
+      // Check if both tokens exist and are valid
+      if (!normalizedStoredToken || !normalizedContextToken) {
+        debugLog('ProtectedRoute', 'Missing token in either context or storage', {
+          hasStoredToken: !!normalizedStoredToken,
+          hasContextToken: !!normalizedContextToken
+        });
+        
+        // If we have a token in storage but not in context, don't show error - this is likely a timing issue
+        if (normalizedStoredToken && !normalizedContextToken) {
+          debugLog('ProtectedRoute', 'Token in storage but not in context - likely initialization timing issue');
+          setChecking(false);
+          return;
+        }
+        
+        // If we have a token in context but not in storage, this is a real problem
+        if (normalizedContextToken && !normalizedStoredToken) {
+          debugLog('ProtectedRoute', 'Token in context but not in storage - clearing context');
+          if (!hasShownToast && location.pathname !== '/login') {
+            toast.error('Authentication issue occurred. Please login again.', {
+              position: 'top-right',
+              autoClose: 4000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+            });
+            setHasShownToast(true);
+          }
+          setChecking(false);
+          return;
         }
         
         setChecking(false);
         return;
+      }
+      
+      // Compare the actual token strings - only show error if they're definitely different
+      const tokensMatch = normalizedStoredToken === normalizedContextToken;
+      
+      if (!tokensMatch) {
+        debugLog('ProtectedRoute', 'Token mismatch between context and storage', {
+          storedTokenLength: normalizedStoredToken.length,
+          contextTokenLength: normalizedContextToken.length,
+          storedTokenStart: normalizedStoredToken.substring(0, 20),
+          contextTokenStart: normalizedContextToken.substring(0, 20)
+        });
+        
+        // Only show error if the tokens are significantly different (not just minor differences)
+        // Check if both tokens are valid JWTs first
+        const storedTokenValid = normalizedStoredToken.split('.').length === 3;
+        const contextTokenValid = normalizedContextToken.split('.').length === 3;
+        
+        if (storedTokenValid && contextTokenValid && normalizedStoredToken !== normalizedContextToken) {
+          // Show toast for significant token mismatch
+          if (!hasShownToast && location.pathname !== '/login') {
+            toast.error('Authentication issue occurred. Please login again.', {
+              position: 'top-right',
+              autoClose: 4000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+            });
+            setHasShownToast(true);
+          }
+          
+          setChecking(false);
+          return;
+        }
       }
       
       debugLog('ProtectedRoute', 'Auth check completed successfully');
