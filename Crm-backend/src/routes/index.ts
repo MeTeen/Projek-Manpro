@@ -8,8 +8,13 @@ import promoRoutes from './promo.routes';
 import analyticsRoutes from './analytics.routes';
 import dashboardRoutes from './dashboard.routes';
 import activityRoutes from './activity.routes';
+import { createBrowserRouter } from 'react-router-dom';
+import ticketRoutes from './tickets';
 
 const router = Router();
+
+router.use('/auth', authRoutes);
+router.use('/tickets', ticketRoutes);
 
 // Health check endpoints
 router.get('/health', (req, res) => {
