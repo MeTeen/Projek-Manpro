@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import { logApiConfig } from './config/api';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
+import CustomerTicketPage from './components/pages/CustomerTicketPage';
+import AdminTicketPage from './components/pages/AdminTicketPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import CustomersPage from './components/pages/CustomersPage';
@@ -11,6 +13,7 @@ import ProductPage from './components/pages/ProductPage';
 import TaskSectionPage from './components/pages/TaskSectionPage';
 import PromoPage from './components/pages/PromoPage';
 import AnalyticsPage from './components/pages/AnalyticsPage';
+import AboutPage from './components/pages/AboutPage';
 import ApiDebugger from './components/ApiDebugger';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
@@ -29,6 +32,10 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+
+          <Route path="/customer" element={<CustomerTicketPage />} />
+          <Route path="/admin" element={<AdminTicketPage />} />
+
           <Route
             path="/dashboard"
             element={
@@ -52,7 +59,7 @@ function App() {
                 <TransactionPage />
               </ProtectedRoute>
             }
-          /> 
+          />
           <Route
             path="/tasksection"
             element={
@@ -66,7 +73,9 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProductPage />
-              </ProtectedRoute>}></Route>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/promo"
             element={
@@ -83,9 +92,17 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/about"
+            element={
+              <ProtectedRoute>
+                <AboutPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
-        
+
         {/* API Debugger for development */}
         <ApiDebugger isVisible={SHOW_API_DEBUGGER} />
       </Router>

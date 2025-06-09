@@ -183,29 +183,24 @@ const getProductSalesDistribution = (req, res) => __awaiter(void 0, void 0, void
             return res.status(200).json({ success: true, data: cachedData });
         }
         console.time('⚡ Product Sales Query (Supabase)');
-        const productSales = yield models_1.CustomerProduct.findAll({
-            attributes: [
-                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('(customer_products.price * customer_products.quantity) - COALESCE(customer_products.discount_amount, 0)')), 'value']
-            ],
-            include: [{
-                    model: models_1.Product,
-                    as: 'product',
-                    attributes: ['name'],
-                    required: true // INNER JOIN for performance
-                }],
-            group: ['product.id', 'product.name'],
-            order: [[models_1.sequelize.literal('value'), 'DESC']],
-            limit: 10, // Top 10 products only
-            raw: true,
-            nest: true,
+        // Use raw SQL query to avoid table alias conflicts
+        const productSalesQuery = `
+            SELECT 
+                p.name,
+                SUM((cp.price * cp.quantity) - COALESCE(cp.discount_amount, 0)) as value
+            FROM customer_products cp
+            INNER JOIN products p ON cp.product_id = p.id
+            GROUP BY p.id, p.name
+            ORDER BY value DESC
+            LIMIT 10
+        `;
+        const productSales = yield models_1.sequelize.query(productSalesQuery, {
+            type: sequelize_1.QueryTypes.SELECT
         });
-        const formattedData = productSales.map((item) => {
-            var _a;
-            return ({
-                name: ((_a = item.product) === null || _a === void 0 ? void 0 : _a.name) || 'Unknown Product',
-                value: parseFloat(item.value || '0')
-            });
-        });
+        const formattedData = productSales.map((item) => ({
+            name: item.name || 'Unknown Product',
+            value: parseFloat(item.value || '0')
+        }));
         setCachedData(cacheKey, formattedData, 10); // Cache for 10 minutes
         console.timeEnd('⚡ Product Sales Query (Supabase)');
         console.log(`✅ Product sales: ${formattedData.length} products fetched`);
@@ -227,29 +222,25 @@ const getTopCustomersBySpend = (req, res) => __awaiter(void 0, void 0, void 0, f
             return res.status(200).json({ success: true, data: cachedData });
         }
         console.time('⚡ Top Customers Query (Supabase)');
-        const topCustomers = yield models_1.CustomerProduct.findAll({
-            attributes: [
-                [(0, sequelize_1.fn)('SUM', models_1.sequelize.literal('(customer_products.price * customer_products.quantity) - COALESCE(customer_products.discount_amount, 0)')), 'value']
-            ],
-            include: [{
-                    model: models_1.Customer,
-                    as: 'customer',
-                    attributes: ['id', 'firstName', 'lastName'],
-                    required: true // INNER JOIN for performance
-                }],
-            group: [(0, sequelize_1.col)('customer.id'), (0, sequelize_1.col)('customer.firstName'), (0, sequelize_1.col)('customer.lastName')],
-            order: [[models_1.sequelize.literal('value'), 'DESC']],
-            limit: limit,
-            raw: true,
-            nest: true,
+        // Use raw SQL query to avoid table alias conflicts
+        const topCustomersQuery = `
+            SELECT 
+                CONCAT(c.first_name, ' ', c.last_name) as name,
+                SUM((cp.price * cp.quantity) - COALESCE(cp.discount_amount, 0)) as value
+            FROM customer_products cp
+            INNER JOIN customers c ON cp.customer_id = c.id
+            GROUP BY c.id, c.first_name, c.last_name
+            ORDER BY value DESC
+            LIMIT $1
+        `;
+        const topCustomers = yield models_1.sequelize.query(topCustomersQuery, {
+            bind: [limit],
+            type: sequelize_1.QueryTypes.SELECT
         });
-        const formattedData = topCustomers.map((item) => {
-            var _a, _b;
-            return ({
-                name: `${((_a = item.customer) === null || _a === void 0 ? void 0 : _a.firstName) || ''} ${((_b = item.customer) === null || _b === void 0 ? void 0 : _b.lastName) || ''}`.trim(),
-                value: parseFloat(item.value || '0')
-            });
-        });
+        const formattedData = topCustomers.map((item) => ({
+            name: (item.name || 'Unknown Customer').trim(),
+            value: parseFloat(item.value || '0')
+        }));
         setCachedData(cacheKey, formattedData, 10); // Cache for 10 minutes
         console.timeEnd('⚡ Top Customers Query (Supabase)');
         console.log(`✅ Top customers: ${formattedData.length} customers fetched`);
