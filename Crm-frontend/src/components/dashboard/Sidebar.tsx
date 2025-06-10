@@ -33,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
     { path: '/tasksection', icon: <MdChecklist size={20} />, label: 'Task To Do' },
     { path: '/settings', icon: <MdSettings size={20} />, label: 'Settings' },
     { path: '/about', icon: <MdInfo size={20} />, label: 'About' }, 
-    { path: '/companyprofile', icon: <MdPerson size={20} />, label: 'Our Company' }
+    { path: '/companyprofile', icon: <MdPerson size={20} />, label: 'Our Company' }  // new sidebar button !!
   ];
 
   const isActiveRoute = (path: string) => {
