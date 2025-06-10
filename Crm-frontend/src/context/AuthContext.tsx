@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import authService from '../services/authService';
 import { AuthResponse, UserData } from '../types/auth';
 import axios from 'axios';
+import { API_CONFIG } from '../config/api';
 
 export type AuthContextType = {
   user: UserData | null;
@@ -11,6 +12,16 @@ export type AuthContextType = {
   signup: (username: string, email: string, password: string, role?: 'admin' | 'super_admin') => Promise<void>;
   logout: () => void;
 };
+
+export async function checkEmailTerdaftar(email: string): Promise<boolean> {
+  try {
+    const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/check-email`, { email });
+    return response.data.terdaftar;
+  } catch (err) {
+    console.error('Gagal mengecek email:', err);
+    return false;
+  }
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

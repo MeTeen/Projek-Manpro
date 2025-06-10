@@ -65,7 +65,16 @@ const authService = {
         }
       }
       logNetworkError('POST', `${API_URL}/auth/signup`, error);
-      logAuth('Signup failed', { error });
+      if (axios.isAxiosError(error)) {
+        logAuth('Signup failed', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+  });
+
+}
+
+      // logAuth('Signup failed', { error });
       throw error;
     }
   },

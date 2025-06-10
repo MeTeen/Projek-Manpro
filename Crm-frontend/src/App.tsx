@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { logApiConfig } from './config/api';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
+import LandingPage from './components/pages/LandingPage';
 import CustomerTicketPage from './components/pages/CustomerTicketPage';
 import AdminTicketPage from './components/pages/AdminTicketPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -17,6 +18,9 @@ import AboutPage from './components/pages/AboutPage';
 import ApiDebugger from './components/ApiDebugger';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
+
+
+<Route path="/" element={<LandingPage />} />
 
 // Set to true to show the API debugger
 const SHOW_API_DEBUGGER = true;
