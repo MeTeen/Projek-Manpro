@@ -104,6 +104,7 @@ const SignUp: React.FC = () => {
               >
                 <MenuItem value="admin">Admin</MenuItem>
                 <MenuItem value="super_admin">Super Admin</MenuItem>
+                <MenuItem value="customer">Customer</MenuItem>
               </Select>
             </FormControl>
             {error && (

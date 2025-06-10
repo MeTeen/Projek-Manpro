@@ -32,7 +32,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
     { path: '/analytics', icon: <MdBarChart size={20} />, label: 'Analytics' },
     { path: '/tasksection', icon: <MdChecklist size={20} />, label: 'Task To Do' },
     { path: '/settings', icon: <MdSettings size={20} />, label: 'Settings' },
-    { path: '/about', icon: <MdInfo size={20} />, label: 'About' } // ✅ Updated menu item
+    { path: '/about', icon: <MdInfo size={20} />, label: 'About' }, 
+    { path: '/companyprofile', icon: <MdPerson size={20} />, label: 'Our Company' }
   ];
 
   const isActiveRoute = (path: string) => {

@@ -7,9 +7,21 @@ import { Op } from 'sequelize';
  * Register a new admin user
  * @route POST /api/auth/signup
  */
+
+
 export const signup = async (req: Request, res: Response) => {
+  console.log('📥 SIGNUP BODY:', req.body);
+
   try {
     const { username, email, password, role } = req.body;
+
+    if (!['admin', 'super_admin', 'customer'].includes(role)) {
+  return res.status(400).json({
+    success: false,
+    message: 'Invalid role',
+  });
+}
+
 
     // Validate request
     if (!username || !email || !password) {

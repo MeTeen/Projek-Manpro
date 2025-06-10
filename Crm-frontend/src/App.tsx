@@ -15,6 +15,10 @@ import AboutPage from './components/pages/AboutPage';
 import ApiDebugger from './components/ApiDebugger';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
+import CompanyProfile from './components/pages/CompanyProfile';
+import AdminTicketPage from './components/pages/AdminTicketPage';
+
+
 
 // Set to true to show the API debugger
 const SHOW_API_DEBUGGER = true;
@@ -88,6 +92,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <AboutPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/companyprofile"
+            element={
+              <ProtectedRoute>
+                <CompanyProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/tickets"
+            element={
+              <ProtectedRoute>
+                <AdminTicketPage />
               </ProtectedRoute>
             }
           />
