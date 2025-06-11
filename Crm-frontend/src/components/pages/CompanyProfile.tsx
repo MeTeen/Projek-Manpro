@@ -132,10 +132,9 @@ const CompanyProfile: React.FC = () => {
               margin: 0 
             }}>
               🪑 Mebel Premium
-            </h1>
-            <div style={{ display: 'flex', gap: '12px' }}>
+            </h1>            <div style={{ display: 'flex', gap: '12px' }}>
               <a 
-                href="/login" 
+                href="/admin/login" 
                 style={{
                   padding: '8px 16px',
                   backgroundColor: 'transparent',
@@ -151,7 +150,7 @@ const CompanyProfile: React.FC = () => {
                 Login
               </a>
               <a 
-                href="/signup" 
+                href="/admin/signup" 
                 style={{
                   padding: '8px 16px',
                   backgroundColor: '#8B4513',

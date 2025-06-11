@@ -22,23 +22,21 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
   const location = useLocation();
   const currentPath = location.pathname;
-
   const navItems = [
-    { path: '/dashboard', icon: <MdDashboard size={20} />, label: 'Dashboard' },
-    { path: '/customers', icon: <MdPerson size={20} />, label: 'Customers' },
-    { path: '/products', icon: <MdShoppingBag size={20} />, label: 'Products' },
-    { path: '/transactions', icon: <MdPointOfSale size={20} />, label: 'Transactions' },
-    { path: '/promo', icon: <MdLocalOffer size={20} />, label: 'Promo' },
-    { path: '/analytics', icon: <MdBarChart size={20} />, label: 'Analytics' },
-    { path: '/tasksection', icon: <MdChecklist size={20} />, label: 'Task To Do' },
-    { path: '/settings', icon: <MdSettings size={20} />, label: 'Settings' },
-    { path: '/about', icon: <MdInfo size={20} />, label: 'About' }, 
-    { path: '/companyprofile', icon: <MdPerson size={20} />, label: 'Our Company' }  // new sidebar button !!
+    { path: '/admin/dashboard', icon: <MdDashboard size={20} />, label: 'Dashboard' },
+    { path: '/admin/customers', icon: <MdPerson size={20} />, label: 'Customers' },
+    { path: '/admin/products', icon: <MdShoppingBag size={20} />, label: 'Products' },
+    { path: '/admin/transactions', icon: <MdPointOfSale size={20} />, label: 'Transactions' },
+    { path: '/admin/promo', icon: <MdLocalOffer size={20} />, label: 'Promo' },
+    { path: '/admin/analytics', icon: <MdBarChart size={20} />, label: 'Analytics' },
+    { path: '/admin/tasksection', icon: <MdChecklist size={20} />, label: 'Task To Do' },
+    { path: '/admin/tickets', icon: <MdSettings size={20} />, label: 'Tickets' },
+    { path: '/admin/about', icon: <MdInfo size={20} />, label: 'About' }, 
+    { path: '/companyprofile', icon: <MdPerson size={20} />, label: 'Our Company' }  // Keep public
   ];
-
   const isActiveRoute = (path: string) => {
-    if (path === '/dashboard') {
-      return currentPath === path || currentPath === '/';
+    if (path === '/admin/dashboard') {
+      return currentPath === path || currentPath === '/admin' || currentPath === '/admin/';
     }
     return currentPath.startsWith(path);
   };

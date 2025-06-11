@@ -32,7 +32,6 @@ const Login: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
   useEffect(() => {
     const checkAuthAndRedirect = () => {
       debugLog('Login', 'Checking authentication state, isAuthenticated:', isAuthenticated);
@@ -40,7 +39,7 @@ const Login: React.FC = () => {
         debugLog('Login', 'User is authenticated, redirecting...');
         
         // Get the page user was trying to access before being redirected to login
-        const from = (location.state as any)?.from?.pathname || '/dashboard';
+        const from = (location.state as any)?.from?.pathname || '/admin/dashboard';
         navigate(from, { replace: true });
       }
     };
@@ -59,17 +58,18 @@ const Login: React.FC = () => {
     setError('');
     setIsLoading(true);    try {
       debugLog('Login', 'Attempting login...');
-      await login(email, password);
-        // Success toast with information about redirect
+      await login(email, password);      // Success toast with information about redirect
       const from = (location.state as any)?.from?.pathname;
-      if (from && from !== '/dashboard') {
+      if (from && from !== '/admin/dashboard') {
         const routeNames: { [key: string]: string } = {
-          '/customers': 'customers page',
-          '/products': 'products page', 
-          '/transactions': 'transactions page',
-          '/tasksection': 'task page',
-          '/promo': 'promo page',
-          '/analytics': 'analytics page'
+          '/admin/customers': 'customers page',
+          '/admin/products': 'products page', 
+          '/admin/transactions': 'transactions page',
+          '/admin/tasksection': 'task page',
+          '/admin/promo': 'promo page',
+          '/admin/analytics': 'analytics page',
+          '/admin/tickets': 'tickets page',
+          '/admin/about': 'about page'
         };
         const routeName = routeNames[from] || 'the requested page';
         toast.success(`Login successful! Redirecting to ${routeName}...`);
@@ -112,9 +112,8 @@ const Login: React.FC = () => {
             alignItems: 'center',
             width: '100%',
           }}
-        >
-          {/* Show info message if user was redirected from a protected route */}
-          {(location.state as any)?.from?.pathname && (location.state as any)?.from?.pathname !== '/dashboard' && (
+        >          {/* Show info message if user was redirected from a protected route */}
+          {(location.state as any)?.from?.pathname && (location.state as any)?.from?.pathname !== '/admin/dashboard' && (
             <Box
               sx={{
                 width: '100%',
@@ -125,7 +124,7 @@ const Login: React.FC = () => {
                 borderRadius: 1,
                 color: '#856404'
               }}
-            >              <Typography variant="body2" align="center">
+            ><Typography variant="body2" align="center">
                 Please login to access the requested page
               </Typography>
             </Box>
@@ -178,9 +177,8 @@ const Login: React.FC = () => {
               ) : (
                 'Sign In'
               )}
-            </Button>
-            <Box sx={{ textAlign: 'center' }}>
-              <Link href="/signup" variant="body2">
+            </Button>            <Box sx={{ textAlign: 'center' }}>
+              <Link href="/admin/signup" variant="body2">
                 {"Don't have an account? Sign Up"}
               </Link>
             </Box>

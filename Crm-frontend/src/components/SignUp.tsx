@@ -23,12 +23,11 @@ const SignUp: React.FC = () => {
   const [error, setError] = useState('');
   const { signup } = useAuth();
   const navigate = useNavigate();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await signup(username, email, password, role);
-      navigate('/dashboard');
+      navigate('/admin/dashboard');
     } catch (error) {
       setError('Failed to create account');
     }
@@ -119,9 +118,8 @@ const SignUp: React.FC = () => {
               sx={{ mt: 3, mb: 2 }}
             >
               Sign Up
-            </Button>
-            <Box sx={{ textAlign: 'center' }}>
-              <Link href="/login" variant="body2">
+            </Button>            <Box sx={{ textAlign: 'center' }}>
+              <Link href="/admin/login" variant="body2">
                 {"Already have an account? Sign In"}
               </Link>
             </Box>

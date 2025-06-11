@@ -28,17 +28,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       // First verify we have valid auth data
       const hasValidData = !!token && !!user && isAuthenticated;
       if (!hasValidData) {
-        debugLog('ProtectedRoute', 'Missing auth data, will redirect');
-          // Show toast notification when user tries to access protected route without authentication
-        if (!hasShownToast && location.pathname !== '/login') {          const routeNames: { [key: string]: string } = {
-            '/dashboard': 'dashboard',
-            '/customers': 'customers page',
-            '/products': 'products page', 
-            '/transactions': 'transactions page',
-            '/tasksection': 'task page',
-            '/promo': 'promo page',
-            '/analytics': 'analytics page',
-            '/about': 'about page'
+        debugLog('ProtectedRoute', 'Missing auth data, will redirect');        // Show toast notification when user tries to access protected route without authentication
+        if (!hasShownToast && location.pathname !== '/admin/login') {
+          const routeNames: { [key: string]: string } = {
+            '/admin/dashboard': 'dashboard',
+            '/admin/customers': 'customers page',
+            '/admin/products': 'products page', 
+            '/admin/transactions': 'transactions page',
+            '/admin/tasksection': 'task page',
+            '/admin/promo': 'promo page',
+            '/admin/analytics': 'analytics page',
+            '/admin/about': 'about page',
+            '/admin/tickets': 'tickets page'
           };
           
           const routeName = routeNames[location.pathname] || 'the requested page';
@@ -60,9 +61,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       // Double-check token is valid by re-checking auth service
       const tokenValid = authService.initializeAuth();
       if (!tokenValid) {
-        debugLog('ProtectedRoute', 'Auth service reports token is invalid');
-          // Show toast for invalid/expired token
-        if (!hasShownToast && location.pathname !== '/login') {
+        debugLog('ProtectedRoute', 'Auth service reports token is invalid');        // Show toast for invalid/expired token
+        if (!hasShownToast && location.pathname !== '/admin/login') {
           toast.error('Your session has expired. Please login again.', {
             position: 'top-right',
             autoClose: 4000,
@@ -162,10 +162,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     // Start check
     checkAuth();
   }, [isAuthenticated, token, user, location.pathname, hasShownToast]);
-
   // Reset toast flag when user goes to login page or becomes authenticated
   useEffect(() => {
-    if (location.pathname === '/login' || isAuthenticated) {
+    if (location.pathname === '/admin/login' || isAuthenticated) {
       setHasShownToast(false);
     }
   }, [location.pathname, isAuthenticated]);
@@ -173,11 +172,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Show loading state while checking authentication
   if (checking) {
     return <div style={{ padding: 20, textAlign: 'center' }}>Checking authentication...</div>;
-  }
-  // If not authenticated, redirect to login
+  }  // If not authenticated, redirect to login
   if (!isAuthenticated) {
-    debugLog('ProtectedRoute', 'Not authenticated, redirecting to login');
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    debugLog('ProtectedRoute', 'Not authenticated, redirecting to admin login');
+    return <Navigate to="/admin/login" replace state={{ from: location }} />;
   }
 
   debugLog('ProtectedRoute', 'Authenticated, rendering protected content');
