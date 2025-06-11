@@ -251,9 +251,8 @@ const TransactionPage: React.FC = () => {
       console.log('Submitting transaction data (with promoId if selected):', dataToSend);      const response = await purchaseService.createPurchase(dataToSend);      
       setIsAddModalOpen(false);
       fetchData(); // Muat ulang semua data
-      
-      // Extract transaction ID from response if available
-      const transactionId = response?.data?.purchase?.id;
+        // Extract transaction ID from response if available
+      const transactionId = response?.id;
       const successMessage = transactionId 
         ? `Transaction ${formatTransactionId(transactionId)} berhasil dicatat!`
         : 'Transaksi berhasil dicatat!';
@@ -343,7 +342,7 @@ const TransactionPage: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    purchases.map((purchase) => {                      const totalPaid = (purchase.price * purchase.quantity) - (purchase.discountAmount || 0);
+                    purchases.map((purchase) => {                      const totalPaid = (purchase.unitPrice * purchase.quantity) - (purchase.discountAmount || 0);
                       return (
                         <tr key={purchase.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                           <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '13px', fontWeight: '600', color: '#4f46e5' }}>
@@ -357,7 +356,7 @@ const TransactionPage: React.FC = () => {
                           </td>
                           <td style={{ padding: '12px 16px', textAlign: 'right' }}>{purchase.quantity}</td>
                           <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                            {formatPrice(purchase.price || 0)}
+                            {formatPrice(purchase.unitPrice || 0)}
                           </td>                          <td style={{
                             padding: '12px 16px',
                             textAlign: 'right',
@@ -378,24 +377,23 @@ const TransactionPage: React.FC = () => {
                           }}>
                             {formatPrice(totalPaid)}
                           </td>
-                          <td style={{ padding: '12px 16px' }}>{new Date(purchase.purchaseDate).toLocaleDateString()}</td>                          <td style={{ padding: '12px 16px' }}>
-                            {purchase.appliedPromoDetails ? (
+                          <td style={{ padding: '12px 16px' }}>{new Date(purchase.purchaseDate).toLocaleDateString()}</td>                          <td style={{ padding: '12px 16px' }}>                            {purchase.promo ? (
                               <div>
                                 <div style={{ 
                                   fontWeight: '600', 
                                   color: '#4f46e5',
                                   fontSize: '13px'
                                 }}>
-                                  {purchase.appliedPromoDetails.name}
+                                  {purchase.promo.name}
                                 </div>
                                 <div style={{ 
                                   fontSize: '11px', 
                                   color: '#6b7280',
                                   marginTop: '2px'
                                 }}>
-                                  {purchase.appliedPromoDetails.type === 'percentage'
-                                    ? `${parseFloat(purchase.appliedPromoDetails.value.toString()).toFixed(0)}% OFF`
-                                    : `${formatPrice(purchase.appliedPromoDetails.value)} OFF`
+                                  {purchase.promo.type === 'percentage'
+                                    ? `${parseFloat(purchase.promo.value.toString()).toFixed(0)}% OFF`
+                                    : `${formatPrice(purchase.promo.value)} OFF`
                                   }
                                 </div>
                               </div>

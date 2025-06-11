@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import customerTicketService, { CustomerTicket, CustomerPurchase } from '../../services/customerTicketService';
 import customerAuthService, { CustomerProfile } from '../../services/customerAuthService';
+import ticketMessageService, { TicketMessage } from '../../services/ticketMessageService';
 import { NeedHelp } from '../../components/ui';
 import { formatTransactionId } from '../../utils/transactionFormatter';
 
@@ -18,12 +19,21 @@ const CustomerTickets: React.FC = () => {
     priority: 'all',
     category: 'all'
   });
-  const navigate = useNavigate();
-  const [newTicket, setNewTicket] = useState({
+  
+  // Chat modal states
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<CustomerTicket | null>(null);
+  const [messages, setMessages] = useState<TicketMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  const navigate = useNavigate();  const [newTicket, setNewTicket] = useState({
     subject: '',
-    description: '',
-    priority: 'medium' as const,
-    category: 'inquiry' as const,
+    message: '',
+    priority: 'Medium' as const,
+    category: 'General' as const,
     purchaseId: undefined as number | undefined
   });
 
@@ -78,7 +88,6 @@ const CustomerTickets: React.FC = () => {
       console.error('Error fetching purchases:', error);
     }
   };
-
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateLoading(true);
@@ -86,12 +95,15 @@ const CustomerTickets: React.FC = () => {
 
     try {
       const response = await customerTicketService.createTicket(newTicket);
+      console.log('Create ticket response:', response);
+      
       if (response.success) {
-        setShowCreateForm(false);        setNewTicket({
+        setShowCreateForm(false);
+        setNewTicket({
           subject: '',
-          description: '',
-          priority: 'medium',
-          category: 'inquiry',
+          message: '',
+          priority: 'Medium',
+          category: 'General',
           purchaseId: undefined
         });
         await fetchTickets();
@@ -99,7 +111,8 @@ const CustomerTickets: React.FC = () => {
         setError(response.message || 'Failed to create ticket');
       }
     } catch (error) {
-      setError('An error occurred while creating the ticket');
+      console.error('Error creating ticket:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred while creating the ticket');
       console.error('Create ticket error:', error);
     } finally {
       setCreateLoading(false);
@@ -111,6 +124,86 @@ const CustomerTickets: React.FC = () => {
     localStorage.removeItem('customerData');
     navigate('/customer/login');
   };
+
+  // Chat functions
+  const openChatModal = async (ticket: CustomerTicket) => {
+    setSelectedTicket(ticket);
+    setShowChatModal(true);
+    await fetchMessages(ticket.id);
+  };
+
+  const closeChatModal = () => {
+    setShowChatModal(false);
+    setSelectedTicket(null);
+    setMessages([]);
+    setNewMessage('');
+    setError('');
+  };
+
+  const fetchMessages = async (ticketId: number) => {
+    try {
+      setMessagesLoading(true);
+      const response = await ticketMessageService.getTicketMessages(ticketId);
+      if (response.success) {
+        setMessages(response.data.messages);
+        // Scroll to bottom after messages load
+        setTimeout(() => scrollToBottom(), 100);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setError('Failed to load messages');
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedTicket) return;
+
+    try {
+      setSendingMessage(true);
+      const response = await ticketMessageService.createMessage(selectedTicket.id, {
+        message: newMessage.trim()
+      });
+      
+      if (response.success) {
+        setMessages(prev => [...prev, response.data]);
+        setNewMessage('');
+        setTimeout(() => scrollToBottom(), 100);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setError('Failed to send message');
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const formatMessageTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
+  };
+
   const filteredTickets = (tickets || []).filter(ticket => {
     if (filter.status !== 'all' && ticket.status !== filter.status) return false;
     if (filter.priority !== 'all' && ticket.priority !== filter.priority) return false;
@@ -391,15 +484,14 @@ const CustomerTickets: React.FC = () => {
                     fontSize: '14px',
                     outline: 'none'
                   }}
-                >                  <option value="all">All Categories</option>
-                  <option value="inquiry">General Inquiry</option>
-                  <option value="complaint">Product Complaint</option>
-                  <option value="delivery_issue">Delivery Issue</option>
-                  <option value="payment_issue">Payment Issue</option>
-                  <option value="warranty_claim">Warranty Claim</option>
-                  <option value="return_refund">Return/Refund</option>
-                  <option value="other">Other</option>
-                </select>
+                >                  <option value="all">All Categories</option                    >
+                      <option value="General">General Inquiry</option>
+                      <option value="Product Quality">Product Complaint</option>
+                      <option value="Delivery">Delivery Issue</option>
+                      <option value="Payment">Payment Issue</option>
+                      <option value="Exchange">Exchange Request</option>
+                      <option value="Refund">Refund Request</option>
+                    </select>
               </div>
             </div>
           </div>
@@ -533,8 +625,38 @@ const CustomerTickets: React.FC = () => {
                         <span style={{ color: '#6b5b47', marginLeft: '8px' }}>
                           {ticket.purchase.product.name}
                         </span>
-                      </div>
-                    )}
+                      </div>                    )}
+                  </div>
+                  
+                  {/* Chat Button */}
+                  <div style={{
+                    marginTop: '16px',
+                    paddingTop: '16px',
+                    borderTop: '1px solid #e5e7eb',
+                    display: 'flex',
+                    justifyContent: 'flex-end'
+                  }}>
+                    <button
+                      onClick={() => openChatModal(ticket)}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#8B4513',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'background-color 0.3s'
+                      }}
+                      onMouseEnter={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#6b3410'}
+                      onMouseLeave={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#8B4513'}
+                    >
+                      💬 View Chat
+                    </button>
                   </div>
                 </div>
               ))}
@@ -615,12 +737,11 @@ const CustomerTickets: React.FC = () => {
                     marginBottom: '8px'
                   }}>
                     Description *
-                  </label>
-                  <textarea
+                  </label>                  <textarea
                     required
                     rows={4}
-                    value={newTicket.description}
-                    onChange={(e) => setNewTicket(prev => ({ ...prev, description: e.target.value }))}
+                    value={newTicket.message}
+                    onChange={(e) => setNewTicket(prev => ({ ...prev, message: e.target.value }))}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -658,12 +779,11 @@ const CustomerTickets: React.FC = () => {
                         borderRadius: '8px',
                         fontSize: '16px',
                         outline: 'none'
-                      }}
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
+                      }}                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
                     </select>
                   </div>
 
@@ -676,8 +796,7 @@ const CustomerTickets: React.FC = () => {
                       marginBottom: '8px'
                     }}>
                       Category
-                    </label>
-                    <select
+                    </label>                    <select
                       value={newTicket.category}
                       onChange={(e) => setNewTicket(prev => ({ ...prev, category: e.target.value as any }))}
                       style={{
@@ -688,13 +807,13 @@ const CustomerTickets: React.FC = () => {
                         fontSize: '16px',
                         outline: 'none'
                       }}
-                    >                      <option value="inquiry">General Inquiry</option>
-                      <option value="complaint">Product Complaint</option>
-                      <option value="delivery_issue">Delivery Issue</option>
-                      <option value="payment_issue">Payment Issue</option>
-                      <option value="warranty_claim">Warranty Claim</option>
-                      <option value="return_refund">Return/Refund</option>
-                      <option value="other">Other</option>
+                    >
+                      <option value="General">General</option>
+                      <option value="Product Quality">Product Quality</option>
+                      <option value="Delivery">Delivery</option>
+                      <option value="Payment">Payment</option>
+                      <option value="Refund">Refund</option>
+                      <option value="Exchange">Exchange</option>
                     </select>
                   </div>
                 </div>                <div>
@@ -1015,6 +1134,175 @@ const CustomerTickets: React.FC = () => {
                     {createLoading ? 'Creating...' : 'Create Ticket'}
                   </button>
                 </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Chat Modal */}
+        {showChatModal && selectedTicket && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative'
+            }}>
+              <div style={{
+                marginBottom: '24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <h3 style={{ color: '#8B4513', margin: 0, fontSize: '20px' }}>
+                  Ticket #{selectedTicket.id} - {selectedTicket.subject}
+                </h3>
+                <button
+                  onClick={closeChatModal}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    borderRadius: '50%',
+                    transition: 'background-color 0.3s'
+                  }}
+                  onMouseEnter={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#f3f4f6'}
+                  onMouseLeave={(e) => (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ color: '#8B4513', width: '24px', height: '24px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Messages List */}
+              <div style={{
+                maxHeight: '400px',
+                overflowY: 'auto',
+                marginBottom: '16px',
+                paddingRight: '8px'
+              }}>
+                {messagesLoading && (
+                  <div style={{ textAlign: 'center', padding: '16px' }}>
+                    <span style={{ fontSize: '16px', color: '#6b5b47' }}>Loading messages...</span>
+                  </div>
+                )}
+                {!messagesLoading && messages.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '16px' }}>
+                    <span style={{ fontSize: '16px', color: '#6b5b47' }}>No messages found. Be the first to send a message!</span>
+                  </div>
+                )}
+                {messages.map((message) => (
+                  <div key={message.id} style={{
+                    marginBottom: '12px',
+                    display: 'flex',
+                    flexDirection: message.sender === 'customer' ? 'row-reverse' : 'row',
+                    alignItems: 'flex-start',
+                    gap: '12px'
+                  }}>
+                    <div style={{
+                      padding: '10px 14px',
+                      borderRadius: '16px',
+                      maxWidth: '80%',
+                      backgroundColor: message.sender === 'customer' ? '#8B4513' : '#f1f1f1',
+                      color: message.sender === 'customer' ? 'white' : '#333',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}>
+                      {message.sender !== 'customer' && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '-8px',
+                          transform: 'translateY(-50%)',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          backgroundColor: '#8B4513',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '16px',
+                          color: 'white',
+                          fontWeight: '600'
+                        }}>
+                          {message.sender.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div style={{
+                        whiteSpace: 'pre-wrap',
+                        wordWrap: 'break-word',
+                        fontSize: '14px',
+                        lineHeight: '1.4'
+                      }}>
+                        {message.message}
+                      </div>
+                      <div style={{
+                        marginTop: '8px',
+                        fontSize: '12px',
+                        color: '#6b5b47',
+                        textAlign: 'right'
+                      }}>
+                        {formatMessageTime(message.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* New Message Form */}
+              <form onSubmit={sendMessage} style={{ display: 'flex', gap: '12px' }}>
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#D2691E'}
+                  onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#e5e7eb'}
+                />
+                <button
+                  type="submit"
+                  disabled={sendingMessage}
+                  style={{
+                    padding: '12px 16px',
+                    backgroundColor: sendingMessage ? '#9ca3af' : '#8B4513',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: sendingMessage ? 'not-allowed' : 'pointer',
+                    transition: 'background-color 0.3s'
+                  }}
+                >
+                  {sendingMessage ? 'Sending...' : 'Send'}
+                </button>
               </form>
             </div>
           </div>

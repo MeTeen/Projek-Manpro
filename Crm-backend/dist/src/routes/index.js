@@ -16,6 +16,7 @@ const activity_routes_1 = __importDefault(require("./activity.routes"));
 const ticket_routes_1 = __importDefault(require("./ticket.routes"));
 const customerAuth_routes_1 = __importDefault(require("./customerAuth.routes"));
 const customerTicket_routes_1 = __importDefault(require("./customerTicket.routes"));
+const ticketMessages_routes_1 = __importDefault(require("./ticketMessages.routes"));
 const router = (0, express_1.Router)();
 // Health check endpoints
 router.get('/health', (req, res) => {
@@ -58,6 +59,8 @@ router.use('/admin/tickets', ticket_routes_1.default);
 // Customer authentication routes
 router.use('/customer/auth', customerAuth_routes_1.default);
 // Customer ticket routes
-router.use('/customer/tickets', customerTicket_routes_1.default);
+router.use('/customer', customerTicket_routes_1.default);
+// Ticket message routes (for both admin and customer)
+router.use('/', ticketMessages_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

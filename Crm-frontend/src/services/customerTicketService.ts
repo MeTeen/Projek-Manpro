@@ -8,7 +8,7 @@ export interface CustomerTicket {
   description: string;
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: 'complaint' | 'inquiry' | 'delivery_issue' | 'payment_issue' | 'warranty_claim' | 'return_refund' | 'other';
+  category: 'Delivery' | 'Product Quality' | 'Payment' | 'General' | 'Refund' | 'Exchange';
   createdAt: string;
   updatedAt: string;
   customer: {
@@ -36,9 +36,9 @@ export interface CustomerTicket {
 
 export interface CreateTicketRequest {
   subject: string;
-  description: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: 'complaint' | 'inquiry' | 'delivery_issue' | 'payment_issue' | 'warranty_claim' | 'return_refund' | 'other';
+  message: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+  category: 'Delivery' | 'Product Quality' | 'Payment' | 'General' | 'Refund' | 'Exchange';
   purchaseId?: number;
 }
 
@@ -67,19 +67,38 @@ class CustomerTicketService {
   private getAuthHeader() {
     const token = localStorage.getItem('customerToken');
     return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
-  async createTicket(ticketData: CreateTicketRequest) {
+  }  async createTicket(ticketData: CreateTicketRequest) {
     try {
+      console.log('🎫 Creating ticket with data:', ticketData);
+      console.log('🔑 Auth header:', this.getAuthHeader());
+      
       const response = await axios.post(`${API_URL}/customer/tickets`, ticketData, {
-        headers: this.getAuthHeader(),
+        headers: {
+          ...this.getAuthHeader(),
+          'Content-Type': 'application/json',
+        },
       });
+      
+      console.log('✅ Ticket creation response:', response.data);
       return response.data;
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        return error.response.data;
+      console.error('❌ Error creating ticket:', error);
+      
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          console.error('❌ Response error:', error.response.status, error.response.data);
+          throw new Error(error.response.data?.message || `Server error: ${error.response.status}`);
+        } else if (error.request) {
+          console.error('❌ Network error:', error.request);
+          throw new Error('Network error: Could not connect to server');
+        } else {
+          console.error('❌ Request setup error:', error.message);
+          throw new Error(`Request error: ${error.message}`);
+        }
+      } else {
+        console.error('❌ Unknown error:', error);
+        throw new Error('Unknown error occurred while creating ticket');
       }
-      throw error;
     }
   }
 
@@ -90,9 +109,7 @@ class CustomerTicketService {
         if (value !== undefined && value !== null && value !== '') {
           params.append(key, value.toString());
         }
-      });
-
-      const response = await axios.get(`${API_URL}/customer/tickets?${params.toString()}`, {
+      });      const response = await axios.get(`${API_URL}/customer?${params.toString()}`, {
         headers: this.getAuthHeader(),
       });
       return response.data;
@@ -120,7 +137,7 @@ class CustomerTicketService {
 
   async getMyPurchases() {
     try {
-      const response = await axios.get(`${API_URL}/customer/tickets/purchases`, {
+      const response = await axios.get(`${API_URL}/customer/purchases`, {
         headers: this.getAuthHeader(),
       });
       return response.data;

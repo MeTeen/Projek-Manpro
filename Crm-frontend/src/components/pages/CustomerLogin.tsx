@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import customerAuthService from '../services/customerAuthService';
+import customerAuthService from '../../services/customerAuthService';
 
 const CustomerLogin: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -67,12 +67,10 @@ const CustomerLogin: React.FC = () => {
     }
 
     setLoading(true);
-    setError('');
-
-    try {
+    setError('');    try {
       const response = await customerAuthService.changePassword({
         customerId: customerId!,
-        currentPassword: formData.password,
+        currentPassword: formData.get('currentPassword') as string,
         newPassword
       });
 
@@ -100,8 +98,20 @@ const CustomerLogin: React.FC = () => {
             <p className="mt-2 text-center text-sm text-gray-600">
               This is your first login. Please change your password to continue.
             </p>
-          </div>
-          <form className="mt-8 space-y-6" onSubmit={handlePasswordChange}>
+          </div>          <form className="mt-8 space-y-6" onSubmit={handlePasswordChange}>
+            <div>
+              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+                Current Password (Your Phone Number)
+              </label>
+              <input
+                id="currentPassword"
+                name="currentPassword"
+                type="password"
+                required
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Enter your phone number"
+              />
+            </div>
             <div>
               <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
                 New Password

@@ -11,6 +11,7 @@ import activityRoutes from './activity.routes';
 import ticketRoutes from './ticket.routes';
 import customerAuthRoutes from './customerAuth.routes';
 import customerTicketRoutes from './customerTicket.routes';
+import ticketMessageRoutes from './ticketMessages.routes';
 
 const router = Router();
 
@@ -68,6 +69,9 @@ router.use('/admin/tickets', ticketRoutes);
 router.use('/customer/auth', customerAuthRoutes);
 
 // Customer ticket routes
-router.use('/customer/tickets', customerTicketRoutes);
+router.use('/customer', customerTicketRoutes);
+
+// Ticket message routes (for both admin and customer) - MUST BE LAST
+router.use('/', ticketMessageRoutes);
 
 export default router;

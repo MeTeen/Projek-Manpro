@@ -32,6 +32,7 @@ import Purchase from './purchase.model';
 import Promo from './promo.model';
 import CustomerPromo from './customerPromo.model';
 import Ticket from './ticket.model';
+import TicketMessage from './ticketMessage.model';
 
 // Initialize models
 Admin.initialize(sequelize);
@@ -43,6 +44,7 @@ Purchase.initialize(sequelize);
 Promo.initialize(sequelize);
 CustomerPromo.initialize(sequelize);
 Ticket.initialize(sequelize);
+TicketMessage.initModel(sequelize);
 
 // Define model associations
 Customer.belongsToMany(Product, { 
@@ -158,6 +160,28 @@ Purchase.hasMany(Ticket, { foreignKey: 'purchaseId', as: 'tickets' });
 Ticket.belongsTo(Admin, { foreignKey: 'assignedTo', as: 'assignedAdmin' });
 Admin.hasMany(Ticket, { foreignKey: 'assignedTo', as: 'assignedTickets' });
 
+// TicketMessage associations
+Ticket.hasMany(TicketMessage, { foreignKey: 'ticketId', as: 'messages' });
+TicketMessage.belongsTo(Ticket, { foreignKey: 'ticketId', as: 'ticket' });
+
+TicketMessage.belongsTo(Customer, {
+  foreignKey: 'senderId',
+  constraints: false,
+  as: 'customerSender',
+  scope: {
+    senderType: 'customer'
+  }
+});
+
+TicketMessage.belongsTo(Admin, {
+  foreignKey: 'senderId',
+  constraints: false,
+  as: 'adminSender',
+  scope: {
+    senderType: 'admin'
+  }
+});
+
 export {
   sequelize,
   Admin,
@@ -168,5 +192,6 @@ export {
   Purchase,
   Promo, // Export model baru
   CustomerPromo, // Export model baru
-  Ticket // Export Ticket model
+  Ticket, // Export Ticket model
+  TicketMessage // Export TicketMessage model
 };

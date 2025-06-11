@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Ticket = exports.CustomerPromo = exports.Promo = exports.Purchase = exports.CustomerProduct = exports.Product = exports.Task = exports.Customer = exports.Admin = exports.sequelize = void 0;
+exports.TicketMessage = exports.Ticket = exports.CustomerPromo = exports.Promo = exports.Purchase = exports.CustomerProduct = exports.Product = exports.Task = exports.Customer = exports.Admin = exports.sequelize = void 0;
 const sequelize_1 = require("sequelize");
 const dotenv_1 = __importDefault(require("dotenv"));
 const database_1 = __importDefault(require("../../config/database"));
@@ -44,6 +44,8 @@ const customerPromo_model_1 = __importDefault(require("./customerPromo.model"));
 exports.CustomerPromo = customerPromo_model_1.default;
 const ticket_model_1 = __importDefault(require("./ticket.model"));
 exports.Ticket = ticket_model_1.default;
+const ticketMessage_model_1 = __importDefault(require("./ticketMessage.model"));
+exports.TicketMessage = ticketMessage_model_1.default;
 // Initialize models
 admin_model_1.default.initialize(sequelize);
 customer_model_1.default.initialize(sequelize);
@@ -54,6 +56,7 @@ purchase_model_1.default.initialize(sequelize);
 promo_model_1.default.initialize(sequelize);
 customerPromo_model_1.default.initialize(sequelize);
 ticket_model_1.default.initialize(sequelize);
+ticketMessage_model_1.default.initModel(sequelize);
 // Define model associations
 customer_model_1.default.belongsToMany(product_model_1.default, {
     through: customerProduct_model_1.default,
@@ -146,4 +149,23 @@ ticket_model_1.default.belongsTo(purchase_model_1.default, { foreignKey: 'purcha
 purchase_model_1.default.hasMany(ticket_model_1.default, { foreignKey: 'purchaseId', as: 'tickets' });
 ticket_model_1.default.belongsTo(admin_model_1.default, { foreignKey: 'assignedTo', as: 'assignedAdmin' });
 admin_model_1.default.hasMany(ticket_model_1.default, { foreignKey: 'assignedTo', as: 'assignedTickets' });
+// TicketMessage associations
+ticket_model_1.default.hasMany(ticketMessage_model_1.default, { foreignKey: 'ticketId', as: 'messages' });
+ticketMessage_model_1.default.belongsTo(ticket_model_1.default, { foreignKey: 'ticketId', as: 'ticket' });
+ticketMessage_model_1.default.belongsTo(customer_model_1.default, {
+    foreignKey: 'senderId',
+    constraints: false,
+    as: 'customerSender',
+    scope: {
+        senderType: 'customer'
+    }
+});
+ticketMessage_model_1.default.belongsTo(admin_model_1.default, {
+    foreignKey: 'senderId',
+    constraints: false,
+    as: 'adminSender',
+    scope: {
+        senderType: 'admin'
+    }
+});
 //# sourceMappingURL=index.js.map
