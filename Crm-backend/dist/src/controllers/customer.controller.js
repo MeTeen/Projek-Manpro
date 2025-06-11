@@ -8,10 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCustomerWithPurchases = exports.deleteCustomer = exports.updateCustomer = exports.createCustomer = exports.getCustomerById = exports.getAllCustomers = void 0;
 const models_1 = require("../models");
 const upload_middleware_1 = require("../middlewares/upload.middleware");
+const supabase_storage_service_1 = __importDefault(require("../services/supabase-storage.service"));
 const sequelize_1 = require("sequelize");
 /**
  * Get all customers with pagination and filtering
@@ -37,7 +41,7 @@ const getAllCustomers = (req, res) => __awaiter(void 0, void 0, void 0, function
             order: [['createdAt', 'DESC']],
             limit,
             offset,
-            attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'city', 'state', 'totalSpent', 'purchaseCount', 'avatarUrl', 'createdAt']
+            attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode', 'totalSpent', 'purchaseCount', 'avatarUrl', 'createdAt']
         });
         res.status(200).json({
             success: true,
@@ -109,8 +113,23 @@ const createCustomer = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 message: `Customer with email ${email} already exists`,
             });
         }
-        // Get avatar URL from uploaded file
-        const avatarUrl = req.file ? (0, upload_middleware_1.getAvatarUrl)(req.file.filename) : null;
+        // Handle avatar upload to Supabase
+        let avatarUrl = null;
+        if (req.file) {
+            try {
+                const fileName = supabase_storage_service_1.default.generateAvatarFileName(req.file.originalname);
+                const uploadResult = yield supabase_storage_service_1.default.uploadFile(req.file.buffer, fileName, req.file.mimetype);
+                avatarUrl = uploadResult.publicUrl;
+            }
+            catch (uploadError) {
+                console.error('Avatar upload failed:', uploadError);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to upload avatar',
+                    error: uploadError.message,
+                });
+            }
+        }
         // Create customer with default values for totalSpent and purchaseCount
         const customer = yield models_1.Customer.create({
             firstName,
@@ -167,10 +186,37 @@ const updateCustomer = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 });
             }
         }
-        // Get avatar URL from uploaded file, or keep existing
-        const avatarUrl = req.file
-            ? (0, upload_middleware_1.getAvatarUrl)(req.file.filename)
-            : customer.avatarUrl;
+        // Handle avatar upload to Supabase
+        let avatarUrl = customer.avatarUrl; // Keep existing avatar by default
+        if (req.file) {
+            try {
+                // Delete old avatar if it exists and is a Supabase URL
+                if (customer.avatarUrl && (0, upload_middleware_1.isSupabaseUrl)(customer.avatarUrl)) {
+                    const oldFileName = supabase_storage_service_1.default.extractFileNameFromUrl(customer.avatarUrl);
+                    if (oldFileName) {
+                        try {
+                            yield supabase_storage_service_1.default.deleteFile(oldFileName);
+                        }
+                        catch (deleteError) {
+                            console.warn('Failed to delete old avatar:', deleteError);
+                            // Continue with upload even if deletion fails
+                        }
+                    }
+                }
+                // Upload new avatar
+                const fileName = supabase_storage_service_1.default.generateAvatarFileName(req.file.originalname, id);
+                const uploadResult = yield supabase_storage_service_1.default.uploadFile(req.file.buffer, fileName, req.file.mimetype);
+                avatarUrl = uploadResult.publicUrl;
+            }
+            catch (uploadError) {
+                console.error('Avatar upload failed:', uploadError);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to upload avatar',
+                    error: uploadError.message,
+                });
+            }
+        }
         // Update customer
         yield customer.update({
             firstName: firstName || customer.firstName,

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CustomerPromo = exports.Promo = exports.CustomerProduct = exports.Product = exports.Task = exports.Customer = exports.Admin = exports.sequelize = void 0;
+exports.Ticket = exports.CustomerPromo = exports.Promo = exports.CustomerProduct = exports.Product = exports.Task = exports.Customer = exports.Admin = exports.sequelize = void 0;
 const sequelize_1 = require("sequelize");
 const dotenv_1 = __importDefault(require("dotenv"));
 const database_1 = __importDefault(require("../../config/database"));
@@ -40,6 +40,8 @@ const promo_model_1 = __importDefault(require("./promo.model"));
 exports.Promo = promo_model_1.default;
 const customerPromo_model_1 = __importDefault(require("./customerPromo.model"));
 exports.CustomerPromo = customerPromo_model_1.default;
+const ticket_model_1 = __importDefault(require("./ticket.model"));
+exports.Ticket = ticket_model_1.default;
 // Initialize models
 admin_model_1.default.initialize(sequelize);
 customer_model_1.default.initialize(sequelize);
@@ -48,6 +50,7 @@ product_model_1.default.initialize(sequelize);
 customerProduct_model_1.default.initialize(sequelize);
 promo_model_1.default.initialize(sequelize);
 customerPromo_model_1.default.initialize(sequelize);
+ticket_model_1.default.initialize(sequelize);
 // Define model associations
 customer_model_1.default.belongsToMany(product_model_1.default, {
     through: customerProduct_model_1.default,
@@ -108,4 +111,11 @@ promo_model_1.default.hasMany(customerProduct_model_1.default, {
 });
 promo_model_1.default.belongsTo(admin_model_1.default, { foreignKey: 'createdBy', as: 'creatorAdmin' });
 admin_model_1.default.hasMany(promo_model_1.default, { foreignKey: 'createdBy', as: 'createdPromos' });
+// Ticket associations
+ticket_model_1.default.belongsTo(customer_model_1.default, { foreignKey: 'customerId', as: 'customer' });
+customer_model_1.default.hasMany(ticket_model_1.default, { foreignKey: 'customerId', as: 'tickets' });
+ticket_model_1.default.belongsTo(customerProduct_model_1.default, { foreignKey: 'purchaseId', as: 'purchase' });
+customerProduct_model_1.default.hasMany(ticket_model_1.default, { foreignKey: 'purchaseId', as: 'tickets' });
+ticket_model_1.default.belongsTo(admin_model_1.default, { foreignKey: 'assignedTo', as: 'assignedAdmin' });
+admin_model_1.default.hasMany(ticket_model_1.default, { foreignKey: 'assignedTo', as: 'assignedTickets' });
 //# sourceMappingURL=index.js.map

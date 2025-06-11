@@ -8,6 +8,9 @@ import promoRoutes from './promo.routes';
 import analyticsRoutes from './analytics.routes';
 import dashboardRoutes from './dashboard.routes';
 import activityRoutes from './activity.routes';
+import ticketRoutes from './ticket.routes';
+// import customerAuthRoutes from './customerAuth.routes';
+// import customerTicketRoutes from './customerTicket.routes';
 
 const router = Router();
 
@@ -58,4 +61,13 @@ router.use('/dashboard', dashboardRoutes);
 // Activity routes
 router.use('/activities', activityRoutes);
 
-export default router; 
+// Ticket routes (admin)
+router.use('/admin/tickets', ticketRoutes);
+
+// Customer authentication routes
+// router.use('/customer/auth', customerAuthRoutes);
+
+// Customer ticket routes
+// router.use('/customer/tickets', customerTicketRoutes);
+
+export default router;

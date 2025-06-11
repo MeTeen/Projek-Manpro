@@ -30,6 +30,7 @@ import Product from './product.model';
 import CustomerProduct from './customerProduct.model';
 import Promo from './promo.model';
 import CustomerPromo from './customerPromo.model';
+import Ticket from './ticket.model';
 
 // Initialize models
 Admin.initialize(sequelize);
@@ -39,6 +40,7 @@ Product.initialize(sequelize);
 CustomerProduct.initialize(sequelize);
 Promo.initialize(sequelize);
 CustomerPromo.initialize(sequelize);
+Ticket.initialize(sequelize);
 
 // Define model associations
 Customer.belongsToMany(Product, { 
@@ -113,6 +115,16 @@ Promo.hasMany(CustomerProduct, {
 Promo.belongsTo(Admin, { foreignKey: 'createdBy', as: 'creatorAdmin' });
 Admin.hasMany(Promo, { foreignKey: 'createdBy', as: 'createdPromos' });
 
+// Ticket associations
+Ticket.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
+Customer.hasMany(Ticket, { foreignKey: 'customerId', as: 'tickets' });
+
+Ticket.belongsTo(CustomerProduct, { foreignKey: 'purchaseId', as: 'purchase' });
+CustomerProduct.hasMany(Ticket, { foreignKey: 'purchaseId', as: 'tickets' });
+
+Ticket.belongsTo(Admin, { foreignKey: 'assignedTo', as: 'assignedAdmin' });
+Admin.hasMany(Ticket, { foreignKey: 'assignedTo', as: 'assignedTickets' });
+
 export {
   sequelize,
   Admin,
@@ -121,5 +133,6 @@ export {
   Product,
   CustomerProduct,
   Promo, // Export model baru
-  CustomerPromo // Export model baru
+  CustomerPromo, // Export model baru
+  Ticket // Export Ticket model
 };

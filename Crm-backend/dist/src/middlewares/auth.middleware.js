@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isSuperAdmin = exports.isAdmin = exports.authenticateJWT = void 0;
+exports.authenticateCustomer = exports.isSuperAdmin = exports.isAdmin = exports.authenticateJWT = void 0;
 const jwt_1 = require("../utils/jwt");
 const models_1 = require("../models");
 /**
@@ -101,4 +101,51 @@ const isSuperAdmin = (req, res, next) => {
     next();
 };
 exports.isSuperAdmin = isSuperAdmin;
+/**
+ * Middleware to authenticate customers via JWT token
+ */
+const authenticateCustomer = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Extract token from Authorization header
+        const authHeader = req.headers.authorization;
+        const token = (0, jwt_1.extractTokenFromHeader)(authHeader);
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authentication failed: No token provided'
+            });
+        }
+        // Verify the token
+        const decoded = (0, jwt_1.verifyToken)(token);
+        if (!decoded || !decoded.id || decoded.role !== 'customer') {
+            return res.status(401).json({
+                success: false,
+                message: 'Authentication failed: Invalid token'
+            });
+        }
+        // Find customer in database
+        const customer = yield models_1.Customer.findByPk(decoded.id);
+        if (!customer) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authentication failed: Customer not found'
+            });
+        }
+        // Attach customer to request
+        req.user = {
+            id: customer.id,
+            email: customer.email,
+            role: 'customer'
+        };
+        next();
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Authentication error',
+            error: error.message
+        });
+    }
+});
+exports.authenticateCustomer = authenticateCustomer;
 //# sourceMappingURL=auth.middleware.js.map

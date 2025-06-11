@@ -18,8 +18,15 @@ const sequelize_1 = require("sequelize");
  * @route POST /api/auth/signup
  */
 const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('📥 SIGNUP BODY:', req.body);
     try {
         const { username, email, password, role } = req.body;
+        if (!['admin', 'super_admin', 'customer'].includes(role)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid role',
+            });
+        }
         // Validate request
         if (!username || !email || !password) {
             return res.status(400).json({

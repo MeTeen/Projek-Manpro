@@ -13,6 +13,9 @@ const promo_routes_1 = __importDefault(require("./promo.routes"));
 const analytics_routes_1 = __importDefault(require("./analytics.routes"));
 const dashboard_routes_1 = __importDefault(require("./dashboard.routes"));
 const activity_routes_1 = __importDefault(require("./activity.routes"));
+const ticket_routes_1 = __importDefault(require("./ticket.routes"));
+// import customerAuthRoutes from './customerAuth.routes';
+// import customerTicketRoutes from './customerTicket.routes';
 const router = (0, express_1.Router)();
 // Health check endpoints
 router.get('/health', (req, res) => {
@@ -50,5 +53,11 @@ router.use('/analytics', analytics_routes_1.default);
 router.use('/dashboard', dashboard_routes_1.default);
 // Activity routes
 router.use('/activities', activity_routes_1.default);
+// Ticket routes (admin)
+router.use('/admin/tickets', ticket_routes_1.default);
+// Customer authentication routes
+// router.use('/customer/auth', customerAuthRoutes);
+// Customer ticket routes
+// router.use('/customer/tickets', customerTicketRoutes);
 exports.default = router;
 //# sourceMappingURL=index.js.map
