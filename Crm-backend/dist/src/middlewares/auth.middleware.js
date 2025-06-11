@@ -17,33 +17,40 @@ const models_1 = require("../models");
  */
 const authenticateJWT = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        console.log('🔐 authenticateJWT middleware called for:', req.method, req.path);
+        console.log('🔐 Headers authorization:', req.headers.authorization ? 'Present' : 'Missing');
         // Extract token from Authorization header
         const authHeader = req.headers.authorization;
         const token = (0, jwt_1.extractTokenFromHeader)(authHeader);
         if (!token) {
+            console.log('🔐 No token provided');
             return res.status(401).json({
                 success: false,
                 message: 'Authentication failed: No token provided'
             });
         }
+        console.log('🔐 Token found, verifying...');
         // Verify the token
         // Pastikan verifyToken mengembalikan payload yang sesuai dengan AuthenticatedUser atau setidaknya memiliki 'id'
         const decoded = (0, jwt_1.verifyToken)(token); // Type assertion jika perlu
         if (!decoded || !decoded.id) { // Periksa juga keberadaan decoded.id
+            console.log('🔐 Invalid token or missing ID');
             return res.status(401).json({
                 success: false,
                 message: 'Authentication failed: Invalid token'
             });
         }
+        console.log('🔐 Token decoded, user ID:', decoded.id);
         // Find user in database
         const admin = yield models_1.Admin.findByPk(decoded.id);
         if (!admin) {
+            console.log('🔐 User not found in database for ID:', decoded.id);
             return res.status(401).json({
                 success: false,
                 message: 'Authentication failed: User not found'
             });
         }
-        // Attach user to request
+        console.log('🔐 User found:', admin.email, 'Role:', admin.role); // Attach user to request
         req.user = {
             id: admin.id,
             username: admin.username,
@@ -51,9 +58,11 @@ const authenticateJWT = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
             // Pastikan admin.role adalah tipe yang kompatibel dengan AuthenticatedUser['role']
             role: admin.role
         };
+        console.log('🔐 Authentication successful, proceeding to next middleware');
         next();
     }
     catch (error) {
+        console.log('🔐 Authentication error caught:', error);
         return res.status(500).json({
             success: false,
             message: 'Authentication error',

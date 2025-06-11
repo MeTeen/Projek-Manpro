@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-toastify';
-import Sidebar from '../dashboard/Sidebar';
-import Header from '../dashboard/Header';
-import AddNewDropdown from '../dashboard/AddNewDropdown';
-import { FormModal, FormInput, FormSelect } from '../ui';
+import Sidebar from '../../components/dashboard/Sidebar';
+import Header from '../../components/dashboard/Header';
+import AddNewDropdown from '../../components/dashboard/AddNewDropdown';
+import { FormModal, FormInput, FormSelect } from '../../components/ui';
 import customerService, { Customer } from '../../services/customerService';
 import productService, { Product } from '../../services/productService';
 // Pastikan PurchaseInput diimpor dengan definisi yang menyertakan promoId?

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import Sidebar from '../dashboard/Sidebar';
-import Header from '../dashboard/Header';
+import Sidebar from '../../components/dashboard/Sidebar';
+import Header from '../../components/dashboard/Header';
 import ticketService, { Ticket, TicketStats, Admin, TicketFilters } from '../../services/ticketService';
 import { toast } from 'react-toastify';
 

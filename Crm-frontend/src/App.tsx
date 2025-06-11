@@ -1,22 +1,24 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { logApiConfig } from './config/api';
-import Login from './components/Login';
-import SignUp from './components/SignUp';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminSignUp from './pages/admin/AdminSignUp';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/dashboard/DashboardLayout';
-import CustomersPage from './components/pages/CustomersPage';
-import TransactionPage from './components/pages/TransactionPage';
-import ProductPage from './components/pages/ProductPage';
-import TaskSectionPage from './components/pages/TaskSectionPage';
-import PromoPage from './components/pages/PromoPage';
-import AnalyticsPage from './components/pages/AnalyticsPage';
-import AboutPage from './components/pages/AboutPage';
+import CustomersPage from './pages/admin/CustomersPage';
+import TransactionPage from './pages/admin/TransactionPage';
+import ProductPage from './pages/admin/ProductPage';
+import TaskSectionPage from './pages/admin/TaskSectionPage';
+import PromoPage from './pages/admin/PromoPage';
+import AnalyticsPage from './pages/admin/AnalyticsPage';
+import AboutPage from './pages/AboutPage';
 import ApiDebugger from './components/ApiDebugger';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
-import CompanyProfile from './components/pages/CompanyProfile';
-import AdminTicketPage from './components/pages/AdminTicketPage';
+import CompanyProfile from './pages/CompanyProfile';
+import AdminTicketPage from './pages/admin/AdminTicketPage';
+import CustomerLogin from './pages/customer/CustomerLogin';
+import CustomerTickets from './pages/customer/CustomerTickets';
 
 
 
@@ -34,10 +36,12 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<CompanyProfile/>} />
           <Route path="/companyprofile" element={<CompanyProfile />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<Login />} />
-          <Route path="/admin/signup" element={<SignUp />} />
+            {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/signup" element={<AdminSignUp />} />
+            {/* Customer Routes */}
+          <Route path="/customer/login" element={<CustomerLogin />} />
+          <Route path="/customer/tickets" element={<CustomerTickets />} />
           <Route
             path="/admin/dashboard"
             element={

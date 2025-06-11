@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { toast } from 'react-toastify';
 
-import Header from '../dashboard/Header';
-import Sidebar from '../dashboard/Sidebar';
-import { ConfirmModal, FormModal } from '../ui';
-import FormInput from '../ui/FormInput';
+import Header from '../../components/dashboard/Header';
+import Sidebar from '../../components/dashboard/Sidebar';
+import { ConfirmModal, FormModal } from '../../components/ui';
+import FormInput from '../../components/ui/FormInput';
 import customerService, { Customer } from '../../services/customerService';
 import { MdEdit, MdDelete, MdPersonAdd, MdPhotoCamera } from 'react-icons/md';
 import { BACKEND_URL } from '../../utils/formatters';

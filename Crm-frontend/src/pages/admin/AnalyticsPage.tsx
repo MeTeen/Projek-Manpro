@@ -1,10 +1,10 @@
 // src/pages/AnalyticsPage.tsx
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../dashboard/Sidebar'; // Sesuaikan path
-import Header from '../dashboard/Header';   // Sesuaikan path
-import ReusableBarChart from '../charts/ReusableBarChart';
-import ReusableLineChart from '../charts/ReusableLineChart';
-import ReusablePieChart from '../charts/ReusablePieChart';
+import Sidebar from '../../components/dashboard/Sidebar'; // Sesuaikan path
+import Header from '../../components/dashboard/Header';   // Sesuaikan path
+import ReusableBarChart from '../../components/charts/ReusableBarChart';
+import ReusableLineChart from '../../components/charts/ReusableLineChart';
+import ReusablePieChart from '../../components/charts/ReusablePieChart';
 // Impor service dan tipe data
 import analyticsService, {
     SalesTrendItem,

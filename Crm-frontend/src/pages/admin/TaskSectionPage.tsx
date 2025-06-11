@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Header from '../dashboard/Header';
-import Sidebar from '../dashboard/Sidebar';
+import Header from '../../components/dashboard/Header';
+import Sidebar from '../../components/dashboard/Sidebar';
 import { 
   Button, 
   ErrorState, 
   FormInput, 
   LoadingSpinner
-} from '../ui';
+} from '../../components/ui';
 import taskService, { Task } from '../../services/taskService';
 import { format } from 'date-fns';
 import { MdCheckCircle, MdRadioButtonUnchecked, MdDelete, MdAddCircleOutline, MdInfoOutline, MdListAlt } from 'react-icons/md';
@@ -268,7 +268,7 @@ const TaskSectionPage: React.FC = () => {
                 <FormInput
                   label="Task Description"
                   value={newTaskContent}
-                  onChange={(e) => setNewTaskContent(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTaskContent(e.target.value)}
                   placeholder="Enter task description..."
                   required
                 />
@@ -278,7 +278,7 @@ const TaskSectionPage: React.FC = () => {
                   label="Date"
                   type="date"
                   value={newTaskDate}
-                  onChange={(e) => setNewTaskDate(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTaskDate(e.target.value)}
                   required
                 />
               </div>

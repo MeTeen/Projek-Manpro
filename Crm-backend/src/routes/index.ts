@@ -9,8 +9,8 @@ import analyticsRoutes from './analytics.routes';
 import dashboardRoutes from './dashboard.routes';
 import activityRoutes from './activity.routes';
 import ticketRoutes from './ticket.routes';
-// import customerAuthRoutes from './customerAuth.routes';
-// import customerTicketRoutes from './customerTicket.routes';
+import customerAuthRoutes from './customerAuth.routes';
+import customerTicketRoutes from './customerTicket.routes';
 
 const router = Router();
 
@@ -65,9 +65,9 @@ router.use('/activities', activityRoutes);
 router.use('/admin/tickets', ticketRoutes);
 
 // Customer authentication routes
-// router.use('/customer/auth', customerAuthRoutes);
+router.use('/customer/auth', customerAuthRoutes);
 
 // Customer ticket routes
-// router.use('/customer/tickets', customerTicketRoutes);
+router.use('/customer/tickets', customerTicketRoutes);
 
 export default router;

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
-  MdPerson,
   MdShoppingCart,
   MdAttachMoney,
   MdTrendingUp,
@@ -16,9 +15,9 @@ import {
 } from "react-icons/md";
 
 // Komponen UI Internal
-import Header from "../dashboard/Header";
-import Sidebar from "../dashboard/Sidebar";
-import AddNewDropdown from "../dashboard/AddNewDropdown";
+import Header from "../../components/dashboard/Header";
+import Sidebar from "../../components/dashboard/Sidebar";
+import AddNewDropdown from "../../components/dashboard/AddNewDropdown";
 
 // Services
 import authService from '../../services/authService';
@@ -26,10 +25,10 @@ import dashboardService, { DashboardSummaryData } from '../../services/dashboard
 import activityService, { Activity } from '../../services/activityService';
 
 // Komponen lain
-import ReusableLineChart from '../charts/ReusableLineChart'; // Sesuaikan path jika perlu
-import CustomerSection from "../dashboard/CustomerSection";
-import TaskSection from "../dashboard/TaskSection";
-import ErrorBoundary from "../common/ErrorBoundary";
+import ReusableLineChart from '../../components/charts/ReusableLineChart'; // Sesuaikan path jika perlu
+import CustomerSection from "../../components/dashboard/CustomerSection";
+import TaskSection from "../../components/dashboard/TaskSection";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 
 // Helper untuk format harga
 const formatPrice = (price: number | undefined): string => {

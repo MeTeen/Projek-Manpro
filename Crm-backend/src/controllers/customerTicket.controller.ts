@@ -14,6 +14,8 @@ export const getCustomerTickets = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
     const status = req.query.status as string;
+    const priority = req.query.priority as string;
+    const category = req.query.category as string;
 
     if (!customerId) {
       return res.status(401).json({
@@ -25,6 +27,8 @@ export const getCustomerTickets = async (req: Request, res: Response) => {
     // Build where clause
     const whereClause: any = { customerId };
     if (status) whereClause.status = status;
+    if (priority) whereClause.priority = priority;
+    if (category) whereClause.category = category;
 
     const { count, rows: tickets } = await Ticket.findAndCountAll({
       where: whereClause,
@@ -37,7 +41,7 @@ export const getCustomerTickets = async (req: Request, res: Response) => {
             {
               model: Product,
               as: 'product',
-              attributes: ['id', 'name', 'category']
+              attributes: ['id', 'name', 'category', 'description']
             }
           ],
           required: false
@@ -248,7 +252,7 @@ export const getCustomerPurchases = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching purchases',
+      message: 'Error fetching customer purchases',
       error: (error as Error).message,
     });
   }

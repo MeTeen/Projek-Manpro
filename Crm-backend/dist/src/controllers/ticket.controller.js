@@ -18,6 +18,8 @@ const sequelize_1 = require("sequelize");
  */
 const getAllTickets = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        console.log('🎫 getAllTickets called with query:', req.query);
+        console.log('🎫 User from token:', req.user);
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const offset = (page - 1) * limit;
@@ -53,12 +55,11 @@ const getAllTickets = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 {
                     model: models_1.CustomerProduct,
                     as: 'purchase',
-                    attributes: ['id', 'quantity', 'price', 'purchaseDate'],
-                    include: [
+                    attributes: ['id', 'quantity', 'price', 'purchaseDate'], include: [
                         {
                             model: models_1.Product,
                             as: 'product',
-                            attributes: ['id', 'name', 'imageUrl']
+                            attributes: ['id', 'name']
                         }
                     ],
                     required: false

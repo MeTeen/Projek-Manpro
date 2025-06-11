@@ -1,8 +1,8 @@
 // pages/AboutPage.tsx
 import { useState } from 'react';
-import Sidebar from '../dashboard/Sidebar';
-import Header from '../dashboard/Header';
-import { Button } from '../ui';
+import Sidebar from '../components/dashboard/Sidebar';
+import Header from '../components/dashboard/Header';
+import { Button, NeedHelp } from '../components/ui';
 
 export default function AboutPage() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -207,34 +207,25 @@ export default function AboutPage() {
                                 </div>
                             </div>
                         </div>                        {/* Contact Section */}
-                        <div style={{ 
-                            textAlign: 'center', 
-                            backgroundColor: '#f3f4f6', 
-                            padding: '32px', 
-                            borderRadius: '8px' 
-                        }}>                            <h2 style={{ 
-                                fontSize: '24px', 
-                                fontWeight: 'bold', 
-                                color: '#111827', 
-                                marginBottom: '16px' 
-                            }}>
-                                Need Help?
-                            </h2>
-                            <p style={{ 
-                                color: '#4b5563', 
-                                marginBottom: '24px' 
-                            }}>
-                                If you have any questions or suggestions about this application, 
-                                feel free to contact the development team.
-                            </p>
+                        <NeedHelp 
+                          variant="admin"
+                          title="Need Help?"
+                          description="If you have any questions or suggestions about this application, feel free to contact the development team."
+                          buttons={
                             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-                                <Button variant="primary">
-                                    📧 Contact Team
-                                </Button>
-                                <Button variant="outline">
-                                    📚 Documentation
-                                </Button>                            </div>
-                        </div>
+                              <Button variant="primary">
+                                📧 Contact Team
+                              </Button>
+                              <Button variant="outline">
+                                📚 Documentation
+                              </Button>
+                            </div>
+                          }
+                          containerStyle={{
+                            padding: '32px',
+                            borderRadius: '8px'
+                          }}
+                        />
                     </div>
                 </main>
                 </div>

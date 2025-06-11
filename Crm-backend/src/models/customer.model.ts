@@ -10,6 +10,7 @@ export interface CustomerAttributes {
   lastName: string;
   email: string;
   phone: string;
+  password: string;
   address: string;
   city: string;
   state: string;
@@ -26,6 +27,7 @@ export interface CustomerInput {
   lastName: string;
   email: string;
   phone: string;
+  password?: string;
   address: string;
   city: string;
   state: string;
@@ -42,6 +44,7 @@ class Customer extends Model {
   declare lastName: string;
   declare email: string;
   declare phone: string;
+  declare password: string;
   declare address: string;
   declare city: string;
   declare state: string;
@@ -78,9 +81,12 @@ class Customer extends Model {
           validate: {
             isEmail: true,
           },
-        },
-        phone: {
+        },        phone: {
           type: DataTypes.STRING(20),
+          allowNull: false,
+        },
+        password: {
+          type: DataTypes.STRING(255),
           allowNull: false,
         },
         address: {

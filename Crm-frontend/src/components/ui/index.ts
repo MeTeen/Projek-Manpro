@@ -12,3 +12,4 @@ export { default as ConfirmModal } from './ConfirmModal';
 export { default as FormModal } from './FormModal';
 export { default as Card } from './Card';
 export { default as StatCard } from './StatCard';
+export { default as NeedHelp } from './NeedHelp';

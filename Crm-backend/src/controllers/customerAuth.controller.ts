@@ -37,10 +37,8 @@ export const customerLogin = async (req: Request, res: Response) => {
         success: false,
         message: 'Invalid email or password',
       });
-    }
-
-    // Check if this is first login (password equals phone number)
-    const isFirstLogin = await bcrypt.compare(customer.phoneNumber, customer.password);
+    }    // Check if this is first login (password equals phone number)
+    const isFirstLogin = await bcrypt.compare(customer.phone, customer.password);
     if (isFirstLogin) {
       return res.status(200).json({
         success: true,
@@ -55,9 +53,7 @@ export const customerLogin = async (req: Request, res: Response) => {
       id: customer.id,
       email: customer.email,
       role: 'customer',
-    });
-
-    res.status(200).json({
+    });    res.status(200).json({
       success: true,
       message: 'Login successful',
       token,
@@ -66,7 +62,7 @@ export const customerLogin = async (req: Request, res: Response) => {
         firstName: customer.firstName,
         lastName: customer.lastName,
         email: customer.email,
-        phoneNumber: customer.phoneNumber,
+        phone: customer.phone,
       },
     });
   } catch (error) {
@@ -133,15 +129,14 @@ export const changePassword = async (req: Request, res: Response) => {
     });
 
     res.status(200).json({
-      success: true,
-      message: 'Password changed successfully',
+      success: true,      message: 'Password changed successfully',
       token,
       customer: {
         id: customer.id,
         firstName: customer.firstName,
         lastName: customer.lastName,
         email: customer.email,
-        phoneNumber: customer.phoneNumber,
+        phone: customer.phone,
       },
     });
   } catch (error) {

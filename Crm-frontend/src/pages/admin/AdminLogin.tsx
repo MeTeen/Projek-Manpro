@@ -10,9 +10,9 @@ import {
   Link,
   CircularProgress,
 } from '@mui/material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { debugLog, debugError } from '../utils/debug';
+import { debugLog, debugError } from '../../utils/debug';
 
 interface LoginError {
   response?: {

@@ -1,16 +1,16 @@
 // src/pages/PromoPage.tsx (Contoh Struktur Dasar)
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { toast } from 'react-toastify';
-import Header from '../dashboard/Header'; // Sesuaikan path
-import Sidebar from '../dashboard/Sidebar'; // Sesuaikan path
-import { ConfirmModal, FormModal } from '../ui'; // Updated imports
+import Header from '../../components/dashboard/Header'; // Sesuaikan path
+import Sidebar from '../../components/dashboard/Sidebar'; // Sesuaikan path
+import { ConfirmModal, FormModal } from '../../components/ui'; // Updated imports
 import promoService, { Promo, PromoInput } from '../../services/promoService'; // Sesuaikan path
 import customerService, { Customer } from '../../services/customerService'; // Untuk dropdown assign
 import AuthContext from '../../context/AuthContext'; // Untuk role check
 import { MdEdit, MdDelete, MdAdd, MdPersonAdd } from 'react-icons/md';
 import Select from 'react-select';
 import { formatPrice, BACKEND_URL } from '../../utils/formatters';
-import PromoForm from '../forms/PromoForm';
+import PromoForm from '../../components/forms/PromoForm';
 
 const styles = {
     actionButton: { background: 'none', border: 'none', cursor: 'pointer', color: '#5E5CEB' },

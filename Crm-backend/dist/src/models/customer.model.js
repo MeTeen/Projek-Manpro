@@ -27,9 +27,12 @@ class Customer extends sequelize_1.Model {
                 validate: {
                     isEmail: true,
                 },
-            },
-            phone: {
+            }, phone: {
                 type: sequelize_1.DataTypes.STRING(20),
+                allowNull: false,
+            },
+            password: {
+                type: sequelize_1.DataTypes.STRING(255),
                 allowNull: false,
             },
             address: {
