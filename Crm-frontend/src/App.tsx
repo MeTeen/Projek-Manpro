@@ -94,15 +94,7 @@ function App() {
                 <AboutPage />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/companyprofile"
-            element={
-              <ProtectedRoute>
-                <CompanyProfile />
-              </ProtectedRoute>
-            }
-          />
+          />          <Route path="/companyprofile" element={<CompanyProfile />} />
           <Route
             path="/admin/tickets"
             element={
@@ -111,7 +103,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/companyprofile" replace />} />
         </Routes>
         
         {/* API Debugger for development */}
