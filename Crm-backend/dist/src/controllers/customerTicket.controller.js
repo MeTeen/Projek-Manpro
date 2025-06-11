@@ -23,6 +23,8 @@ const getCustomerTickets = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
         const status = req.query.status;
+        const priority = req.query.priority;
+        const category = req.query.category;
         if (!customerId) {
             return res.status(401).json({
                 success: false,
@@ -33,18 +35,22 @@ const getCustomerTickets = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const whereClause = { customerId };
         if (status)
             whereClause.status = status;
+        if (priority)
+            whereClause.priority = priority;
+        if (category)
+            whereClause.category = category;
         const { count, rows: tickets } = yield models_1.Ticket.findAndCountAll({
             where: whereClause,
             include: [
                 {
-                    model: models_1.CustomerProduct,
+                    model: models_1.Purchase,
                     as: 'purchase',
-                    attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+                    attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
                     include: [
                         {
                             model: models_1.Product,
                             as: 'product',
-                            attributes: ['id', 'name', 'category']
+                            attributes: ['id', 'name', 'dimensions']
                         }
                     ],
                     required: false
@@ -93,19 +99,18 @@ const getCustomerTicketById = (req, res) => __awaiter(void 0, void 0, void 0, fu
         }
         const ticket = yield models_1.Ticket.findOne({
             where: {
-                id: ticketId,
-                customerId: customerId // Ensure customer can only see their own tickets
+                id: ticketId, customerId: customerId // Ensure customer can only see their own tickets
             },
             include: [
                 {
-                    model: models_1.CustomerProduct,
+                    model: models_1.Purchase,
                     as: 'purchase',
-                    attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+                    attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
                     include: [
                         {
                             model: models_1.Product,
                             as: 'product',
-                            attributes: ['id', 'name', 'category', 'description']
+                            attributes: ['id', 'name', 'dimensions']
                         }
                     ],
                     required: false
@@ -153,10 +158,9 @@ const createCustomerTicket = (req, res) => __awaiter(void 0, void 0, void 0, fun
                 success: false,
                 message: 'Subject, message, and category are required',
             });
-        }
-        // If purchaseId is provided, verify it belongs to the customer
+        } // If purchaseId is provided, verify it belongs to the customer
         if (purchaseId) {
-            const purchase = yield models_1.CustomerProduct.findOne({
+            const purchase = yield models_1.Purchase.findOne({
                 where: {
                     id: purchaseId,
                     customerId: customerId
@@ -178,19 +182,17 @@ const createCustomerTicket = (req, res) => __awaiter(void 0, void 0, void 0, fun
             priority: priority || 'Medium',
             attachmentUrls: attachmentUrls || null,
         };
-        const ticket = yield models_1.Ticket.create(ticketData);
-        // Fetch created ticket with includes
-        const createdTicket = yield models_1.Ticket.findByPk(ticket.id, {
-            include: [
+        const ticket = yield models_1.Ticket.create(ticketData); // Fetch created ticket with includes
+        const createdTicket = yield models_1.Ticket.findByPk(ticket.id, { include: [
                 {
-                    model: models_1.CustomerProduct,
+                    model: models_1.Purchase,
                     as: 'purchase',
-                    attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+                    attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
                     include: [
                         {
                             model: models_1.Product,
                             as: 'product',
-                            attributes: ['id', 'name', 'category']
+                            attributes: ['id', 'name']
                         }
                     ],
                     required: false
@@ -226,13 +228,13 @@ const getCustomerPurchases = (req, res) => __awaiter(void 0, void 0, void 0, fun
                 message: 'Unauthorized',
             });
         }
-        const purchases = yield models_1.CustomerProduct.findAll({
+        const purchases = yield models_1.Purchase.findAll({
             where: { customerId },
             include: [
                 {
                     model: models_1.Product,
                     as: 'product',
-                    attributes: ['id', 'name', 'category', 'description']
+                    attributes: ['id', 'name', 'dimensions']
                 }
             ],
             order: [['purchaseDate', 'DESC']],
@@ -245,7 +247,7 @@ const getCustomerPurchases = (req, res) => __awaiter(void 0, void 0, void 0, fun
     catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error fetching purchases',
+            message: 'Error fetching customer purchases',
             error: error.message,
         });
     }

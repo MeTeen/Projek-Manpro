@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRecentActivities = void 0;
 const models_1 = require("../models");
 const date_fns_1 = require("date-fns");
+const transactionFormatter_1 = require("../utils/transactionFormatter");
 const getRecentActivities = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const limit = parseInt(req.query.limit, 10) || 10; // Default 10 aktivitas terakhir
     try {
@@ -22,16 +23,15 @@ const getRecentActivities = (req, res) => __awaiter(void 0, void 0, void 0, func
                 limit: Math.ceil(limit / 3), // Ambil sepertiga dari limit
                 order: [['createdAt', 'DESC']],
                 attributes: ['id', 'firstName', 'lastName', 'createdAt'],
-            }),
-            // 2. Transaksi Baru
-            models_1.CustomerProduct.findAll({
+            }), // 2. Transaksi Baru
+            models_1.Purchase.findAll({
                 limit: Math.ceil(limit / 2),
                 order: [['createdAt', 'DESC']],
                 include: [
                     { model: models_1.Customer, as: 'customer', attributes: ['id', 'firstName', 'lastName'] },
                     { model: models_1.Product, as: 'product', attributes: ['id', 'name', 'price'] }
                 ],
-                attributes: ['id', 'createdAt', 'quantity', 'price', 'discountAmount', 'productId', 'customerId']
+                attributes: ['id', 'createdAt', 'quantity', 'unitPrice', 'discountAmount', 'productId', 'customerId']
             }),
             // 3. Promo Baru
             models_1.Promo.findAll({
@@ -46,9 +46,8 @@ const getRecentActivities = (req, res) => __awaiter(void 0, void 0, void 0, func
                 attributes: ['id', 'content', 'createdAt', 'date', 'isCompleted']
             })
         ]);
-        const activities = [];
-        // Process customers
-        newCustomers.forEach(c => {
+        const activities = []; // Process customers
+        newCustomers.forEach((c) => {
             activities.push({
                 id: `customer-${c.id}`,
                 type: 'customer',
@@ -56,23 +55,20 @@ const getRecentActivities = (req, res) => __awaiter(void 0, void 0, void 0, func
                 timestamp: c.createdAt,
                 relatedEntity: { id: c.id, name: `${c.firstName} ${c.lastName}`, path: `/customers/${c.id}` }
             });
-        });
-        // Process purchases
-        newPurchases.forEach(p => {
+        }); // Process purchases
+        newPurchases.forEach((p) => {
             const purchase = p;
             const customerName = purchase.customer ? `${purchase.customer.firstName} ${purchase.customer.lastName}` : 'Unknown Customer';
             const productName = purchase.product ? purchase.product.name : 'Unknown Product';
-            const total = (purchase.price * purchase.quantity) - (purchase.discountAmount || 0);
+            const total = (purchase.unitPrice * purchase.quantity) - (purchase.discountAmount || 0);
             activities.push({
                 id: `purchase-${purchase.id}`,
-                type: 'purchase',
-                description: `Transaksi baru oleh ${customerName} untuk produk ${productName} (Qty: ${purchase.quantity}, Total: Rp ${total.toLocaleString('id-ID')})`,
+                type: 'purchase', description: `Transaksi baru oleh ${customerName} untuk produk ${productName} (Qty: ${purchase.quantity}, Total: Rp ${total.toLocaleString('id-ID')})`,
                 timestamp: purchase.createdAt,
-                relatedEntity: { id: purchase.id, name: `Transaksi #${purchase.id}`, path: `/transaksi` }
+                relatedEntity: { id: purchase.id, name: `Transaksi ${(0, transactionFormatter_1.formatTransactionReference)(purchase.id)}`, path: `/transaksi` }
             });
-        });
-        // Process promos
-        newPromos.forEach(pr => {
+        }); // Process promos
+        newPromos.forEach((pr) => {
             activities.push({
                 id: `promo-${pr.id}`,
                 type: 'promo',
@@ -82,7 +78,7 @@ const getRecentActivities = (req, res) => __awaiter(void 0, void 0, void 0, func
             });
         });
         // Process tasks
-        newTasks.forEach(t => {
+        newTasks.forEach((t) => {
             activities.push({
                 id: `task-${t.id}`,
                 type: 'task',

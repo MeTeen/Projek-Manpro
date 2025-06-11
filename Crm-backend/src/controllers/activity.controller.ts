@@ -1,8 +1,9 @@
 // src/controllers/activity.controller.ts
 import { Request, Response } from 'express';
-import { sequelize, Customer, CustomerProduct, Product, Promo, Task, Admin } from '../models';
+import { sequelize, Customer, Purchase, Product, Promo, Task, Admin } from '../models';
 import { Op, literal } from 'sequelize';
 import { format } from 'date-fns';
+import { formatTransactionReference } from '../utils/transactionFormatter';
 
 interface ActivityItem {
   id: string; // Gabungan tipe dan ID, misal 'customer-1', 'purchase-5'
@@ -31,17 +32,15 @@ export const getRecentActivities = async (req: Request, res: Response) => {
         limit: Math.ceil(limit / 3), // Ambil sepertiga dari limit
         order: [['createdAt', 'DESC']],
         attributes: ['id', 'firstName', 'lastName', 'createdAt'],
-      }),
-
-      // 2. Transaksi Baru
-      CustomerProduct.findAll({
+      }),      // 2. Transaksi Baru
+      Purchase.findAll({
         limit: Math.ceil(limit / 2),
         order: [['createdAt', 'DESC']],
         include: [
           { model: Customer, as: 'customer', attributes: ['id', 'firstName', 'lastName'] },
           { model: Product, as: 'product', attributes: ['id', 'name', 'price'] }
         ],
-        attributes: ['id', 'createdAt', 'quantity', 'price', 'discountAmount', 'productId', 'customerId']
+        attributes: ['id', 'createdAt', 'quantity', 'unitPrice', 'discountAmount', 'productId', 'customerId']
       }),
 
       // 3. Promo Baru
@@ -59,10 +58,8 @@ export const getRecentActivities = async (req: Request, res: Response) => {
       })
     ]);
 
-    const activities: ActivityItem[] = [];
-
-    // Process customers
-    newCustomers.forEach(c => {
+    const activities: ActivityItem[] = [];    // Process customers
+    newCustomers.forEach((c: any) => {
       activities.push({
         id: `customer-${c.id}`,
         type: 'customer',
@@ -70,28 +67,21 @@ export const getRecentActivities = async (req: Request, res: Response) => {
         timestamp: c.createdAt!,
         relatedEntity: { id: c.id, name: `${c.firstName} ${c.lastName}`, path: `/customers/${c.id}` }
       });
-    });
-
-    // Process purchases
-    newPurchases.forEach(p => {
-      const purchase = p as typeof p & {
+    });// Process purchases
+    newPurchases.forEach((p: any) => {      const purchase = p as typeof p & {
         customer?: { id: number; firstName: string; lastName: string };
         product?: { id: number; name: string; price: number };
-      };
-      const customerName = purchase.customer ? `${purchase.customer.firstName} ${purchase.customer.lastName}` : 'Unknown Customer';
+      };      const customerName = purchase.customer ? `${purchase.customer.firstName} ${purchase.customer.lastName}` : 'Unknown Customer';
       const productName = purchase.product ? purchase.product.name : 'Unknown Product';
-      const total = (purchase.price * purchase.quantity) - (purchase.discountAmount || 0);
+      const total = (purchase.unitPrice * purchase.quantity) - (purchase.discountAmount || 0);
       activities.push({
         id: `purchase-${purchase.id}`,
-        type: 'purchase',
-        description: `Transaksi baru oleh ${customerName} untuk produk ${productName} (Qty: ${purchase.quantity}, Total: Rp ${total.toLocaleString('id-ID')})`,
+        type: 'purchase',        description: `Transaksi baru oleh ${customerName} untuk produk ${productName} (Qty: ${purchase.quantity}, Total: Rp ${total.toLocaleString('id-ID')})`,
         timestamp: purchase.createdAt!,
-        relatedEntity: { id: purchase.id, name: `Transaksi #${purchase.id}`, path: `/transaksi` }
+        relatedEntity: { id: purchase.id, name: `Transaksi ${formatTransactionReference(purchase.id)}`, path: `/transaksi` }
       });
-    });
-
-    // Process promos
-    newPromos.forEach(pr => {
+    });    // Process promos
+    newPromos.forEach((pr: any) => {
       activities.push({
         id: `promo-${pr.id}`,
         type: 'promo',
@@ -102,7 +92,7 @@ export const getRecentActivities = async (req: Request, res: Response) => {
     });
 
     // Process tasks
-    newTasks.forEach(t => {
+    newTasks.forEach((t: any) => {
       activities.push({
         id: `task-${t.id}`,
         type: 'task',

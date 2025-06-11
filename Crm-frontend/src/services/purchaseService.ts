@@ -12,12 +12,14 @@ export interface Purchase {
   customerId: number;
   productId: number;
   quantity: number;
-  price: number; // << HARGA SATUAN PRODUK SAAT TRANSAKSI
+  unitPrice: number; // << UNIT PRICE FROM NEW PURCHASE MODEL
+  totalAmount: number; // << TOTAL AMOUNT BEFORE DISCOUNT
+  discountAmount?: number | null; // << DISCOUNT AMOUNT
+  finalAmount: number; // << FINAL AMOUNT AFTER DISCOUNT
   purchaseDate: string;
   createdAt: string;
   updatedAt: string;
   promoId?: number | null;       // << ID PROMO YANG DIGUNAKAN
-  discountAmount?: number | null; // << JUMLAH DISKON
   customer?: {
     id: number;
     firstName: string;
@@ -30,7 +32,7 @@ export interface Purchase {
     price: number; // Harga master produk
     stock: number;
   };
-  appliedPromoDetails?: Promo | null; // Detail promo jika di-include oleh backend
+  promo?: Promo | null; // Detail promo jika di-include oleh backend
 }
 
 export interface PurchaseInput {

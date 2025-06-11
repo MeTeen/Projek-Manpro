@@ -10,8 +10,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getProductPurchaseHistory = exports.getCustomerPurchases = exports.getAllPurchases = exports.addProductToCustomer = exports.createPurchase = void 0;
-const models_1 = require("../models"); // Pastikan Promo dan CustomerPromo diimpor
+const models_1 = require("../models");
 const sequelize_1 = require("sequelize");
+const transactionFormatter_1 = require("../utils/transactionFormatter");
 function validateAndCalculatePromo(promoId, customerId, basePrice // Harga total sebelum diskon (misal: product.price * quantity)
 ) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -73,9 +74,8 @@ function validateAndCalculatePromo(promoId, customerId, basePrice // Harga total
         return { isValid: true, appliedPromo: promo, discountAmount: discount };
     });
 }
-// --- Akhir Fungsi Helper ---
 /**
- * Create a purchase (add a product to a customer's purchases)
+ * Create a purchase
  * @route POST /api/purchases
  */
 const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -83,7 +83,7 @@ const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function*
     const t = yield models_1.sequelize.transaction();
     let transactionCompleted = false;
     try {
-        const { customerId, productId, quantity = 1, promoId, promoCode } = req.body; // Ambil promoId atau promoCode dari body
+        const { customerId, productId, quantity = 1, promoId, promoCode } = req.body;
         console.log('Purchase request received:', req.body);
         console.log('PromoId received:', promoId, 'Type:', typeof promoId);
         console.log('PromoCode received:', promoCode, 'Type:', typeof promoCode);
@@ -122,8 +122,8 @@ const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function*
             transactionCompleted = true;
             return res.status(400).json({ success: false, message: `Not enough stock. Requested: ${quantityNum}, Available: ${product.stock}` });
         }
-        const productPrice = parseFloat(((_a = product.price) === null || _a === void 0 ? void 0 : _a.toString()) || '0');
-        const basePurchaseTotal = productPrice * quantityNum;
+        const unitPrice = parseFloat(((_a = product.price) === null || _a === void 0 ? void 0 : _a.toString()) || '0');
+        const totalAmount = unitPrice * quantityNum;
         // Resolve promo: if promoCode is provided, find the corresponding promoId
         let resolvedPromoId = promoId ? parseInt(promoId, 10) : null;
         if (promoCode && !resolvedPromoId) {
@@ -143,21 +143,23 @@ const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function*
             }
         }
         // Validasi dan kalkulasi promo
-        const promoDetails = yield validateAndCalculatePromo(resolvedPromoId, customerIdNum, basePurchaseTotal);
+        const promoDetails = yield validateAndCalculatePromo(resolvedPromoId, customerIdNum, totalAmount);
         if (!promoDetails.isValid) {
             yield t.rollback();
             transactionCompleted = true;
             return res.status(400).json({ success: false, message: promoDetails.message });
         }
-        const finalPurchaseTotal = basePurchaseTotal - promoDetails.discountAmount;
-        const purchase = yield models_1.CustomerProduct.create({
+        const finalAmount = totalAmount - promoDetails.discountAmount;
+        const purchase = yield models_1.Purchase.create({
             customerId: customerIdNum,
             productId: productIdNum,
             quantity: quantityNum,
-            price: productPrice, // Harga asli produk per unit
-            purchaseDate: new Date(),
-            promoId: promoDetails.appliedPromo ? promoDetails.appliedPromo.id : null,
+            unitPrice: unitPrice,
+            totalAmount: totalAmount,
             discountAmount: promoDetails.discountAmount,
+            finalAmount: finalAmount,
+            promoId: promoDetails.appliedPromo ? promoDetails.appliedPromo.id : null,
+            purchaseDate: new Date(),
         }, { transaction: t });
         console.log('Purchase record created:', purchase);
         yield product.update({
@@ -166,7 +168,7 @@ const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function*
         let currentTotalSpent = parseFloat(((_b = customer.totalSpent) === null || _b === void 0 ? void 0 : _b.toString()) || '0');
         let currentPurchaseCount = parseInt(((_c = customer.purchaseCount) === null || _c === void 0 ? void 0 : _c.toString()) || '0', 10);
         yield customer.update({
-            totalSpent: currentTotalSpent + finalPurchaseTotal, // totalSpent adalah setelah diskon
+            totalSpent: currentTotalSpent + finalAmount, // totalSpent adalah setelah diskon
             purchaseCount: currentPurchaseCount + 1
         }, { transaction: t });
         // Mark promo as used if a promo was applied
@@ -186,7 +188,7 @@ const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function*
         transactionCompleted = true;
         return res.status(201).json({
             success: true,
-            message: 'Purchase completed successfully',
+            message: `Purchase completed successfully. Transaction ${(0, transactionFormatter_1.formatTransactionReference)(purchase.id)} created.`,
             data: {
                 purchase,
                 customer: {
@@ -222,138 +224,25 @@ const createPurchase = (req, res) => __awaiter(void 0, void 0, void 0, function*
 });
 exports.createPurchase = createPurchase;
 /**
- * Add product to customer from dropdown selection (mirip createPurchase)
+ * Add product to customer from dropdown selection (alias for createPurchase for backward compatibility)
  * @route POST /api/purchases/add-to-customer
  */
 const addProductToCustomer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
-    const t = yield models_1.sequelize.transaction();
-    let transactionCompleted = false;
-    try {
-        const { customerId, productId, quantity = 1, promoId } = req.body; // Ambil promoId
-        const customerIdNum = parseInt(customerId.toString(), 10);
-        const productIdNum = parseInt(productId.toString(), 10);
-        const quantityNum = parseInt(quantity.toString(), 10);
-        // ... (Validasi input seperti di createPurchase) ...
-        if (isNaN(customerIdNum) || customerIdNum <= 0) { /* ... */
-            yield t.rollback();
-            transactionCompleted = true;
-            return res.status(400).json({ /*...*/});
-        }
-        if (isNaN(productIdNum) || productIdNum <= 0) { /* ... */
-            yield t.rollback();
-            transactionCompleted = true;
-            return res.status(400).json({ /*...*/});
-        }
-        if (isNaN(quantityNum) || quantityNum <= 0) { /* ... */
-            yield t.rollback();
-            transactionCompleted = true;
-            return res.status(400).json({ /*...*/});
-        }
-        const customer = yield models_1.Customer.findByPk(customerIdNum, { transaction: t });
-        const product = yield models_1.Product.findByPk(productIdNum, { transaction: t });
-        if (!customer) { /* ... */
-            yield t.rollback();
-            transactionCompleted = true;
-            return res.status(404).json({ /*...*/});
-        }
-        if (!product) { /* ... */
-            yield t.rollback();
-            transactionCompleted = true;
-            return res.status(404).json({ /*...*/});
-        }
-        if (product.stock < quantityNum) { /* ... */
-            yield t.rollback();
-            transactionCompleted = true;
-            return res.status(400).json({ /*...*/});
-        }
-        const productPrice = parseFloat(((_a = product.price) === null || _a === void 0 ? void 0 : _a.toString()) || '0');
-        const basePurchaseTotal = productPrice * quantityNum;
-        // Validasi dan kalkulasi promo
-        const promoDetails = yield validateAndCalculatePromo(promoId ? parseInt(promoId, 10) : null, customerIdNum, basePurchaseTotal);
-        if (!promoDetails.isValid) {
-            yield t.rollback();
-            transactionCompleted = true;
-            return res.status(400).json({ success: false, message: promoDetails.message });
-        }
-        const finalPurchaseTotal = basePurchaseTotal - promoDetails.discountAmount;
-        const purchase = yield models_1.CustomerProduct.create({
-            customerId: customerIdNum,
-            productId: productIdNum,
-            quantity: quantityNum,
-            price: productPrice,
-            purchaseDate: new Date(),
-            promoId: promoDetails.appliedPromo ? promoDetails.appliedPromo.id : null,
-            discountAmount: promoDetails.discountAmount,
-        }, { transaction: t });
-        const newStock = Math.max(0, product.stock - quantityNum);
-        yield product.update({ stock: newStock }, { transaction: t });
-        let currentTotalSpent = parseFloat(((_b = customer.totalSpent) === null || _b === void 0 ? void 0 : _b.toString()) || '0');
-        let currentPurchaseCount = parseInt(((_c = customer.purchaseCount) === null || _c === void 0 ? void 0 : _c.toString()) || '0', 10);
-        yield customer.update({
-            totalSpent: currentTotalSpent + finalPurchaseTotal,
-            purchaseCount: currentPurchaseCount + 1
-        }, { transaction: t });
-        // Mark promo as used if a promo was applied
-        if (promoDetails.appliedPromo) {
-            yield models_1.CustomerPromo.update({
-                isUsed: true,
-                usedAt: new Date()
-            }, {
-                where: {
-                    customerId: customerIdNum,
-                    promoId: promoDetails.appliedPromo.id
-                },
-                transaction: t
-            });
-        }
-        yield t.commit();
-        transactionCompleted = true;
-        return res.status(201).json({
-            success: true,
-            message: 'Product added to customer successfully',
-            data: {
-                purchase,
-                customer: {
-                    id: customer.id,
-                    totalSpent: customer.totalSpent,
-                    purchaseCount: customer.purchaseCount
-                },
-                product: {
-                    id: product.id,
-                    name: product.name,
-                    stock: newStock
-                },
-                appliedPromo: promoDetails.appliedPromo ? {
-                    id: promoDetails.appliedPromo.id,
-                    name: promoDetails.appliedPromo.name,
-                    discountApplied: promoDetails.discountAmount
-                } : null
-            }
-        });
-    }
-    catch (error) {
-        if (!transactionCompleted) {
-            try {
-                yield t.rollback();
-            }
-            catch (rbError) {
-                console.error('Rollback error:', rbError);
-            }
-        }
-        console.error('Error adding product to customer:', error);
-        return res.status(500).json({ success: false, message: 'Failed to add product to customer', error: error.message });
-    }
+    // This is just an alias for createPurchase to maintain backward compatibility
+    return (0, exports.createPurchase)(req, res);
 });
 exports.addProductToCustomer = addProductToCustomer;
-// Get all purchases (mungkin perlu join dengan Promo jika ingin menampilkan promo yang digunakan)
+/**
+ * Get all purchases
+ * @route GET /api/purchases
+ */
 const getAllPurchases = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const purchases = yield models_1.CustomerProduct.findAll({
+        const purchases = yield models_1.Purchase.findAll({
             include: [
                 { model: models_1.Customer, as: 'customer', attributes: ['id', 'firstName', 'lastName', 'email'] },
                 { model: models_1.Product, as: 'product', attributes: ['id', 'name'] },
-                { model: models_1.Promo, as: 'appliedPromoDetails', attributes: ['id', 'name', 'type', 'value'] }
+                { model: models_1.Promo, as: 'promo', attributes: ['id', 'name', 'type', 'value'] }
             ],
             order: [['purchaseDate', 'DESC']]
         });
@@ -369,7 +258,10 @@ const getAllPurchases = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.getAllPurchases = getAllPurchases;
-// Get purchases for a specific customer
+/**
+ * Get purchases for a specific customer
+ * @route GET /api/purchases/customer/:customerId
+ */
 const getCustomerPurchases = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { customerId } = req.params;
@@ -381,11 +273,11 @@ const getCustomerPurchases = (req, res) => __awaiter(void 0, void 0, void 0, fun
         if (!customer) {
             return res.status(404).json({ success: false, message: 'Customer not found' });
         }
-        const purchases = yield models_1.CustomerProduct.findAll({
+        const purchases = yield models_1.Purchase.findAll({
             where: { customerId: customerIdNum },
             include: [
                 { model: models_1.Product, as: 'product', attributes: ['id', 'name'] },
-                { model: models_1.Promo, as: 'appliedPromoDetails', attributes: ['id', 'name', 'type', 'value'] } // Tambahkan ini
+                { model: models_1.Promo, as: 'promo', attributes: ['id', 'name', 'type', 'value'] }
             ],
             order: [['purchaseDate', 'DESC']]
         });
@@ -410,7 +302,10 @@ const getCustomerPurchases = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.getCustomerPurchases = getCustomerPurchases;
-// Get purchase history for a specific product
+/**
+ * Get purchase history for a specific product
+ * @route GET /api/purchases/product/:productId
+ */
 const getProductPurchaseHistory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { productId } = req.params;
@@ -422,11 +317,11 @@ const getProductPurchaseHistory = (req, res) => __awaiter(void 0, void 0, void 0
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
-        const purchases = yield models_1.CustomerProduct.findAll({
+        const purchases = yield models_1.Purchase.findAll({
             where: { productId: productIdNum },
             include: [
                 { model: models_1.Customer, as: 'customer', attributes: ['id', 'firstName', 'lastName', 'email'] },
-                { model: models_1.Promo, as: 'appliedPromoDetails', attributes: ['id', 'name', 'type', 'value'] } // Tambahkan ini
+                { model: models_1.Promo, as: 'promo', attributes: ['id', 'name', 'type', 'value'] }
             ],
             order: [['purchaseDate', 'DESC']]
         });

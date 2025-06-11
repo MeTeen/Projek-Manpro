@@ -28,6 +28,7 @@ import Customer from './customer.model';
 import Task from './task.model';
 import Product from './product.model';
 import CustomerProduct from './customerProduct.model';
+import Purchase from './purchase.model';
 import Promo from './promo.model';
 import CustomerPromo from './customerPromo.model';
 import Ticket from './ticket.model';
@@ -38,6 +39,7 @@ Customer.initialize(sequelize);
 Task.initialize(sequelize);
 Product.initialize(sequelize);
 CustomerProduct.initialize(sequelize);
+Purchase.initialize(sequelize);
 Promo.initialize(sequelize);
 CustomerPromo.initialize(sequelize);
 Ticket.initialize(sequelize);
@@ -55,6 +57,37 @@ Product.belongsToMany(Customer, {
   foreignKey: 'productId',
   otherKey: 'customerId',
   as: 'Customers' // Use capital C to match Sequelize default
+});
+
+// Purchase model associations
+Purchase.belongsTo(Customer, {
+  foreignKey: 'customerId',
+  as: 'customer'
+});
+
+Purchase.belongsTo(Product, {
+  foreignKey: 'productId',
+  as: 'product'
+});
+
+Purchase.belongsTo(Promo, {
+  foreignKey: 'promoId',
+  as: 'promo'
+});
+
+Customer.hasMany(Purchase, {
+  foreignKey: 'customerId',
+  as: 'purchases'
+});
+
+Product.hasMany(Purchase, {
+  foreignKey: 'productId',
+  as: 'purchases'
+});
+
+Promo.hasMany(Purchase, {
+  foreignKey: 'promoId',
+  as: 'purchases'
 });
 
 // Add direct associations for CustomerProduct to fix include queries
@@ -83,15 +116,15 @@ Promo.belongsToMany(Customer, {
   as: 'eligibleCustomers' // Promo bisa melihat pelanggan mana saja yang berhak
 });
 
-// Inverse associations
+// Inverse associations (legacy CustomerProduct - keeping for backward compatibility)
 Customer.hasMany(CustomerProduct, {
   foreignKey: 'customerId',
-  as: 'purchases'
+  as: 'customerProducts' // Changed from 'purchases' to avoid conflict
 });
 
 Product.hasMany(CustomerProduct, {
   foreignKey: 'productId',
-  as: 'purchases'
+  as: 'customerProducts' // Changed from 'purchases' to avoid conflict
 });
 
 CustomerPromo.belongsTo(Customer, { foreignKey: 'customerId', as: 'customerDetails' });
@@ -119,8 +152,8 @@ Admin.hasMany(Promo, { foreignKey: 'createdBy', as: 'createdPromos' });
 Ticket.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
 Customer.hasMany(Ticket, { foreignKey: 'customerId', as: 'tickets' });
 
-Ticket.belongsTo(CustomerProduct, { foreignKey: 'purchaseId', as: 'purchase' });
-CustomerProduct.hasMany(Ticket, { foreignKey: 'purchaseId', as: 'tickets' });
+Ticket.belongsTo(Purchase, { foreignKey: 'purchaseId', as: 'purchase' });
+Purchase.hasMany(Ticket, { foreignKey: 'purchaseId', as: 'tickets' });
 
 Ticket.belongsTo(Admin, { foreignKey: 'assignedTo', as: 'assignedAdmin' });
 Admin.hasMany(Ticket, { foreignKey: 'assignedTo', as: 'assignedTickets' });
@@ -132,6 +165,7 @@ export {
   Task,
   Product,
   CustomerProduct,
+  Purchase,
   Promo, // Export model baru
   CustomerPromo, // Export model baru
   Ticket // Export Ticket model

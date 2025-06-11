@@ -246,15 +246,6 @@ export const createPurchase = async (req: Request, res: Response) => {
 };
 
 /**
- * Add product to customer from dropdown selection (alias for createPurchase for backward compatibility)
- * @route POST /api/purchases/add-to-customer
- */
-export const addProductToCustomer = async (req: Request, res: Response) => {
-  // This is just an alias for createPurchase to maintain backward compatibility
-  return createPurchase(req, res);
-};
-
-/**
  * Get all purchases
  * @route GET /api/purchases
  */

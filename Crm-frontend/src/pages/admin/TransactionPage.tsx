@@ -12,6 +12,7 @@ import promoService, { Promo } from '../../services/promoService';
 import { MdAdd, MdShoppingCart, MdInfoOutline } from 'react-icons/md';
 import Select from 'react-select';
 import { BACKEND_URL } from '../../utils/formatters';
+import { formatTransactionId } from '../../utils/transactionFormatter';
 
 const TransactionPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -247,11 +248,17 @@ const TransactionPage: React.FC = () => {
 
     try {
       setFormSubmitLoading(true);
-      console.log('Submitting transaction data (with promoId if selected):', dataToSend);
-
-      await purchaseService.createPurchase(dataToSend);      setIsAddModalOpen(false);
+      console.log('Submitting transaction data (with promoId if selected):', dataToSend);      const response = await purchaseService.createPurchase(dataToSend);      
+      setIsAddModalOpen(false);
       fetchData(); // Muat ulang semua data
-      toast.success('Transaksi berhasil dicatat!'); // Pesan lebih netral
+      
+      // Extract transaction ID from response if available
+      const transactionId = response?.data?.purchase?.id;
+      const successMessage = transactionId 
+        ? `Transaction ${formatTransactionId(transactionId)} berhasil dicatat!`
+        : 'Transaksi berhasil dicatat!';
+      
+      toast.success(successMessage);
     } catch (err) {
       console.error('Error creating transaction:', err);
       const errorMessage = err instanceof Error ? err.message : 'Gagal mencatat transaksi.';
@@ -336,11 +343,12 @@ const TransactionPage: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    purchases.map((purchase) => {
-                      const totalPaid = (purchase.price * purchase.quantity) - (purchase.discountAmount || 0);
+                    purchases.map((purchase) => {                      const totalPaid = (purchase.price * purchase.quantity) - (purchase.discountAmount || 0);
                       return (
                         <tr key={purchase.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                          <td style={{ padding: '12px 16px' }}>{purchase.id}</td>
+                          <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '13px', fontWeight: '600', color: '#4f46e5' }}>
+                            {formatTransactionId(purchase.id)}
+                          </td>
                           <td style={{ padding: '12px 16px' }}>
                             {purchase.customer ? `${purchase.customer.firstName} ${purchase.customer.lastName}` : getCustomerName(purchase.customerId)}
                           </td>

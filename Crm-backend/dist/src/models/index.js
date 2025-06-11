@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Ticket = exports.CustomerPromo = exports.Promo = exports.CustomerProduct = exports.Product = exports.Task = exports.Customer = exports.Admin = exports.sequelize = void 0;
+exports.Ticket = exports.CustomerPromo = exports.Promo = exports.Purchase = exports.CustomerProduct = exports.Product = exports.Task = exports.Customer = exports.Admin = exports.sequelize = void 0;
 const sequelize_1 = require("sequelize");
 const dotenv_1 = __importDefault(require("dotenv"));
 const database_1 = __importDefault(require("../../config/database"));
@@ -36,6 +36,8 @@ const product_model_1 = __importDefault(require("./product.model"));
 exports.Product = product_model_1.default;
 const customerProduct_model_1 = __importDefault(require("./customerProduct.model"));
 exports.CustomerProduct = customerProduct_model_1.default;
+const purchase_model_1 = __importDefault(require("./purchase.model"));
+exports.Purchase = purchase_model_1.default;
 const promo_model_1 = __importDefault(require("./promo.model"));
 exports.Promo = promo_model_1.default;
 const customerPromo_model_1 = __importDefault(require("./customerPromo.model"));
@@ -48,6 +50,7 @@ customer_model_1.default.initialize(sequelize);
 task_model_1.default.initialize(sequelize);
 product_model_1.default.initialize(sequelize);
 customerProduct_model_1.default.initialize(sequelize);
+purchase_model_1.default.initialize(sequelize);
 promo_model_1.default.initialize(sequelize);
 customerPromo_model_1.default.initialize(sequelize);
 ticket_model_1.default.initialize(sequelize);
@@ -63,6 +66,31 @@ product_model_1.default.belongsToMany(customer_model_1.default, {
     foreignKey: 'productId',
     otherKey: 'customerId',
     as: 'Customers' // Use capital C to match Sequelize default
+});
+// Purchase model associations
+purchase_model_1.default.belongsTo(customer_model_1.default, {
+    foreignKey: 'customerId',
+    as: 'customer'
+});
+purchase_model_1.default.belongsTo(product_model_1.default, {
+    foreignKey: 'productId',
+    as: 'product'
+});
+purchase_model_1.default.belongsTo(promo_model_1.default, {
+    foreignKey: 'promoId',
+    as: 'promo'
+});
+customer_model_1.default.hasMany(purchase_model_1.default, {
+    foreignKey: 'customerId',
+    as: 'purchases'
+});
+product_model_1.default.hasMany(purchase_model_1.default, {
+    foreignKey: 'productId',
+    as: 'purchases'
+});
+promo_model_1.default.hasMany(purchase_model_1.default, {
+    foreignKey: 'promoId',
+    as: 'purchases'
 });
 // Add direct associations for CustomerProduct to fix include queries
 customerProduct_model_1.default.belongsTo(customer_model_1.default, {
@@ -86,14 +114,14 @@ promo_model_1.default.belongsToMany(customer_model_1.default, {
     otherKey: 'customerId',
     as: 'eligibleCustomers' // Promo bisa melihat pelanggan mana saja yang berhak
 });
-// Inverse associations
+// Inverse associations (legacy CustomerProduct - keeping for backward compatibility)
 customer_model_1.default.hasMany(customerProduct_model_1.default, {
     foreignKey: 'customerId',
-    as: 'purchases'
+    as: 'customerProducts' // Changed from 'purchases' to avoid conflict
 });
 product_model_1.default.hasMany(customerProduct_model_1.default, {
     foreignKey: 'productId',
-    as: 'purchases'
+    as: 'customerProducts' // Changed from 'purchases' to avoid conflict
 });
 customerPromo_model_1.default.belongsTo(customer_model_1.default, { foreignKey: 'customerId', as: 'customerDetails' });
 customerPromo_model_1.default.belongsTo(promo_model_1.default, { foreignKey: 'promoId', as: 'promoDetails' });
@@ -114,8 +142,8 @@ admin_model_1.default.hasMany(promo_model_1.default, { foreignKey: 'createdBy', 
 // Ticket associations
 ticket_model_1.default.belongsTo(customer_model_1.default, { foreignKey: 'customerId', as: 'customer' });
 customer_model_1.default.hasMany(ticket_model_1.default, { foreignKey: 'customerId', as: 'tickets' });
-ticket_model_1.default.belongsTo(customerProduct_model_1.default, { foreignKey: 'purchaseId', as: 'purchase' });
-customerProduct_model_1.default.hasMany(ticket_model_1.default, { foreignKey: 'purchaseId', as: 'tickets' });
+ticket_model_1.default.belongsTo(purchase_model_1.default, { foreignKey: 'purchaseId', as: 'purchase' });
+purchase_model_1.default.hasMany(ticket_model_1.default, { foreignKey: 'purchaseId', as: 'tickets' });
 ticket_model_1.default.belongsTo(admin_model_1.default, { foreignKey: 'assignedTo', as: 'assignedAdmin' });
 admin_model_1.default.hasMany(ticket_model_1.default, { foreignKey: 'assignedTo', as: 'assignedTickets' });
 //# sourceMappingURL=index.js.map

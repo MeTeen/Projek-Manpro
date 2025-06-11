@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Ticket, Customer, CustomerProduct, Product } from '../models';
+import { Ticket, Customer, Purchase, Product } from '../models';
 import { TicketInput } from '../models/ticket.model';
 import { Op } from 'sequelize';
 
@@ -28,20 +28,18 @@ export const getCustomerTickets = async (req: Request, res: Response) => {
     const whereClause: any = { customerId };
     if (status) whereClause.status = status;
     if (priority) whereClause.priority = priority;
-    if (category) whereClause.category = category;
-
-    const { count, rows: tickets } = await Ticket.findAndCountAll({
+    if (category) whereClause.category = category;    const { count, rows: tickets } = await Ticket.findAndCountAll({
       where: whereClause,
       include: [
         {
-          model: CustomerProduct,
+          model: Purchase,
           as: 'purchase',
-          attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+          attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
           include: [
             {
               model: Product,
               as: 'product',
-              attributes: ['id', 'name', 'category', 'description']
+              attributes: ['id', 'name', 'dimensions']
             }
           ],
           required: false
@@ -87,23 +85,20 @@ export const getCustomerTicketById = async (req: Request, res: Response) => {
         success: false,
         message: 'Unauthorized',
       });
-    }
-
-    const ticket = await Ticket.findOne({
+    }    const ticket = await Ticket.findOne({
       where: { 
-        id: ticketId,
-        customerId: customerId  // Ensure customer can only see their own tickets
+        id: ticketId,      customerId: customerId  // Ensure customer can only see their own tickets
       },
       include: [
         {
-          model: CustomerProduct,
+          model: Purchase,
           as: 'purchase',
-          attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+          attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
           include: [
             {
               model: Product,
               as: 'product',
-              attributes: ['id', 'name', 'category', 'description']
+              attributes: ['id', 'name', 'dimensions']
             }
           ],
           required: false
@@ -154,11 +149,9 @@ export const createCustomerTicket = async (req: Request, res: Response) => {
         success: false,
         message: 'Subject, message, and category are required',
       });
-    }
-
-    // If purchaseId is provided, verify it belongs to the customer
+    }    // If purchaseId is provided, verify it belongs to the customer
     if (purchaseId) {
-      const purchase = await CustomerProduct.findOne({
+      const purchase = await Purchase.findOne({
         where: { 
           id: purchaseId,
           customerId: customerId
@@ -183,20 +176,17 @@ export const createCustomerTicket = async (req: Request, res: Response) => {
       attachmentUrls: attachmentUrls || null,
     };
 
-    const ticket = await Ticket.create(ticketData as any);
-
-    // Fetch created ticket with includes
-    const createdTicket = await Ticket.findByPk(ticket.id, {
-      include: [
+    const ticket = await Ticket.create(ticketData as any);    // Fetch created ticket with includes
+    const createdTicket = await Ticket.findByPk(ticket.id, {      include: [
         {
-          model: CustomerProduct,
+          model: Purchase,
           as: 'purchase',
-          attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+          attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
           include: [
             {
               model: Product,
               as: 'product',
-              attributes: ['id', 'name', 'category']
+              attributes: ['id', 'name']
             }
           ],
           required: false
@@ -231,17 +221,15 @@ export const getCustomerPurchases = async (req: Request, res: Response) => {
         success: false,
         message: 'Unauthorized',
       });
-    }
-
-    const purchases = await CustomerProduct.findAll({
-      where: { customerId },
-      include: [
-        {
-          model: Product,
-          as: 'product',
-          attributes: ['id', 'name', 'category', 'description']
-        }
-      ],
+    }    const purchases = await      Purchase.findAll({
+        where: { customerId },
+        include: [
+          {
+            model: Product,
+            as: 'product',
+            attributes: ['id', 'name', 'dimensions']
+          }
+        ],
       order: [['purchaseDate', 'DESC']],
     });
 

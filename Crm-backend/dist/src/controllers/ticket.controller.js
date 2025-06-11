@@ -51,11 +51,10 @@ const getAllTickets = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                     model: models_1.Customer,
                     as: 'customer',
                     attributes: ['id', 'firstName', 'lastName', 'email', 'phone']
-                },
-                {
-                    model: models_1.CustomerProduct,
+                }, {
+                    model: models_1.Purchase,
                     as: 'purchase',
-                    attributes: ['id', 'quantity', 'price', 'purchaseDate'], include: [
+                    attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'], include: [
                         {
                             model: models_1.Product,
                             as: 'product',
@@ -111,16 +110,15 @@ const getTicketById = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                     model: models_1.Customer,
                     as: 'customer',
                     attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'address', 'city']
-                },
-                {
-                    model: models_1.CustomerProduct,
+                }, {
+                    model: models_1.Purchase,
                     as: 'purchase',
-                    attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+                    attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
                     include: [
                         {
                             model: models_1.Product,
                             as: 'product',
-                            attributes: ['id', 'name', 'imageUrl', 'description']
+                            attributes: ['id', 'name', 'dimensions']
                         }
                     ],
                     required: false
@@ -314,10 +312,9 @@ const createTicket = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 success: false,
                 message: `Customer with ID ${ticketData.customerId} not found`,
             });
-        }
-        // Validate purchase exists if provided
+        } // Validate purchase exists if provided
         if (ticketData.purchaseId) {
-            const purchase = yield models_1.CustomerProduct.findOne({
+            const purchase = yield models_1.Purchase.findOne({
                 where: {
                     id: ticketData.purchaseId,
                     customerId: ticketData.customerId
@@ -338,11 +335,10 @@ const createTicket = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                     model: models_1.Customer,
                     as: 'customer',
                     attributes: ['id', 'firstName', 'lastName', 'email']
-                },
-                {
-                    model: models_1.CustomerProduct,
+                }, {
+                    model: models_1.Purchase,
                     as: 'purchase',
-                    attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+                    attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
                     include: [
                         {
                             model: models_1.Product,

@@ -16,8 +16,7 @@ export interface CustomerTicket {
     firstName: string;
     lastName: string;
     email: string;
-  };
-  purchase?: {
+  };  purchase?: {
     id: number;
     purchaseDate: string;
     quantity: number;
@@ -25,8 +24,7 @@ export interface CustomerTicket {
     product: {
       id: number;
       name: string;
-      category: string;
-      description: string;
+      dimensions?: string;
     };
   };
   admin?: {
@@ -52,8 +50,7 @@ export interface CustomerPurchase {
   product: {
     id: number;
     name: string;
-    category: string;
-    description: string;
+    dimensions?: string;
   };
 }
 

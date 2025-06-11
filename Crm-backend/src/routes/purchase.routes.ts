@@ -29,4 +29,4 @@ router.get('/customer/:customerId', getCustomerPurchases as any);
 // GET /api/purchases/product/:productId - Get purchase history for a specific product
 router.get('/product/:productId', getProductPurchaseHistory as any);
 
-export default router; 
+export default router;

@@ -22,39 +22,39 @@ module.exports = {
                 const existingIndexes = indexes[0].map(row => row.indexname);
                 // Add indexes for analytics performance
                 if (!existingIndexes.includes('idx_customers_created_at')) {
-                    yield queryInterface.addIndex('customers', ['createdAt'], {
+                    yield queryInterface.addIndex('customers', ['created_at'], {
                         name: 'idx_customers_created_at'
                     });
                     console.log('Added idx_customers_created_at');
                 }
                 if (!existingIndexes.includes('idx_customer_products_purchase_date')) {
-                    yield queryInterface.addIndex('customer_products', ['purchaseDate'], {
+                    yield queryInterface.addIndex('customer_products', ['purchase_date'], {
                         name: 'idx_customer_products_purchase_date'
                     });
                     console.log('Added idx_customer_products_purchase_date');
                 }
                 if (!existingIndexes.includes('idx_customer_products_customer_id')) {
-                    yield queryInterface.addIndex('customer_products', ['customerId'], {
+                    yield queryInterface.addIndex('customer_products', ['customer_id'], {
                         name: 'idx_customer_products_customer_id'
                     });
                     console.log('Added idx_customer_products_customer_id');
                 }
                 if (!existingIndexes.includes('idx_customer_products_product_id')) {
-                    yield queryInterface.addIndex('customer_products', ['productId'], {
+                    yield queryInterface.addIndex('customer_products', ['product_id'], {
                         name: 'idx_customer_products_product_id'
                     });
                     console.log('Added idx_customer_products_product_id');
                 }
                 // Composite index for date range analytics queries
                 if (!existingIndexes.includes('idx_customer_products_date_customer')) {
-                    yield queryInterface.addIndex('customer_products', ['purchaseDate', 'customerId'], {
+                    yield queryInterface.addIndex('customer_products', ['purchase_date', 'customer_id'], {
                         name: 'idx_customer_products_date_customer'
                     });
                     console.log('Added idx_customer_products_date_customer');
                 }
                 // Index for product sales aggregation
                 if (!existingIndexes.includes('idx_customer_products_product_price_qty')) {
-                    yield queryInterface.addIndex('customer_products', ['productId', 'price', 'quantity'], {
+                    yield queryInterface.addIndex('customer_products', ['product_id', 'price', 'quantity'], {
                         name: 'idx_customer_products_product_price_qty'
                     });
                     console.log('Added idx_customer_products_product_price_qty');

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Ticket, Customer, CustomerProduct, Admin, Product } from '../models';
+import { Ticket, Customer, Purchase, Admin, Product } from '../models';
 import { TicketInput } from '../models/ticket.model';
 import { Op } from 'sequelize';
 
@@ -41,11 +41,10 @@ export const getAllTickets = async (req: Request, res: Response) => {
           model: Customer,
           as: 'customer',
           attributes: ['id', 'firstName', 'lastName', 'email', 'phone']
-        },
-        {
-          model: CustomerProduct,
+        },        {
+          model: Purchase,
           as: 'purchase',
-          attributes: ['id', 'quantity', 'price', 'purchaseDate'],          include: [
+          attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],          include: [
             {
               model: Product,
               as: 'product',
@@ -102,16 +101,15 @@ export const getTicketById = async (req: Request, res: Response) => {
           model: Customer,
           as: 'customer',
           attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'address', 'city']
-        },
-        {
-          model: CustomerProduct,
+        },        {
+          model: Purchase,
           as: 'purchase',
-          attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+          attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
           include: [
             {
               model: Product,
               as: 'product',
-              attributes: ['id', 'name', 'imageUrl', 'description']
+              attributes: ['id', 'name', 'dimensions']
             }
           ],
           required: false
@@ -311,11 +309,9 @@ export const createTicket = async (req: Request, res: Response) => {
         success: false,
         message: `Customer with ID ${ticketData.customerId} not found`,
       });
-    }
-
-    // Validate purchase exists if provided
+    }    // Validate purchase exists if provided
     if (ticketData.purchaseId) {
-      const purchase = await CustomerProduct.findOne({
+      const purchase = await Purchase.findOne({
         where: {
           id: ticketData.purchaseId,
           customerId: ticketData.customerId
@@ -338,11 +334,10 @@ export const createTicket = async (req: Request, res: Response) => {
           model: Customer,
           as: 'customer',
           attributes: ['id', 'firstName', 'lastName', 'email']
-        },
-        {
-          model: CustomerProduct,
+        },        {
+          model: Purchase,
           as: 'purchase',
-          attributes: ['id', 'quantity', 'price', 'purchaseDate'],
+          attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
           include: [
             {
               model: Product,

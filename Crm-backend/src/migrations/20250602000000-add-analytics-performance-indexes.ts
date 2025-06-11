@@ -12,31 +12,30 @@ module.exports = {
       `);
       
       const existingIndexes = (indexes[0] as any[]).map(row => row.indexname);
-      
-      // Add indexes for analytics performance
+        // Add indexes for analytics performance
       if (!existingIndexes.includes('idx_customers_created_at')) {
-        await queryInterface.addIndex('customers', ['createdAt'], {
+        await queryInterface.addIndex('customers', ['created_at'], {
           name: 'idx_customers_created_at'
         });
         console.log('Added idx_customers_created_at');
       }
       
       if (!existingIndexes.includes('idx_customer_products_purchase_date')) {
-        await queryInterface.addIndex('customer_products', ['purchaseDate'], {
+        await queryInterface.addIndex('customer_products', ['purchase_date'], {
           name: 'idx_customer_products_purchase_date'
         });
         console.log('Added idx_customer_products_purchase_date');
       }
       
       if (!existingIndexes.includes('idx_customer_products_customer_id')) {
-        await queryInterface.addIndex('customer_products', ['customerId'], {
+        await queryInterface.addIndex('customer_products', ['customer_id'], {
           name: 'idx_customer_products_customer_id'
         });
         console.log('Added idx_customer_products_customer_id');
       }
       
       if (!existingIndexes.includes('idx_customer_products_product_id')) {
-        await queryInterface.addIndex('customer_products', ['productId'], {
+        await queryInterface.addIndex('customer_products', ['product_id'], {
           name: 'idx_customer_products_product_id'
         });
         console.log('Added idx_customer_products_product_id');
@@ -44,7 +43,7 @@ module.exports = {
       
       // Composite index for date range analytics queries
       if (!existingIndexes.includes('idx_customer_products_date_customer')) {
-        await queryInterface.addIndex('customer_products', ['purchaseDate', 'customerId'], {
+        await queryInterface.addIndex('customer_products', ['purchase_date', 'customer_id'], {
           name: 'idx_customer_products_date_customer'
         });
         console.log('Added idx_customer_products_date_customer');
@@ -52,7 +51,7 @@ module.exports = {
       
       // Index for product sales aggregation
       if (!existingIndexes.includes('idx_customer_products_product_price_qty')) {
-        await queryInterface.addIndex('customer_products', ['productId', 'price', 'quantity'], {
+        await queryInterface.addIndex('customer_products', ['product_id', 'price', 'quantity'], {
           name: 'idx_customer_products_product_price_qty'
         });
         console.log('Added idx_customer_products_product_price_qty');

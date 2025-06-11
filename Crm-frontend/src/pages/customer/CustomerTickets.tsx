@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import customerTicketService, { CustomerTicket, CustomerPurchase } from '../../services/customerTicketService';
 import customerAuthService, { CustomerProfile } from '../../services/customerAuthService';
 import { NeedHelp } from '../../components/ui';
+import { formatTransactionId } from '../../utils/transactionFormatter';
 
 const CustomerTickets: React.FC = () => {
   const [tickets, setTickets] = useState<CustomerTicket[]>([]);
@@ -56,12 +57,11 @@ const CustomerTickets: React.FC = () => {
       console.error('Error fetching profile:', error);
     }
   };
-
   const fetchTickets = async () => {
     try {
       const response = await customerTicketService.getMyTickets();
       if (response.success) {
-        setTickets(response.data);
+        setTickets(response.data.tickets || []);
       }
     } catch (error) {
       console.error('Error fetching tickets:', error);
@@ -111,8 +111,7 @@ const CustomerTickets: React.FC = () => {
     localStorage.removeItem('customerData');
     navigate('/customer/login');
   };
-
-  const filteredTickets = tickets.filter(ticket => {
+  const filteredTickets = (tickets || []).filter(ticket => {
     if (filter.status !== 'all' && ticket.status !== filter.status) return false;
     if (filter.priority !== 'all' && ticket.priority !== filter.priority) return false;
     if (filter.category !== 'all' && ticket.category !== filter.category) return false;
@@ -524,10 +523,13 @@ const CustomerTickets: React.FC = () => {
                       <span style={{ color: '#6b5b47', marginLeft: '8px' }}>
                         {new Date(ticket.updatedAt).toLocaleDateString()}
                       </span>
-                    </div>
-                    {ticket.purchase && (
+                    </div>                    {ticket.purchase && (
                       <div>
-                        <span style={{ color: '#8B4513', fontWeight: '600' }}>Related Product:</span>
+                        <span style={{ color: '#8B4513', fontWeight: '600' }}>Related Transaction:</span>
+                        <span style={{ color: '#6b5b47', marginLeft: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
+                          {formatTransactionId(ticket.purchase.id)}
+                        </span>
+                        <span style={{ color: '#8B4513', fontWeight: '600', marginLeft: '12px' }}>Product:</span>
                         <span style={{ color: '#6b5b47', marginLeft: '8px' }}>
                           {ticket.purchase.product.name}
                         </span>
@@ -695,52 +697,276 @@ const CustomerTickets: React.FC = () => {
                       <option value="other">Other</option>
                     </select>
                   </div>
-                </div>
-
-                {purchases.length > 0 && (
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#8B4513',
-                      marginBottom: '8px'
-                    }}>                      Related Transaction (Optional)
-                    </label>
-                    <p style={{
-                      fontSize: '12px',
-                      color: '#6b5b47',
-                      marginBottom: '8px',
-                      lineHeight: '1.4'
-                    }}>
-                      Select a transaction if your issue is related to a specific purchase
-                    </p><select
-                      value={newTicket.purchaseId || ''}
-                      onChange={(e) => setNewTicket(prev => ({ 
-                        ...prev, 
-                        purchaseId: e.target.value ? parseInt(e.target.value) : undefined 
-                      }))}
+                </div>                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#8B4513',
+                    marginBottom: '8px'
+                  }}>
+                    Related Product (Optional)
+                  </label>
+                  <p style={{
+                    fontSize: '12px',
+                    color: '#6b5b47',
+                    marginBottom: '16px',
+                    lineHeight: '1.4'
+                  }}>
+                    Select a product if your issue is related to a specific purchase, or choose "General Issue" for non-product specific inquiries
+                  </p>
+                  
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    {/* General Issue Option */}
+                    <div
+                      onClick={() => setNewTicket(prev => ({ ...prev, purchaseId: undefined }))}
                       style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '16px',
-                        outline: 'none'
+                        padding: '16px',
+                        border: `2px solid ${!newTicket.purchaseId ? '#8B4513' : '#e5e7eb'}`,
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        backgroundColor: !newTicket.purchaseId ? '#8B451308' : 'white',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
                       }}
-                    >                      <option value="">No related transaction</option>
-                      {purchases.map((purchase) => (
-                        <option key={purchase.id} value={purchase.id}>
-                          {purchase.product.name} - Qty: {purchase.quantity} - {purchase.price} - {new Date(purchase.purchaseDate).toLocaleDateString('id-ID', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </option>
-                      ))}
-                    </select>
+                      onMouseEnter={(e) => {
+                        if (!newTicket.purchaseId) return;
+                        (e.currentTarget as HTMLElement).style.borderColor = '#D2691E';
+                        (e.currentTarget as HTMLElement).style.backgroundColor = '#8B451305';
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!newTicket.purchaseId) return;
+                        (e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb';
+                        (e.currentTarget as HTMLElement).style.backgroundColor = 'white';
+                      }}
+                    >
+                      <div style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        border: `2px solid ${!newTicket.purchaseId ? '#8B4513' : '#e5e7eb'}`,
+                        backgroundColor: !newTicket.purchaseId ? '#8B4513' : 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        {!newTicket.purchaseId && (
+                          <div style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: 'white'
+                          }} />
+                        )}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          marginBottom: '4px'
+                        }}>
+                          <span style={{ fontSize: '20px' }}>💬</span>
+                          <h4 style={{
+                            margin: 0,
+                            color: '#8B4513',
+                            fontSize: '16px',
+                            fontWeight: '600'
+                          }}>
+                            General Issue
+                          </h4>
+                        </div>
+                        <p style={{
+                          margin: 0,
+                          color: '#6b5b47',
+                          fontSize: '14px',
+                          lineHeight: '1.4'
+                        }}>
+                          For questions, inquiries, or issues not related to a specific product
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Product Options */}
+                    {purchases.length > 0 && (
+                      <>
+                        <div style={{
+                          margin: '8px 0 4px 0',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: '#8B4513'
+                        }}>
+                          Your Purchases:
+                        </div>
+                        {purchases.map((purchase) => (
+                          <div
+                            key={purchase.id}
+                            onClick={() => setNewTicket(prev => ({ ...prev, purchaseId: purchase.id }))}
+                            style={{
+                              padding: '16px',
+                              border: `2px solid ${newTicket.purchaseId === purchase.id ? '#8B4513' : '#e5e7eb'}`,
+                              borderRadius: '12px',
+                              cursor: 'pointer',
+                              backgroundColor: newTicket.purchaseId === purchase.id ? '#8B451308' : 'white',
+                              transition: 'all 0.3s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (newTicket.purchaseId === purchase.id) return;
+                              (e.currentTarget as HTMLElement).style.borderColor = '#D2691E';
+                              (e.currentTarget as HTMLElement).style.backgroundColor = '#8B451305';
+                            }}
+                            onMouseLeave={(e) => {
+                              if (newTicket.purchaseId === purchase.id) return;
+                              (e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb';
+                              (e.currentTarget as HTMLElement).style.backgroundColor = 'white';
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '50%',
+                                border: `2px solid ${newTicket.purchaseId === purchase.id ? '#8B4513' : '#e5e7eb'}`,
+                                backgroundColor: newTicket.purchaseId === purchase.id ? '#8B4513' : 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                              }}>
+                                {newTicket.purchaseId === purchase.id && (
+                                  <div style={{
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'white'
+                                  }} />
+                                )}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  marginBottom: '8px'
+                                }}>
+                                  <h4 style={{
+                                    margin: 0,
+                                    color: '#8B4513',
+                                    fontSize: '16px',
+                                    fontWeight: '600'
+                                  }}>
+                                    {purchase.product.name}
+                                  </h4>                                  <span style={{
+                                    padding: '4px 8px',
+                                    backgroundColor: '#8B451315',
+                                    color: '#8B4513',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: '600'
+                                  }}>
+                                    {purchase.product.dimensions || 'Product'}
+                                  </span>
+                                </div>
+                                <div style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                                  gap: '12px',
+                                  marginBottom: '8px'
+                                }}>
+                                  <div>
+                                    <span style={{
+                                      fontSize: '12px',
+                                      color: '#8B4513',
+                                      fontWeight: '600'
+                                    }}>
+                                      Quantity:
+                                    </span>
+                                    <span style={{
+                                      marginLeft: '4px',
+                                      fontSize: '14px',
+                                      color: '#6b5b47'
+                                    }}>
+                                      {purchase.quantity}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span style={{
+                                      fontSize: '12px',
+                                      color: '#8B4513',
+                                      fontWeight: '600'
+                                    }}>
+                                      Price:
+                                    </span>
+                                    <span style={{
+                                      marginLeft: '4px',
+                                      fontSize: '14px',
+                                      color: '#6b5b47',
+                                      fontWeight: '600'
+                                    }}>
+                                      {purchase.price}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span style={{
+                                      fontSize: '12px',
+                                      color: '#8B4513',
+                                      fontWeight: '600'
+                                    }}>
+                                      Date:
+                                    </span>
+                                    <span style={{
+                                      marginLeft: '4px',
+                                      fontSize: '14px',
+                                      color: '#6b5b47'
+                                    }}>
+                                      {new Date(purchase.purchaseDate).toLocaleDateString('id-ID', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>                                </div>
+                                {purchase.product.dimensions && (
+                                  <p style={{
+                                    margin: 0,
+                                    color: '#6b5b47',
+                                    fontSize: '12px',
+                                    lineHeight: '1.4',
+                                    opacity: 0.8
+                                  }}>
+                                    Dimensions: {purchase.product.dimensions}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {purchases.length === 0 && (
+                      <div style={{
+                        padding: '24px',
+                        backgroundColor: '#f9fafb',
+                        borderRadius: '12px',
+                        textAlign: 'center',
+                        border: '1px dashed #d1d5db'
+                      }}>
+                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>📦</div>
+                        <p style={{
+                          margin: 0,
+                          color: '#6b5b47',
+                          fontSize: '14px'
+                        }}>
+                          No purchases found. You can still create a general inquiry ticket.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {error && (
                   <div style={{
