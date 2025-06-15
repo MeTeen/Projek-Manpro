@@ -14,10 +14,10 @@ const router = Router();
 router.use(authenticateCustomer as any);
 
 // Customer ticket routes
-router.get('/stats', getCustomerTicketStats as any);
+router.get('/tickets/stats', getCustomerTicketStats as any);
 router.get('/purchases', getCustomerPurchases as any);
-router.get('/', getCustomerTickets as any);
-router.get('/:id', getCustomerTicketById as any);
-router.post('/', createCustomerTicket as any);
+router.get('/tickets', getCustomerTickets as any);
+router.get('/tickets/:id', getCustomerTicketById as any);
+router.post('/tickets', createCustomerTicket as any);
 
 export default router;

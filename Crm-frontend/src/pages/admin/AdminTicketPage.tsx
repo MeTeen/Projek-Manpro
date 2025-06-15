@@ -1,18 +1,41 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Ticket, 
+  TicketStats, 
+  TicketMessage, 
+  TicketFilters,
+  Admin,
+  TICKET_STATUSES,
+  TICKET_PRIORITIES,
+  TICKET_CATEGORIES,
+  getStatusBadgeStyle,
+  getPriorityBadgeStyle
+} from '../../types/ticket';
+import adminTicketService from '../../services/adminTicketService';
+import ticketMessageService from '../../services/ticketMessageService';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
-import ticketService, { Ticket, TicketStats, Admin, TicketFilters } from '../../services/ticketService';
-import ticketMessageService, { TicketMessage } from '../../services/ticketMessageService';
+import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 
+// Add CSS animations
+const styles = `
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+`;
+
 const AdminTicketPage: React.FC = () => {
+  const { user } = useAuth(); // Get current admin user
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState<TicketStats | null>(null);
-  const [admins, setAdmins] = useState<Admin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [admins, setAdmins] = useState<Admin[]>([]);  const [loading, setLoading] = useState(true);
   
   // Filter states
   const [filters, setFilters] = useState<TicketFilters>({
@@ -23,7 +46,9 @@ const AdminTicketPage: React.FC = () => {
     category: '',
     assignedTo: undefined,
     search: ''
-  });  const [pagination, setPagination] = useState({
+  });
+
+  const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
     limit: 10,
@@ -52,8 +77,8 @@ const AdminTicketPage: React.FC = () => {
   const fetchInitialData = async () => {
     try {
       const [statsResponse, adminsResponse] = await Promise.all([
-        ticketService.getTicketStats(),
-        ticketService.getAdminsForAssignment()
+        adminTicketService.getTicketStats(),
+        adminTicketService.getAdminsForAssignment()
       ]);
       setStats(statsResponse.data);
       setAdmins(adminsResponse.data);
@@ -66,7 +91,7 @@ const AdminTicketPage: React.FC = () => {
   const fetchTickets = async () => {
     try {
       setLoading(true);
-      const response = await ticketService.getAllTickets(filters);
+      const response = await adminTicketService.getAllTickets(filters);
       setTickets(response.data);
       setPagination(response.pagination);
     } catch (error) {
@@ -79,7 +104,7 @@ const AdminTicketPage: React.FC = () => {
 
   const handleStatusChange = async (ticketId: number, newStatus: Ticket['status']) => {
     try {
-      await ticketService.updateTicket(ticketId, { status: newStatus });
+      await adminTicketService.updateTicket(ticketId, { status: newStatus });
       await fetchTickets();
       await fetchInitialData(); // Refresh stats
       toast.success('Ticket status updated successfully');
@@ -88,36 +113,50 @@ const AdminTicketPage: React.FC = () => {
       toast.error('Failed to update ticket status');
     }
   };
-
-  const handleAssignTicket = async (ticketId: number, adminId: number | null) => {
+  const handleClaimTicket = async (ticketId: number, allowReclaim = false) => {
     try {
-      await ticketService.updateTicket(ticketId, { assignedTo: adminId });
-      await fetchTickets();
-      toast.success('Ticket assigned successfully');
+      const response = await adminTicketService.claimTicket(ticketId, allowReclaim);
+      if (response.success) {
+        await fetchTickets();
+        await fetchInitialData(); // Refresh stats
+        toast.success('Ticket claimed successfully');
+      } else {
+        // Handle specific error cases
+        if (response.message?.includes('already claimed')) {
+          toast.error(response.message);
+        } else {
+          toast.error('Failed to claim ticket');
+        }
+      }
     } catch (error) {
-      console.error('Failed to assign ticket', error);
-      toast.error('Failed to assign ticket');
+      console.error('Failed to claim ticket', error);
+      toast.error('Failed to claim ticket');
     }
   };
 
+  const handleReleaseTicket = async (ticketId: number) => {
+    try {
+      const response = await adminTicketService.releaseTicket(ticketId);
+      if (response.success) {
+        await fetchTickets();
+        await fetchInitialData(); // Refresh stats
+        toast.success('Ticket released successfully');
+      } else {
+        toast.error('Failed to release ticket');
+      }
+    } catch (error) {
+      console.error('Failed to release ticket', error);
+      toast.error('Failed to release ticket');
+    }
+  };
   const handlePriorityChange = async (ticketId: number, newPriority: Ticket['priority']) => {
     try {
-      await ticketService.updateTicket(ticketId, { priority: newPriority });
+      await adminTicketService.updateTicket(ticketId, { priority: newPriority });
       await fetchTickets();
       toast.success('Ticket priority updated successfully');
     } catch (error) {
       console.error('Failed to update ticket priority', error);
       toast.error('Failed to update ticket priority');
-    }
-  };
-  const openTicketDetail = async (ticket: Ticket) => {
-    try {
-      const response = await ticketService.getTicketById(ticket.id);
-      setSelectedTicket(response.data);
-      setShowDetailModal(true);
-    } catch (error) {
-      console.error('Failed to fetch ticket details', error);
-      toast.error('Failed to load ticket details');
     }
   };
 
@@ -198,6 +237,16 @@ const AdminTicketPage: React.FC = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const handleFilterChange = (key: keyof TicketFilters, value: any) => {
     setFilters(prev => ({
       ...prev,
@@ -206,26 +255,34 @@ const AdminTicketPage: React.FC = () => {
     }));
   };
 
-  const getPriorityBadgeStyle = (priority: string) => ({
-    backgroundColor: ticketService.getPriorityColor(priority),
-    color: 'white',
-    padding: '4px 8px',
-    borderRadius: '12px',
-    fontSize: '12px',
-    fontWeight: '600'
-  });
+  const getResponseTime = (ticket: Ticket): string => {
+    if (!ticket.firstResponseAt) return 'No response yet';
+    
+    const created = new Date(ticket.createdAt);
+    const firstResponse = new Date(ticket.firstResponseAt);
+    const diffHours = Math.round((firstResponse.getTime() - created.getTime()) / (1000 * 60 * 60));
+    
+    if (diffHours < 1) return 'Less than 1 hour';
+    if (diffHours < 24) return `${diffHours} hours`;
+    return `${Math.round(diffHours / 24)} days`;
+  };
 
-  const getStatusBadgeStyle = (status: string) => ({
-    backgroundColor: ticketService.getStatusColor(status),
-    color: 'white',
-    padding: '4px 8px',
-    borderRadius: '12px',
-    fontSize: '12px',
-    fontWeight: '600'
-  });
-
+  const isEscalated = (ticket: Ticket): boolean => {
+    const created = new Date(ticket.createdAt);
+    const now = new Date();
+    const hoursOld = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
+    
+    // Escalation rules
+    if (ticket.priority === 'urgent' && hoursOld > 2) return true;
+    if (ticket.priority === 'high' && hoursOld > 8) return true;
+    if (ticket.priority === 'medium' && hoursOld > 24) return true;
+    if (ticket.priority === 'low' && hoursOld > 72) return true;
+    
+    return false;
+  };
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
       <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8fafc' }}>
         <div style={{ padding: '20px 30px' }}>
@@ -234,10 +291,10 @@ const AdminTicketPage: React.FC = () => {
           {/* Page Header */}
           <div style={{ marginBottom: '24px' }}>
             <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>
-              🎫 Ticket Management
+              🎫 Ticket Management System
             </h1>
             <p style={{ color: '#64748b', fontSize: '16px' }}>
-              Manage customer complaints and support requests
+              Manage customer support tickets efficiently with real-time updates and analytics
             </p>
           </div>
 
@@ -269,7 +326,7 @@ const AdminTicketPage: React.FC = () => {
                 border: '1px solid #e2e8f0'
               }}>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔓</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{stats.overview.open}</div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>{stats.overview.open}</div>
                 <div style={{ fontSize: '14px', color: '#64748b' }}>Open Tickets</div>
               </div>
               
@@ -281,7 +338,7 @@ const AdminTicketPage: React.FC = () => {
                 border: '1px solid #e2e8f0'
               }}>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏳</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>{stats.overview.inProgress}</div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.overview.inProgress}</div>
                 <div style={{ fontSize: '14px', color: '#64748b' }}>In Progress</div>
               </div>
               
@@ -296,6 +353,18 @@ const AdminTicketPage: React.FC = () => {
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>{stats.priority.urgent}</div>
                 <div style={{ fontSize: '14px', color: '#64748b' }}>Urgent Tickets</div>
               </div>
+
+              <div style={{ 
+                backgroundColor: 'white', 
+                padding: '20px', 
+                borderRadius: '12px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                border: '1px solid #e2e8f0'
+              }}>
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>{stats.recent}</div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>This Week</div>
+              </div>
             </div>
           )}
 
@@ -309,7 +378,7 @@ const AdminTicketPage: React.FC = () => {
             border: '1px solid #e2e8f0'
           }}>
             <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#1e293b' }}>
-              🔍 Filters
+              🔍 Advanced Filters
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               <div>
@@ -343,10 +412,9 @@ const AdminTicketPage: React.FC = () => {
                   }}
                 >
                   <option value="">All Status</option>
-                  <option value="Open">Open</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Resolved">Resolved</option>
-                  <option value="Closed">Closed</option>
+                  {Object.entries(TICKET_STATUSES).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
                 </select>
               </div>
               
@@ -364,10 +432,9 @@ const AdminTicketPage: React.FC = () => {
                   }}
                 >
                   <option value="">All Priorities</option>
-                  <option value="Urgent">Urgent</option>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
+                  {Object.entries(TICKET_PRIORITIES).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
                 </select>
               </div>
               
@@ -385,380 +452,575 @@ const AdminTicketPage: React.FC = () => {
                   }}
                 >
                   <option value="">All Categories</option>
-                  <option value="Delivery">Delivery</option>
-                  <option value="Product Quality">Product Quality</option>
-                  <option value="Payment">Payment</option>
-                  <option value="General">General</option>
-                  <option value="Refund">Refund</option>
-                  <option value="Exchange">Exchange</option>
+                  {Object.entries(TICKET_CATEGORIES).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Assignment</label>
+                <select
+                  value={
+                    filters.assignedTo === parseInt(user?.id || '0') ? 'my_tickets' :
+                    filters.assignedTo === null ? 'unassigned' :
+                    filters.assignedTo === undefined ? 'all' : 
+                    filters.assignedTo.toString()
+                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'my_tickets') {
+                      handleFilterChange('assignedTo', parseInt(user?.id || '0'));
+                    } else if (value === 'unassigned') {
+                      handleFilterChange('assignedTo', null);
+                    } else if (value === 'all') {
+                      handleFilterChange('assignedTo', undefined);
+                    } else {
+                      handleFilterChange('assignedTo', parseInt(value));
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                >
+                  <option value="all">All Tickets</option>
+                  <option value="my_tickets">🎯 My Tickets</option>
+                  <option value="unassigned">📭 Unassigned</option>
+                  {admins.filter(admin => admin.id !== parseInt(user?.id || '0')).map((admin) => (
+                    <option key={admin.id} value={admin.id}>{admin.username}'s Tickets</option>
+                  ))}
                 </select>
               </div>
             </div>
-          </div>
-
-          {/* Tickets List */}
+          </div>          {/* Tickets List */}
           <div style={{ 
             backgroundColor: 'white', 
-            borderRadius: '12px', 
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            border: '1px solid #e2e8f0'
+            borderRadius: '16px', 
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1)',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden'
           }}>
-            <div style={{ padding: '20px', borderBottom: '1px solid #e2e8f0' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-                📋 Tickets ({pagination.total})
-              </h3>
+            <div style={{ 
+              padding: '24px 28px', 
+              borderBottom: '2px solid #f1f5f9',
+              background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+              color: 'white'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '24px' }}>🎫</span>
+                  Support Tickets
+                  <span style={{ 
+                    backgroundColor: 'rgba(255,255,255,0.2)', 
+                    padding: '4px 12px', 
+                    borderRadius: '20px', 
+                    fontSize: '14px', 
+                    fontWeight: '600' 
+                  }}>
+                    {pagination.total}
+                  </span>
+                </h3>
+                <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                  Page {pagination.page} of {pagination.totalPages}
+                </div>
+              </div>
             </div>
             
             {loading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                Loading tickets...
+              <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+                <div style={{ 
+                  fontSize: '48px', 
+                  marginBottom: '16px',
+                  background: 'linear-gradient(45deg, #1e293b, #3b82f6)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>
+                  ⏳
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: '500' }}>Loading tickets...</div>
+                <div style={{ fontSize: '14px', marginTop: '4px' }}>Please wait while we fetch the latest data</div>
               </div>
             ) : tickets.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                No tickets found
+              <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+                <div style={{ 
+                  fontSize: '48px', 
+                  marginBottom: '16px',
+                  background: 'linear-gradient(45deg, #64748b, #94a3b8)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>
+                  📭
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: '500' }}>No tickets found</div>
+                <div style={{ fontSize: '14px', marginTop: '4px' }}>Try adjusting your filters to see more results</div>
               </div>
-            ) : (
-              <>                {tickets.map((ticket) => (
-                  <div
+            ) : (              <div style={{ padding: '16px' }}>
+                {tickets.map((ticket) => (                  <div
                     key={ticket.id}
                     style={{
+                      marginBottom: '16px',
+                      backgroundColor: isEscalated(ticket) ? '#fef2f2' : 'white',
+                      border: isEscalated(ticket) ? '2px solid #ef4444' : '1px solid #e2e8f0',
+                      borderRadius: '12px',
                       padding: '20px',
-                      borderBottom: '1px solid #f1f5f9',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.2s'
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                    onClick={() => openTicketDetail(ticket)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                      e.currentTarget.style.borderColor = '#1e293b';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                      e.currentTarget.style.borderColor = isEscalated(ticket) ? '#ef4444' : '#e2e8f0';
+                    }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    {/* Escalation Indicator */}
+                    {isEscalated(ticket) && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '4px',
+                        background: 'linear-gradient(90deg, #ef4444, #dc2626)',
+                        animation: 'pulse 2s infinite'
+                      }} />
+                    )}
+                    
+                    {/* Main Content */}
+                    <div style={{ display: 'flex', gap: '20px' }}>
+                      {/* Left Section - Ticket Info */}
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '20px' }}>{ticketService.getPriorityIcon(ticket.priority)}</span>
-                          <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', margin: 0 }}>
-                            #{ticket.id} - {ticket.subject}
-                          </h3>
-                          <span style={getPriorityBadgeStyle(ticket.priority)}>
-                            {ticket.priority}
+                        {/* Header with ID and Title */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                          <div style={{ 
+                            backgroundColor: '#1e293b', 
+                            color: 'white', 
+                            padding: '6px 12px', 
+                            borderRadius: '8px', 
+                            fontSize: '14px', 
+                            fontWeight: '700',
+                            letterSpacing: '0.5px'
+                          }}>
+                            #{ticket.id}
+                          </div>
+                          <h4 style={{ 
+                            margin: 0, 
+                            fontSize: '18px', 
+                            fontWeight: '600', 
+                            color: '#1e293b',
+                            flex: 1,
+                            minWidth: '200px'
+                          }}>
+                            {ticket.subject}
+                          </h4>
+                        </div>
+
+                        {/* Badges Row */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                          {isEscalated(ticket) && (
+                            <span style={{
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              animation: 'pulse 2s infinite'
+                            }}>
+                              🚨 ESCALATED
+                            </span>
+                          )}
+                          <span style={{
+                            ...getStatusBadgeStyle(ticket.status),
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>
+                            {TICKET_STATUSES[ticket.status]}
                           </span>
-                          <span style={getStatusBadgeStyle(ticket.status)}>
-                            {ticketService.getStatusIcon(ticket.status)} {ticket.status}
+                          <span style={{
+                            ...getPriorityBadgeStyle(ticket.priority),
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>
+                            {TICKET_PRIORITIES[ticket.priority]}
+                          </span>
+                          <span style={{
+                            backgroundColor: '#f1f5f9',
+                            color: '#475569',
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>
+                            {TICKET_CATEGORIES[ticket.category]}
                           </span>
                         </div>
+
+                        {/* Customer Info */}
+                        <div style={{ 
+                          backgroundColor: '#f8fafc', 
+                          padding: '12px 16px', 
+                          borderRadius: '8px', 
+                          marginBottom: '12px',
+                          border: '1px solid #e2e8f0'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '16px' }}>👤</span>
+                            <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                              {ticket.customer?.firstName} {ticket.customer?.lastName}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#64748b', marginLeft: '24px' }}>
+                            📧 {ticket.customer?.email}
+                          </div>
+                        </div>
+
+                        {/* Timeline Info */}
+                        <div style={{ display: 'flex', gap: '20px', marginBottom: '12px', fontSize: '13px', color: '#64748b' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span>🕒</span>
+                            <span>Created: {formatDate(ticket.createdAt)}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span>⏱️</span>
+                            <span>Response: {getResponseTime(ticket)}</span>
+                          </div>
+                        </div>
+
+                        {/* Message Preview */}
+                        <div style={{ 
+                          backgroundColor: '#fafafa', 
+                          padding: '14px', 
+                          borderRadius: '8px', 
+                          marginBottom: '12px',
+                          borderLeft: '4px solid #1e293b'
+                        }}>
+                          <p style={{ 
+                            color: '#374151', 
+                            fontSize: '14px', 
+                            lineHeight: '1.5', 
+                            margin: 0,
+                            fontStyle: 'italic'
+                          }}>
+                            "{ticket.message.length > 150 
+                              ? `${ticket.message.substring(0, 150)}...` 
+                              : ticket.message}"
+                          </p>
+                        </div>
                         
-                        <p style={{ color: '#64748b', fontSize: '14px', margin: '0 0 8px 0' }}>
-                          Customer: <strong>{ticket.customer?.firstName} {ticket.customer?.lastName}</strong> ({ticket.customer?.email})
-                        </p>
-                        
-                        <p style={{ color: '#64748b', fontSize: '14px', margin: '0 0 8px 0' }}>
-                          Category: <strong>{ticket.category}</strong> | 
-                          Created: <strong>{new Date(ticket.createdAt).toLocaleDateString()}</strong>
-                        </p>
-                        
-                        <p style={{ color: '#374151', fontSize: '14px', lineHeight: '1.4' }}>
-                          {ticket.message.length > 150 ? `${ticket.message.substring(0, 150)}...` : ticket.message}
-                        </p>
-                        
+                        {/* Purchase Info */}
                         {ticket.purchase && (
                           <div style={{ 
-                            backgroundColor: '#f0f9ff', 
-                            padding: '8px 12px', 
-                            borderRadius: '6px', 
-                            marginTop: '8px',
-                            fontSize: '12px',
-                            color: '#0369a1'
+                            backgroundColor: '#fff7ed', 
+                            padding: '10px 14px', 
+                            borderRadius: '8px',
+                            border: '1px solid #fed7aa',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
                           }}>
-                            🛒 Related Purchase: {ticket.purchase.product?.name} (Qty: {ticket.purchase.quantity})
+                            <span style={{ fontSize: '16px' }}>🛒</span>
+                            <span style={{ color: '#c2410c', fontSize: '14px', fontWeight: '500' }}>
+                              Related Purchase: {ticket.purchase.product.name} (#{ticket.purchase.id})
+                            </span>
                           </div>
                         )}
                       </div>
                       
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
-                        <select
-                          value={ticket.status}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            handleStatusChange(ticket.id, e.target.value as Ticket['status']);
-                          }}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid #d1d5db',
-                            fontSize: '12px',
-                            backgroundColor: 'white'
-                          }}
-                        >
-                          <option value="Open">Open</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Resolved">Resolved</option>
-                          <option value="Closed">Closed</option>
-                        </select>
-                        
-                        <select
-                          value={ticket.priority}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            handlePriorityChange(ticket.id, e.target.value as Ticket['priority']);
-                          }}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid #d1d5db',
-                            fontSize: '12px',
-                            backgroundColor: 'white'
-                          }}
-                        >
-                          <option value="Low">Low</option>
-                          <option value="Medium">Medium</option>
-                          <option value="High">High</option>
-                          <option value="Urgent">Urgent</option>
-                        </select>
+                      {/* Right Section - Actions */}
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '12px', 
+                        minWidth: '220px',
+                        backgroundColor: '#f8fafc',
+                        padding: '16px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <h5 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                          Quick Actions
+                        </h5>
+
+                        {/* Status Dropdown */}
+                        <div>
+                          <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+                            Status
+                          </label>
                           <select
-                          value={ticket.assignedTo || ''}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            handleAssignTicket(ticket.id, e.target.value ? parseInt(e.target.value) : null);
-                          }}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid #d1d5db',
-                            fontSize: '12px',
-                            backgroundColor: 'white'
-                          }}
-                        >
-                          <option value="">Unassigned</option>
-                          {admins.map(admin => (
-                            <option key={admin.id} value={admin.id}>
-                              {admin.username}
-                            </option>
-                          ))}
-                        </select>
+                            value={ticket.status}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleStatusChange(ticket.id, e.target.value as Ticket['status']);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              backgroundColor: 'white',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {Object.entries(TICKET_STATUSES).map(([key, label]) => (
+                              <option key={key} value={key}>{label}</option>
+                            ))}
+                          </select>
+                        </div>
 
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openChatModal(ticket);
-                          }}
-                          style={{
-                            padding: '8px 12px',
-                            backgroundColor: '#10b981',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            transition: 'background-color 0.3s'
-                          }}
-                          onMouseEnter={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#059669'}
-                          onMouseLeave={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#10b981'}
-                        >
-                          💬 Chat
-                        </button>
-                        
-                        {ticket.assignedAdmin && (
-                          <div style={{ fontSize: '11px', color: '#059669' }}>
-                            ✓ Assigned to {ticket.assignedAdmin.username}
-                          </div>
-                        )}
+                        {/* Priority Dropdown */}
+                        <div>
+                          <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+                            Priority
+                          </label>
+                          <select
+                            value={ticket.priority}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handlePriorityChange(ticket.id, e.target.value as Ticket['priority']);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              backgroundColor: 'white',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {Object.entries(TICKET_PRIORITIES).map(([key, label]) => (
+                              <option key={key} value={key}>{label}</option>
+                            ))}
+                          </select>
+                        </div>                        {/* Claim/Release Section */}
+                        <div>
+                          <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '500', display: 'block', marginBottom: '8px' }}>
+                            Assignment Status
+                          </label>
+                          {ticket.assignedTo ? (
+                            <div style={{ marginBottom: '8px' }}>
+                              <div style={{ 
+                                fontSize: '12px', 
+                                color: ticket.assignedTo === parseInt(user?.id || '0') ? '#059669' : '#6b7280',
+                                fontWeight: '600',
+                                marginBottom: '6px'
+                              }}>
+                                {ticket.assignedTo === parseInt(user?.id || '0') 
+                                  ? '✅ Claimed by You' 
+                                  : `🔒 Claimed by ${ticket.assignedAdmin?.username || 'Unknown'}`
+                                }
+                              </div>
+                              {ticket.assignedTo === parseInt(user?.id || '0') ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReleaseTicket(ticket.id);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    backgroundColor: '#ef4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
+                                >
+                                  🔓 Release Ticket
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm(`This ticket is already claimed by ${ticket.assignedAdmin?.username}. Do you want to take it over?`)) {
+                                      handleClaimTicket(ticket.id, true);
+                                    }
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    backgroundColor: '#f59e0b',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#d97706'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f59e0b'}
+                                >
+                                  ⚡ Take Over
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleClaimTicket(ticket.id);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                backgroundColor: '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#059669'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#10b981'}
+                            >
+                              🎯 Claim Ticket
+                            </button>
+                          )}
+                        </div>                        {/* Action Buttons */}
+                        <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openChatModal(ticket);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '10px 16px',
+                              backgroundColor: '#1e293b',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f172a'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1e293b'}
+                          >
+                            💬 Open Chat
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                ))}              </>
-            )}
-            
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div style={{ 
-                padding: '20px', 
-                borderTop: '1px solid #e2e8f0',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>
-                  Showing {(pagination.page - 1) * pagination.limit + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} tickets
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    onClick={() => handleFilterChange('page', pagination.page - 1)}
-                    disabled={pagination.page <= 1}
-                    style={{
-                      padding: '8px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      backgroundColor: pagination.page <= 1 ? '#f9fafb' : 'white',
-                      color: pagination.page <= 1 ? '#9ca3af' : '#374151',
-                      cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    Previous
-                  </button>
-                  
-                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                    const page = i + 1;
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => handleFilterChange('page', page)}
-                        style={{
-                          padding: '8px 12px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          backgroundColor: pagination.page === page ? '#3b82f6' : 'white',
-                          color: pagination.page === page ? 'white' : '#374151',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                  
-                  <button
-                    onClick={() => handleFilterChange('page', pagination.page + 1)}
-                    disabled={pagination.page >= pagination.totalPages}
-                    style={{
-                      padding: '8px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      backgroundColor: pagination.page >= pagination.totalPages ? '#f9fafb' : 'white',
-                      color: pagination.page >= pagination.totalPages ? '#9ca3af' : '#374151',
-                      cursor: pagination.page >= pagination.totalPages ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    Next
-                  </button>
-                </div>
+                ))}
               </div>
             )}
-          </div>
-          
-          {/* Ticket Detail Modal */}
-          {showDetailModal && selectedTicket && (
-            <div style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          </div>          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div style={{ 
+              backgroundColor: 'white', 
+              borderRadius: '16px', 
+              boxShadow: '0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1)',
+              border: '1px solid #e2e8f0',
+              marginTop: '16px',
+              padding: '20px', 
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000
+              justifyContent: 'space-between',
+              alignItems: 'center'
             }}>
-              <div style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                padding: '24px',
-                maxWidth: '800px',
-                width: '90%',
-                maxHeight: '90vh',
-                overflowY: 'auto'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b' }}>
-                    Ticket #{selectedTicket.id} Details
-                  </h2>
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      fontSize: '24px',
-                      cursor: 'pointer',
-                      color: '#64748b'
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-                
-                <div style={{ display: 'grid', gap: '16px' }}>
-                  <div>
-                    <strong>Subject:</strong> {selectedTicket.subject}
-                  </div>
-                  <div>
-                    <strong>Customer:</strong> {selectedTicket.customer?.firstName} {selectedTicket.customer?.lastName}
-                    <br />
-                    <span style={{ color: '#64748b' }}>
-                      {selectedTicket.customer?.email} | {selectedTicket.customer?.phone}
-                    </span>
-                  </div>
-                  <div>
-                    <strong>Message:</strong>
-                    <div style={{ 
-                      backgroundColor: '#f8fafc', 
-                      padding: '12px', 
-                      borderRadius: '8px', 
-                      marginTop: '8px',
-                      lineHeight: '1.5'
-                    }}>
-                      {selectedTicket.message}
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div>
-                      <strong>Status:</strong> <span style={getStatusBadgeStyle(selectedTicket.status)}>{selectedTicket.status}</span>
-                    </div>
-                    <div>
-                      <strong>Priority:</strong> <span style={getPriorityBadgeStyle(selectedTicket.priority)}>{selectedTicket.priority}</span>
-                    </div>
-                    <div>
-                      <strong>Category:</strong> {selectedTicket.category}
-                    </div>
-                    <div>
-                      <strong>Created:</strong> {new Date(selectedTicket.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                  
-                  {selectedTicket.purchase && (
-                    <div>
-                      <strong>Related Purchase:</strong>
-                      <div style={{ 
-                        backgroundColor: '#f0f9ff', 
-                        padding: '12px', 
-                        borderRadius: '8px', 
-                        marginTop: '8px'
-                      }}>
-                        Product: {selectedTicket.purchase.product?.name}<br />
-                        Quantity: {selectedTicket.purchase.quantity}<br />
-                        Price: Rp {selectedTicket.purchase.price?.toLocaleString()}<br />
-                        Purchase Date: {new Date(selectedTicket.purchase.purchaseDate).toLocaleDateString()}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {selectedTicket.assignedAdmin && (
-                    <div>
-                      <strong>Assigned to:</strong> {selectedTicket.assignedAdmin.username} ({selectedTicket.assignedAdmin.email})
-                    </div>
-                  )}
-                  
-                  {selectedTicket.resolution && (
-                    <div>
-                      <strong>Resolution:</strong>
-                      <div style={{ 
-                        backgroundColor: '#f0fdf4', 
-                        padding: '12px', 
-                        borderRadius: '8px', 
-                        marginTop: '8px',
-                        lineHeight: '1.5'
-                      }}>
-                        {selectedTicket.resolution}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
+                Showing {(pagination.page - 1) * pagination.limit + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} tickets
               </div>
-            </div>          )}
-
-          {/* Chat Modal */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => handleFilterChange('page', pagination.page - 1)}
+                  disabled={pagination.page <= 1}
+                  style={{
+                    padding: '10px 16px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    backgroundColor: pagination.page <= 1 ? '#f9fafb' : 'white',
+                    color: pagination.page <= 1 ? '#9ca3af' : '#374151',
+                    cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  ← Previous
+                </button>
+                
+                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => handleFilterChange('page', page)}
+                      style={{
+                        padding: '10px 16px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        backgroundColor: pagination.page === page ? '#1e293b' : 'white',
+                        color: pagination.page === page ? 'white' : '#374151',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        minWidth: '44px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  onClick={() => handleFilterChange('page', pagination.page + 1)}
+                  disabled={pagination.page >= pagination.totalPages}
+                  style={{
+                    padding: '10px 16px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    backgroundColor: pagination.page >= pagination.totalPages ? '#f9fafb' : 'white',
+                    color: pagination.page >= pagination.totalPages ? '#9ca3af' : '#374151',
+                    cursor: pagination.page >= pagination.totalPages ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}          {/* Chat Modal */}
           {showChatModal && chatTicket && (
             <div style={{
               position: 'fixed',
@@ -820,12 +1082,14 @@ const AdminTicketPage: React.FC = () => {
                 }}>
                   {messagesLoading && (
                     <div style={{ textAlign: 'center', padding: '16px' }}>
-                      <span style={{ fontSize: '16px', color: '#6b5b47' }}>Loading messages...</span>
+                      <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏳</div>
+                      Loading messages...
                     </div>
                   )}
                   {!messagesLoading && messages.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '16px' }}>
-                      <span style={{ fontSize: '16px', color: '#6b5b47' }}>No messages found. Start the conversation!</span>
+                    <div style={{ textAlign: 'center', padding: '16px', color: '#64748b' }}>
+                      <div style={{ fontSize: '24px', marginBottom: '8px' }}>💬</div>
+                      No messages yet. Start the conversation!
                     </div>
                   )}
                   {messages.map((message) => (
@@ -837,36 +1101,26 @@ const AdminTicketPage: React.FC = () => {
                       gap: '12px'
                     }}>
                       <div style={{
-                        padding: '10px 14px',
-                        borderRadius: '16px',
-                        maxWidth: '80%',
-                        backgroundColor: message.senderType === 'admin' ? '#1e293b' : '#f1f1f1',
-                        color: message.senderType === 'admin' ? 'white' : '#333',
-                        position: 'relative'
+                        backgroundColor: message.senderType === 'admin' ? '#1e293b' : '#f3f4f6',
+                        color: message.senderType === 'admin' ? 'white' : '#1f2937',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        maxWidth: '70%',
+                        wordWrap: 'break-word'
                       }}>
-                        <div style={{
-                          fontSize: '10px',
-                          color: message.senderType === 'admin' ? '#cbd5e1' : '#6b7280',
-                          marginBottom: '4px',
-                          fontWeight: '600'
-                        }}>
-                          {message.senderType === 'admin' ? 'Admin' : 'Customer'}
-                        </div>
-                        <div style={{
-                          whiteSpace: 'pre-wrap',
-                          wordWrap: 'break-word',
-                          fontSize: '14px',
-                          lineHeight: '1.4'
-                        }}>
+                        <div style={{ fontSize: '14px', marginBottom: '4px' }}>
                           {message.message}
-                        </div>
-                        <div style={{
-                          marginTop: '8px',
+                        </div>                        <div style={{
                           fontSize: '12px',
-                          color: message.senderType === 'admin' ? '#cbd5e1' : '#6b7280',
+                          opacity: 0.7,
                           textAlign: 'right'
                         }}>
-                          {formatMessageTime(message.createdAt)}
+                          {message.senderType === 'admin' 
+                            ? (message.adminSender?.username || 'Admin')
+                            : (message.customerSender 
+                                ? `${message.customerSender.firstName} ${message.customerSender.lastName}` 
+                                : 'Customer')
+                          } • {formatMessageTime(message.createdAt)}
                         </div>
                       </div>
                     </div>
@@ -880,7 +1134,7 @@ const AdminTicketPage: React.FC = () => {
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type your message..."
+                    placeholder="Type your response..."
                     style={{
                       flex: 1,
                       padding: '12px 16px',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import customerAuthService from '../../services/customerAuthService';
 import { NeedHelp } from '../../components/ui';
@@ -12,8 +12,15 @@ const CustomerLogin: React.FC = () => {
   const [error, setError] = useState('');
   const [requirePasswordChange, setRequirePasswordChange] = useState(false);
   const [customerId, setCustomerId] = useState<number | null>(null);
-  
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+
+  // Redirect if customer is already logged in
+  useEffect(() => {
+    if (customerAuthService.isAuthenticated()) {
+      console.log('Customer already logged in, redirecting to tickets');
+      navigate('/customer/tickets', { replace: true });
+    }
+  }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -118,7 +125,7 @@ const CustomerLogin: React.FC = () => {
               color: '#8B4513',
               margin: 0
             }}>
-              🪑 Mebel Premium - Customer Portal
+              🐝 Bee Furniture - Customer Portal
             </h1>
             <button
               onClick={() => navigate('/')}
@@ -281,8 +288,7 @@ const CustomerLogin: React.FC = () => {
                   onMouseLeave={(e) => {
                     if (!loading) (e.target as HTMLButtonElement).style.backgroundColor = '#8B4513';
                   }}
-                >
-                  {loading ? 'Changing Password...' : 'Change Password'}
+                >                  {loading ? 'Changing Password...' : 'Change Password'}
                 </button>
               </form>
 
@@ -292,8 +298,8 @@ const CustomerLogin: React.FC = () => {
                 title="Need Help?"
                 description="Contact our customer support team for assistance with your account or products."
                 contacts={[
-                  { icon: "📱", label: "Phone", value: "+62 812-3456-7890" },
-                  { icon: "✉️", label: "Email", value: "support@mebelpremium.com" }
+                  { icon: "📱", label: "Phone", value: "+62 812-3456-7890", type: "phone" },
+                  { icon: "✉️", label: "Email", value: "help@beefurniture.com", type: "email" }
                 ]}
                 style={{ marginTop: '32px' }}
               />
@@ -331,7 +337,7 @@ const CustomerLogin: React.FC = () => {
             color: '#8B4513',
             margin: 0
           }}>
-            🪑 Mebel Premium - Customer Portal
+            🐝 Bee Furniture - Customer Portal
           </h1>
           <button
             onClick={() => navigate('/')}
@@ -500,8 +506,7 @@ const CustomerLogin: React.FC = () => {
                 onMouseLeave={(e) => {
                   if (!loading) (e.target as HTMLButtonElement).style.backgroundColor = '#8B4513';
                 }}
-              >
-                {loading ? 'Signing in...' : 'Sign In'}
+              >                {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
 
@@ -511,8 +516,8 @@ const CustomerLogin: React.FC = () => {
               title="Need Help?"
               description="Contact our customer support team for assistance with your account or products."
               contacts={[
-                { icon: "📱", label: "Phone", value: "+62 812-3456-7890" },
-                { icon: "✉️", label: "Email", value: "support@mebelpremium.com" }
+                { icon: "📱", label: "Phone", value: "+62 812-3456-7890", type: "phone" },
+                { icon: "✉️", label: "Email", value: "help@beefurniture.com", type: "email" }
               ]}
               style={{ marginTop: '32px' }}
             />

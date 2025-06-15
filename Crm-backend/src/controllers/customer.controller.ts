@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { Customer, Product, CustomerProduct, Promo } from '../models';
 import { CustomerInput } from '../models/customer.model';
 import { isSupabaseUrl } from '../middlewares/upload.middleware';
@@ -135,13 +136,15 @@ export const createCustomer = async (req: Request, res: Response) => {
           error: (uploadError as Error).message,
         });
       }
-    }
+    }    // Create customer with default values for totalSpent and purchaseCount
+    // Default password is the phone number (hashed)
+    const hashedPassword = await bcrypt.hash(phone, 10);
     
-    // Create customer with default values for totalSpent and purchaseCount
     const customer = await Customer.create({
       firstName,
       lastName,
       email,
+      password: hashedPassword, // Default password is hashed phone number
       phone,
       address,
       city,

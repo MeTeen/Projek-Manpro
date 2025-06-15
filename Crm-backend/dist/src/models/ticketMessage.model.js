@@ -32,10 +32,10 @@ class TicketMessage extends sequelize_1.Model {
                 type: sequelize_1.DataTypes.INTEGER,
                 primaryKey: true,
                 autoIncrement: true,
-            },
-            ticketId: {
+            }, ticketId: {
                 type: sequelize_1.DataTypes.INTEGER,
                 allowNull: false,
+                field: 'ticket_id',
                 references: {
                     model: 'tickets',
                     key: 'id',
@@ -46,43 +46,46 @@ class TicketMessage extends sequelize_1.Model {
             senderId: {
                 type: sequelize_1.DataTypes.INTEGER,
                 allowNull: false,
+                field: 'sender_id',
             },
             senderType: {
                 type: sequelize_1.DataTypes.ENUM('customer', 'admin'),
                 allowNull: false,
+                field: 'sender_type',
             },
             message: {
                 type: sequelize_1.DataTypes.TEXT,
                 allowNull: false,
-            },
-            attachmentUrls: {
+            }, attachmentUrls: {
                 type: sequelize_1.DataTypes.JSON,
                 allowNull: true,
+                field: 'attachment_urls',
                 defaultValue: null,
             },
             createdAt: {
                 type: sequelize_1.DataTypes.DATE,
                 allowNull: false,
+                field: 'created_at',
                 defaultValue: sequelize_1.DataTypes.NOW,
             },
             updatedAt: {
                 type: sequelize_1.DataTypes.DATE,
                 allowNull: false,
+                field: 'updated_at',
                 defaultValue: sequelize_1.DataTypes.NOW,
             },
         }, {
             sequelize,
-            tableName: 'ticket_messages',
-            timestamps: true,
+            tableName: 'ticket_messages', timestamps: true,
             indexes: [
                 {
-                    fields: ['ticketId']
+                    fields: ['ticket_id']
                 },
                 {
-                    fields: ['senderId', 'senderType']
+                    fields: ['sender_id', 'sender_type']
                 },
                 {
-                    fields: ['createdAt']
+                    fields: ['created_at']
                 }
             ]
         });

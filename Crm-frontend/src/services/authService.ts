@@ -2,6 +2,7 @@ import axios from 'axios';
 import { debugLog, debugError, logRequest, logResponse, logNetworkError } from '../utils/debug';
 import { AuthResponse, LoginData, SignUpData, UserData, JwtPayload } from '../types/auth';
 import { API_CONFIG } from '../config/api';
+import { toast } from 'react-toastify';
 
 // Use centralized API configuration
 const API_URL = API_CONFIG.BASE_URL;
@@ -445,11 +446,20 @@ const authService = {
             timeLeftSeconds: timeLeft,
             expiresAt: new Date(expiryTime * 1000).toISOString()
           });
-          
-          if (timeLeft <= 0) {
+            if (timeLeft <= 0) {
             logAuth('Token has expired during initialization - clearing token');
+            toast.warning('Your session has expired. Please login again.', {
+              position: 'top-right',
+              autoClose: 4000,
+            });
             this.logout();
             return false;
+          } else if (timeLeft < 300) { // Less than 5 minutes left
+            logAuth('Token expires soon', { timeLeftSeconds: timeLeft });
+            toast.info('Your session will expire soon. Please save your work.', {
+              position: 'top-right',
+              autoClose: 5000,
+            });
           }
         }
         
@@ -572,9 +582,69 @@ const authService = {
       debugError('AuthService', 'Error checking authentication:', error);
       logAuth('Error checking authentication', { error });
       return false;
-    }
-  }
+    }  }
 };
+
+// Setup axios response interceptor for handling token expiration
+let isRedirecting = false; // Prevent multiple redirects
+
+axios.interceptors.response.use(
+  (response) => {
+    // Return successful responses as-is
+    return response;
+  },
+  (error) => {
+    // Handle authentication errors
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      // Check for authentication/authorization errors
+      if (status === 401 || status === 403) {
+        const currentToken = authService.getToken();
+        
+        // Only handle if we actually have a token (user was supposed to be authenticated)
+        if (currentToken && !isRedirecting) {
+          isRedirecting = true;
+          
+          logAuth('Authentication error - token invalid/expired', { 
+            status, 
+            message: data?.message || error.message,
+            url: error.config?.url 
+          });
+          
+          // Clear invalid token and user data
+          authService.logout();
+          
+          // Show toast notification
+          toast.error('Your session has expired. Please login again.', {
+            position: 'top-right',
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+          
+          // Redirect to login page after a short delay to ensure toast is shown
+          setTimeout(() => {
+            isRedirecting = false;
+            // Use window.location to force a full page redirect
+            if (window.location.pathname.startsWith('/admin')) {
+              window.location.href = '/admin/login';
+            } else if (window.location.pathname.startsWith('/customer')) {
+              window.location.href = '/customer/login';
+            } else {
+              window.location.href = '/admin/login'; // Default to admin login
+            }
+          }, 1000);
+        }
+      }
+    }
+    
+    // Return the error for other parts of the app to handle
+    return Promise.reject(error);
+  }
+);
 
 // Call initialization on module load
 authService.initializeAuth();

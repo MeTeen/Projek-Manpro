@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
@@ -100,10 +101,22 @@ class CustomerAuthService {
       throw error;
     }
   }
-
   logout(): void {
+    console.log('Customer logging out...');
+    
+    // Show logout success toast
+    toast.success('You have been logged out successfully', {
+      position: 'top-right',
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+    
     localStorage.removeItem('customerToken');
     localStorage.removeItem('customerData');
+    console.log('Customer auth data cleared');
   }
 
   getCurrentCustomer(): any {
@@ -114,18 +127,81 @@ class CustomerAuthService {
   getToken(): string | null {
     return localStorage.getItem('customerToken');
   }
-
   isAuthenticated(): boolean {
     const token = this.getToken();
     if (!token) return false;
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp * 1000 > Date.now();
+      const isValid = payload.exp * 1000 > Date.now();
+      
+      if (!isValid) {
+        console.log('Customer token has expired');
+        this.logout();
+      }
+      
+      return isValid;
     } catch {
+      console.log('Customer token is invalid');
+      this.logout();
       return false;
     }
   }
 }
 
-export default new CustomerAuthService();
+// Setup customer-specific axios interceptor for handling token expiration
+let isCustomerRedirecting = false; // Prevent multiple redirects
+
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Handle customer authentication errors
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      // Check for authentication/authorization errors on customer endpoints
+      if ((status === 401 || status === 403) && error.config?.url?.includes('/customer/')) {
+        const currentToken = customerAuthService.getToken();
+        
+        // Only handle if we actually have a customer token
+        if (currentToken && !isCustomerRedirecting) {
+          isCustomerRedirecting = true;
+          
+          console.log('Customer authentication error - token invalid/expired', { 
+            status, 
+            message: data?.message || error.message,
+            url: error.config?.url 
+          });
+          
+          // Clear invalid token and customer data
+          customerAuthService.logout();
+          
+          // Show toast notification
+          toast.error('Your session has expired. Please login again.', {
+            position: 'top-right',
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+          
+          // Redirect to customer login after a short delay
+          setTimeout(() => {
+            isCustomerRedirecting = false;
+            window.location.href = '/customer/login';
+          }, 1000);
+        }
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+// Create instance  
+const customerAuthService = new CustomerAuthService();
+
+export default customerAuthService;

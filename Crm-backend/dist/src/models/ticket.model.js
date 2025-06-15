@@ -36,19 +36,18 @@ class Ticket extends sequelize_1.Model {
             message: {
                 type: sequelize_1.DataTypes.TEXT,
                 allowNull: false,
-            },
-            status: {
-                type: sequelize_1.DataTypes.ENUM('Open', 'In Progress', 'Resolved', 'Closed'),
+            }, status: {
+                type: sequelize_1.DataTypes.ENUM('open', 'in_progress', 'resolved', 'closed'),
                 allowNull: false,
-                defaultValue: 'Open',
+                defaultValue: 'open',
             },
             priority: {
-                type: sequelize_1.DataTypes.ENUM('Low', 'Medium', 'High', 'Urgent'),
+                type: sequelize_1.DataTypes.ENUM('low', 'medium', 'high', 'urgent'),
                 allowNull: false,
-                defaultValue: 'Medium',
+                defaultValue: 'medium',
             },
             category: {
-                type: sequelize_1.DataTypes.ENUM('Delivery', 'Product Quality', 'Payment', 'General', 'Refund', 'Exchange'),
+                type: sequelize_1.DataTypes.ENUM('delivery', 'product_quality', 'payment', 'general', 'refund', 'exchange'),
                 allowNull: false,
             },
             assignedTo: {
@@ -68,8 +67,20 @@ class Ticket extends sequelize_1.Model {
             attachmentUrls: {
                 type: sequelize_1.DataTypes.JSON,
                 allowNull: true,
+            }, resolvedAt: {
+                type: sequelize_1.DataTypes.DATE,
+                allowNull: true,
             },
-            resolvedAt: {
+            firstResponseAt: {
+                type: sequelize_1.DataTypes.DATE,
+                allowNull: true,
+            },
+            lastActivityAt: {
+                type: sequelize_1.DataTypes.DATE,
+                allowNull: false,
+                defaultValue: sequelize_1.DataTypes.NOW,
+            },
+            escalatedAt: {
                 type: sequelize_1.DataTypes.DATE,
                 allowNull: true,
             },

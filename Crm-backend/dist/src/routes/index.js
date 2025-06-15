@@ -58,9 +58,9 @@ router.use('/activities', activity_routes_1.default);
 router.use('/admin/tickets', ticket_routes_1.default);
 // Customer authentication routes
 router.use('/customer/auth', customerAuth_routes_1.default);
-// Customer ticket routes
+// Customer ticket routes (includes purchases endpoint)
 router.use('/customer', customerTicket_routes_1.default);
-// Ticket message routes (for both admin and customer)
+// Ticket message routes (for both admin and customer) - MUST BE LAST
 router.use('/', ticketMessages_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

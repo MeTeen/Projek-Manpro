@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateJWT } from '../middlewares/auth.middleware';
+import { authenticateAnyUser } from '../middlewares/auth.middleware';
 import {
   getTicketMessages,
   createTicketMessage,
@@ -9,8 +9,8 @@ import {
 
 const router = Router();
 
-// All routes require authentication
-router.use(authenticateJWT as any);
+// All routes require authentication (supports both customers and admins)
+router.use(authenticateAnyUser as any);
 
 // Get all messages for a ticket
 router.get('/tickets/:ticketId/messages', getTicketMessages as any);

@@ -37,30 +37,36 @@ export const getTicketMessages = async (req: Request, res: Response) => {
         success: false,
         message: 'Access denied',
       });
-    }
-
-    const { count, rows: messages } = await TicketMessage.findAndCountAll({
+    }    // Get raw messages first
+    const { count, rows: rawMessages } = await TicketMessage.findAndCountAll({
       where: { ticketId },
-      include: [
-        {
-          model: Customer,
-          as: 'customerSender',
-          attributes: ['id', 'firstName', 'lastName', 'email'],
-          required: false
-        },
-        {
-          model: Admin,
-          as: 'adminSender',
-          attributes: ['id', 'username', 'email'],
-          required: false
-        }
-      ],
-      order: [['createdAt', 'ASC']], // Oldest messages first for chat-like experience
+      order: [['createdAt', 'ASC']],
       limit,
       offset,
     });
 
-    res.status(200).json({
+    // Then fetch sender details for each message
+    const messages = await Promise.all(
+      rawMessages.map(async (message) => {
+        const messageData = message.toJSON() as any;
+        
+        if (message.senderType === 'customer') {
+          const customer = await Customer.findByPk(message.senderId, {
+            attributes: ['id', 'firstName', 'lastName', 'email']
+          });
+          messageData.customerSender = customer;
+          messageData.adminSender = null;
+        } else if (message.senderType === 'admin') {
+          const admin = await Admin.findByPk(message.senderId, {
+            attributes: ['id', 'username', 'email']
+          });
+          messageData.adminSender = admin;
+          messageData.customerSender = null;
+        }
+        
+        return messageData;
+      })
+    );    res.status(200).json({
       success: true,
       data: {
         messages,
@@ -121,11 +127,11 @@ export const createTicketMessage = async (req: Request, res: Response) => {
         success: false,
         message: 'Access denied',
       });
-    }
-
-    // Determine sender type and ID
-    const senderType = user.role === 'admin' ? 'admin' : 'customer';
+    }    // Determine sender type and ID
+    const senderType = (user.role === 'admin' || user.role === 'super_admin') ? 'admin' : 'customer';
     const senderId = user.id;
+
+    console.log('🔍 Creating message - User role:', user.role, 'User ID:', user.id, 'Sender type:', senderType);
 
     const messageData: TicketMessageInput = {
       ticketId,
@@ -135,39 +141,35 @@ export const createTicketMessage = async (req: Request, res: Response) => {
       attachmentUrls: attachmentUrls || null,
     };
 
-    const newMessage = await TicketMessage.create(messageData);
-
-    // Update ticket's updatedAt timestamp and potentially status
-    if (user.role === 'customer' && ticket.status === 'Resolved') {
+    const newMessage = await TicketMessage.create(messageData);    // Update ticket's updatedAt timestamp and potentially status
+    if (user.role === 'customer' && ticket.status === 'resolved') {
       // If customer replies to a resolved ticket, reopen it
-      await ticket.update({ status: 'Open' });
-    } else if (user.role === 'admin' && ticket.status === 'Open') {
+      await ticket.update({ status: 'open' });
+    } else if ((user.role === 'admin' || user.role === 'super_admin') && ticket.status === 'open') {
       // If admin replies to an open ticket, mark as in progress
-      await ticket.update({ status: 'In Progress' });
+      await ticket.update({ status: 'in_progress' });
+    }// Fetch the created message with sender details
+    const messageWithSender = await TicketMessage.findByPk(newMessage.id);
+    const responseData = messageWithSender?.toJSON() as any;
+    
+    if (responseData.senderType === 'customer') {
+      const customer = await Customer.findByPk(responseData.senderId, {
+        attributes: ['id', 'firstName', 'lastName', 'email']
+      });
+      responseData.customerSender = customer;
+      responseData.adminSender = null;
+    } else if (responseData.senderType === 'admin') {
+      const admin = await Admin.findByPk(responseData.senderId, {
+        attributes: ['id', 'username', 'email']
+      });
+      responseData.adminSender = admin;
+      responseData.customerSender = null;
     }
-
-    // Fetch the created message with sender details
-    const messageWithSender = await TicketMessage.findByPk(newMessage.id, {
-      include: [
-        {
-          model: Customer,
-          as: 'customerSender',
-          attributes: ['id', 'firstName', 'lastName', 'email'],
-          required: false
-        },
-        {
-          model: Admin,
-          as: 'adminSender',
-          attributes: ['id', 'username', 'email'],
-          required: false
-        }
-      ]
-    });
 
     res.status(201).json({
       success: true,
       message: 'Message created successfully',
-      data: messageWithSender,
+      data: responseData,
     });
   } catch (error) {
     console.error('Error creating ticket message:', error);
@@ -213,10 +215,8 @@ export const updateTicketMessage = async (req: Request, res: Response) => {
         success: false,
         message: 'Message not found',
       });
-    }
-
-    // Check if user is the sender
-    const senderType = user.role === 'admin' ? 'admin' : 'customer';
+    }    // Check if user is the sender
+    const senderType = (user.role === 'admin' || user.role === 'super_admin') ? 'admin' : 'customer';
     if (ticketMessage.senderId !== user.id || ticketMessage.senderType !== senderType) {
       return res.status(403).json({
         success: false,
@@ -235,29 +235,27 @@ export const updateTicketMessage = async (req: Request, res: Response) => {
       });
     }
 
-    await ticketMessage.update({ message: message.trim() });
-
-    const updatedMessage = await TicketMessage.findByPk(messageId, {
-      include: [
-        {
-          model: Customer,
-          as: 'customerSender',
-          attributes: ['id', 'firstName', 'lastName', 'email'],
-          required: false
-        },
-        {
-          model: Admin,
-          as: 'adminSender',
-          attributes: ['id', 'username', 'email'],
-          required: false
-        }
-      ]
-    });
+    await ticketMessage.update({ message: message.trim() });    const updatedMessage = await TicketMessage.findByPk(messageId);
+    const responseData = updatedMessage?.toJSON() as any;
+    
+    if (responseData.senderType === 'customer') {
+      const customer = await Customer.findByPk(responseData.senderId, {
+        attributes: ['id', 'firstName', 'lastName', 'email']
+      });
+      responseData.customerSender = customer;
+      responseData.adminSender = null;
+    } else if (responseData.senderType === 'admin') {
+      const admin = await Admin.findByPk(responseData.senderId, {
+        attributes: ['id', 'username', 'email']
+      });
+      responseData.adminSender = admin;
+      responseData.customerSender = null;
+    }
 
     res.status(200).json({
       success: true,
       message: 'Message updated successfully',
-      data: updatedMessage,
+      data: responseData,
     });
   } catch (error) {
     console.error('Error updating ticket message:', error);
@@ -295,11 +293,9 @@ export const deleteTicketMessage = async (req: Request, res: Response) => {
         success: false,
         message: 'Message not found',
       });
-    }
-
-    // Check if user can delete (sender or admin)
-    const senderType = user.role === 'admin' ? 'admin' : 'customer';
-    const canDelete = user.role === 'admin' || 
+    }    // Check if user can delete (sender or admin)
+    const senderType = (user.role === 'admin' || user.role === 'super_admin') ? 'admin' : 'customer';
+    const canDelete = (user.role === 'admin' || user.role === 'super_admin') || 
                      (ticketMessage.senderId === user.id && ticketMessage.senderType === senderType);
 
     if (!canDelete) {

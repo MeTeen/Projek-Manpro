@@ -175,10 +175,15 @@ const updateTicket = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (assignedTo !== undefined)
             updateData.assignedTo = assignedTo;
         if (resolution)
-            updateData.resolution = resolution;
-        // If status is being changed to Resolved or Closed, set resolvedAt
-        if (status && (status === 'Resolved' || status === 'Closed')) {
+            updateData.resolution = resolution; // If status is being changed to resolved or closed, set resolvedAt
+        if (status && (status === 'resolved' || status === 'closed')) {
             updateData.resolvedAt = new Date();
+        }
+        // Update lastActivityAt on any change
+        updateData.lastActivityAt = new Date();
+        // If admin is responding for the first time, set firstResponseAt
+        if (!ticket.firstResponseAt && currentUser.role === 'admin') {
+            updateData.firstResponseAt = new Date();
         }
         yield ticket.update(updateData);
         // Fetch updated ticket with includes
@@ -220,14 +225,14 @@ const getTicketStats = (req, res) => __awaiter(void 0, void 0, void 0, function*
     try {
         const [totalTickets, openTickets, inProgressTickets, resolvedTickets, closedTickets] = yield Promise.all([
             models_1.Ticket.count(),
-            models_1.Ticket.count({ where: { status: 'Open' } }),
-            models_1.Ticket.count({ where: { status: 'In Progress' } }),
-            models_1.Ticket.count({ where: { status: 'Resolved' } }),
-            models_1.Ticket.count({ where: { status: 'Closed' } })
+            models_1.Ticket.count({ where: { status: 'open' } }),
+            models_1.Ticket.count({ where: { status: 'in_progress' } }),
+            models_1.Ticket.count({ where: { status: 'resolved' } }),
+            models_1.Ticket.count({ where: { status: 'closed' } })
         ]);
         const [urgentTickets, highPriorityTickets] = yield Promise.all([
-            models_1.Ticket.count({ where: { priority: 'Urgent', status: { [sequelize_1.Op.not]: 'Closed' } } }),
-            models_1.Ticket.count({ where: { priority: 'High', status: { [sequelize_1.Op.not]: 'Closed' } } })
+            models_1.Ticket.count({ where: { priority: 'urgent', status: { [sequelize_1.Op.not]: 'closed' } } }),
+            models_1.Ticket.count({ where: { priority: 'high', status: { [sequelize_1.Op.not]: 'closed' } } })
         ]);
         // Category breakdown
         const categoryStats = yield models_1.Ticket.findAll({

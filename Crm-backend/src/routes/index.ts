@@ -62,16 +62,16 @@ router.use('/dashboard', dashboardRoutes);
 // Activity routes
 router.use('/activities', activityRoutes);
 
+// Ticket message routes (for both admin and customer) - MOVED TO FRONT
+router.use('/', ticketMessageRoutes);
+
 // Ticket routes (admin)
 router.use('/admin/tickets', ticketRoutes);
 
 // Customer authentication routes
 router.use('/customer/auth', customerAuthRoutes);
 
-// Customer ticket routes
+// Customer ticket routes (includes purchases endpoint)
 router.use('/customer', customerTicketRoutes);
-
-// Ticket message routes (for both admin and customer) - MUST BE LAST
-router.use('/', ticketMessageRoutes);
 
 export default router;

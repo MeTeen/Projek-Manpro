@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateJWT } from '../middlewares/auth.middleware';
+import { authenticateAnyUser } from '../middlewares/auth.middleware';
 import {
   getTicketMessages,
   createTicketMessage,
@@ -9,19 +9,16 @@ import {
 
 const router = Router();
 
-// All routes require authentication
-router.use(authenticateJWT as any);
+// Get all messages for a ticket (require authentication)
+router.get('/tickets/:ticketId/messages', authenticateAnyUser as any, getTicketMessages as any);
 
-// Get all messages for a ticket
-router.get('/tickets/:ticketId/messages', getTicketMessages as any);
+// Create a new message in a ticket (require authentication)
+router.post('/tickets/:ticketId/messages', authenticateAnyUser as any, createTicketMessage as any);
 
-// Create a new message in a ticket
-router.post('/tickets/:ticketId/messages', createTicketMessage as any);
+// Update a message (require authentication)
+router.put('/tickets/:ticketId/messages/:messageId', authenticateAnyUser as any, updateTicketMessage as any);
 
-// Update a message
-router.put('/tickets/:ticketId/messages/:messageId', updateTicketMessage as any);
-
-// Delete a message
-router.delete('/tickets/:ticketId/messages/:messageId', deleteTicketMessage as any);
+// Delete a message (require authentication)
+router.delete('/tickets/:ticketId/messages/:messageId', authenticateAnyUser as any, deleteTicketMessage as any);
 
 export default router;

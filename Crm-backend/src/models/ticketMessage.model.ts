@@ -43,25 +43,17 @@ class TicketMessage extends Model<TicketMessageAttributes, TicketMessageInput> {
     TicketMessage.belongsTo(models.Ticket, {
       foreignKey: 'ticketId',
       as: 'ticket'
-    });
-
-    // Polymorphic relationship dengan Customer dan Admin
+    });    // Polymorphic relationship dengan Customer dan Admin
     TicketMessage.belongsTo(models.Customer, {
       foreignKey: 'senderId',
       constraints: false,
-      as: 'customerSender',
-      scope: {
-        senderType: 'customer'
-      }
+      as: 'customerSender'
     });
 
     TicketMessage.belongsTo(models.Admin, {
       foreignKey: 'senderId',
       constraints: false,
-      as: 'adminSender',
-      scope: {
-        senderType: 'admin'
-      }
+      as: 'adminSender'
     });
   }
 

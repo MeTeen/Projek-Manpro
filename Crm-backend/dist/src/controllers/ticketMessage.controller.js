@@ -133,15 +133,14 @@ const createTicketMessage = (req, res) => __awaiter(void 0, void 0, void 0, func
             message: message.trim(),
             attachmentUrls: attachmentUrls || null,
         };
-        const newMessage = yield models_1.TicketMessage.create(messageData);
-        // Update ticket's updatedAt timestamp and potentially status
-        if (user.role === 'customer' && ticket.status === 'Resolved') {
+        const newMessage = yield models_1.TicketMessage.create(messageData); // Update ticket's updatedAt timestamp and potentially status
+        if (user.role === 'customer' && ticket.status === 'resolved') {
             // If customer replies to a resolved ticket, reopen it
-            yield ticket.update({ status: 'Open' });
+            yield ticket.update({ status: 'open' });
         }
-        else if (user.role === 'admin' && ticket.status === 'Open') {
+        else if (user.role === 'admin' && ticket.status === 'open') {
             // If admin replies to an open ticket, mark as in progress
-            yield ticket.update({ status: 'In Progress' });
+            yield ticket.update({ status: 'in_progress' });
         }
         // Fetch the created message with sender details
         const messageWithSender = yield models_1.TicketMessage.findByPk(newMessage.id, {

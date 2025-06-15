@@ -2,20 +2,31 @@ import { QueryInterface, DataTypes } from 'sequelize';
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface: QueryInterface) {
-    // Add indexes for frequently queried columns to improve performance
-      // Index on customers table
-    await queryInterface.addIndex('customers', ['created_at'], {
-      name: 'idx_customers_created_at'
-    });
+  async up(queryInterface: QueryInterface) {    // Add indexes for frequently queried columns to improve performance
+    // Index on customers table
+    try {
+      await queryInterface.addIndex('customers', ['created_at'], {
+        name: 'idx_customers_created_at'
+      });
+    } catch (e) {
+      console.log('Index idx_customers_created_at already exists');
+    }
     
-    await queryInterface.addIndex('customers', ['first_name', 'last_name'], {
-      name: 'idx_customers_names'
-    });
+    try {
+      await queryInterface.addIndex('customers', ['first_name', 'last_name'], {
+        name: 'idx_customers_names'
+      });
+    } catch (e) {
+      console.log('Index idx_customers_names already exists');
+    }
     
-    await queryInterface.addIndex('customers', ['email'], {
-      name: 'idx_customers_email'
-    });
+    try {
+      await queryInterface.addIndex('customers', ['email'], {
+        name: 'idx_customers_email'
+      });
+    } catch (e) {
+      console.log('Index idx_customers_email already exists');
+    }
 
     // Index on customer_products table (transactions) - some already exist, add conditionally
     try {

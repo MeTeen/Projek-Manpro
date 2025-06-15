@@ -5,7 +5,9 @@ import {
   updateTicket,
   getTicketStats,
   getAdminsForAssignment,
-  createTicket
+  createTicket,
+  claimTicket,
+  releaseTicket
 } from '../controllers/ticket.controller';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 
@@ -21,5 +23,9 @@ router.get('/', getAllTickets as any);
 router.get('/:id', getTicketById as any);
 router.patch('/:id', updateTicket as any);
 router.post('/', createTicket as any);
+
+// Claim/release ticket routes
+router.post('/:id/claim', claimTicket as any);
+router.post('/:id/release', releaseTicket as any);
 
 export default router;

@@ -1,15 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import customerTicketService, { CustomerTicket, CustomerPurchase } from '../../services/customerTicketService';
-import customerAuthService, { CustomerProfile } from '../../services/customerAuthService';
-import ticketMessageService, { TicketMessage } from '../../services/ticketMessageService';
-import { NeedHelp } from '../../components/ui';
-import { formatTransactionId } from '../../utils/transactionFormatter';
+import { 
+  Ticket, 
+  Purchase, 
+  TicketMessage, 
+  CreateTicketRequest,
+  TicketFormData,
+  TICKET_STATUSES,
+  TICKET_PRIORITIES,
+  TICKET_CATEGORIES,
+  getStatusBadgeStyle,
+  getPriorityBadgeStyle
+} from '../../types/ticket';
+import { Customer as CustomerProfile } from '../../types/ticket';
+import customerTicketService from '../../services/customerTicketService';
+import ticketMessageService from '../../services/ticketMessageService';
+import customerAuthService from '../../services/customerAuthService';
+import { NeedHelp, Modal } from '../../components/ui';
 
 const CustomerTickets: React.FC = () => {
-  const [tickets, setTickets] = useState<CustomerTicket[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [customer, setCustomer] = useState<CustomerProfile | null>(null);
-  const [purchases, setPurchases] = useState<CustomerPurchase[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -22,19 +34,21 @@ const CustomerTickets: React.FC = () => {
   
   // Chat modal states
   const [showChatModal, setShowChatModal] = useState(false);
-  const [selectedTicket, setSelectedTicket] = useState<CustomerTicket | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   
-  const navigate = useNavigate();  const [newTicket, setNewTicket] = useState({
+  const navigate = useNavigate();
+  
+  const [newTicket, setNewTicket] = useState<TicketFormData>({
     subject: '',
     message: '',
-    priority: 'Medium' as const,
-    category: 'General' as const,
-    purchaseId: undefined as number | undefined
+    priority: 'medium',
+    category: 'general',
+    purchaseId: undefined
   });
 
   useEffect(() => {
@@ -67,6 +81,7 @@ const CustomerTickets: React.FC = () => {
       console.error('Error fetching profile:', error);
     }
   };
+
   const fetchTickets = async () => {
     try {
       const response = await customerTicketService.getMyTickets();
@@ -88,13 +103,22 @@ const CustomerTickets: React.FC = () => {
       console.error('Error fetching purchases:', error);
     }
   };
+
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateLoading(true);
     setError('');
 
     try {
-      const response = await customerTicketService.createTicket(newTicket);
+      const ticketData: CreateTicketRequest = {
+        subject: newTicket.subject,
+        message: newTicket.message,
+        priority: newTicket.priority,
+        category: newTicket.category,
+        purchaseId: newTicket.purchaseId
+      };
+
+      const response = await customerTicketService.createTicket(ticketData);
       console.log('Create ticket response:', response);
       
       if (response.success) {
@@ -102,8 +126,8 @@ const CustomerTickets: React.FC = () => {
         setNewTicket({
           subject: '',
           message: '',
-          priority: 'Medium',
-          category: 'General',
+          priority: 'medium',
+          category: 'general',
           purchaseId: undefined
         });
         await fetchTickets();
@@ -113,20 +137,17 @@ const CustomerTickets: React.FC = () => {
     } catch (error) {
       console.error('Error creating ticket:', error);
       setError(error instanceof Error ? error.message : 'An error occurred while creating the ticket');
-      console.error('Create ticket error:', error);
     } finally {
       setCreateLoading(false);
     }
   };
-
   const handleLogout = () => {
-    localStorage.removeItem('customerToken');
-    localStorage.removeItem('customerData');
+    customerAuthService.logout();
     navigate('/customer/login');
   };
 
   // Chat functions
-  const openChatModal = async (ticket: CustomerTicket) => {
+  const openChatModal = async (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setShowChatModal(true);
     await fetchMessages(ticket.id);
@@ -146,7 +167,6 @@ const CustomerTickets: React.FC = () => {
       const response = await ticketMessageService.getTicketMessages(ticketId);
       if (response.success) {
         setMessages(response.data.messages);
-        // Scroll to bottom after messages load
         setTimeout(() => scrollToBottom(), 100);
       }
     } catch (error) {
@@ -204,32 +224,22 @@ const CustomerTickets: React.FC = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const filteredTickets = (tickets || []).filter(ticket => {
     if (filter.status !== 'all' && ticket.status !== filter.status) return false;
     if (filter.priority !== 'all' && ticket.priority !== filter.priority) return false;
     if (filter.category !== 'all' && ticket.category !== filter.category) return false;
     return true;
   });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return '#f59e0b';
-      case 'in_progress': return '#3b82f6';
-      case 'resolved': return '#10b981';
-      case 'closed': return '#6b5b73';
-      default: return '#6b5b73';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return '#dc2626';
-      case 'high': return '#ea580c';
-      case 'medium': return '#ca8a04';
-      case 'low': return '#65a30d';
-      default: return '#6b5b73';
-    }
-  };
 
   if (loading) {
     return (
@@ -278,7 +288,7 @@ const CustomerTickets: React.FC = () => {
               margin: 0,
               marginBottom: '4px'
             }}>
-              🪑 Customer Portal
+              🪑 Customer Portal - Support Tickets
             </h1>
             {customer && (
               <p style={{
@@ -354,29 +364,69 @@ const CustomerTickets: React.FC = () => {
               }}>
                 <div>
                   <h3 style={{ color: '#8B4513', marginBottom: '8px', fontSize: '16px' }}>Account Information</h3>
-                  <p style={{ margin: '4px 0', color: '#6b5b47' }}><strong>Email:</strong> {customer.email}</p>
-                  <p style={{ margin: '4px 0', color: '#6b5b47' }}><strong>Phone:</strong> {customer.phone}</p>
+                  <p style={{ margin: '4px 0', color: '#6b5b47' }}>
+                    <strong>Name:</strong> {customer.firstName} {customer.lastName}
+                  </p>
+                  <p style={{ margin: '4px 0', color: '#6b5b47' }}>
+                    <strong>Email:</strong> {customer.email}
+                  </p>
+                  {customer.phone && (
+                    <p style={{ margin: '4px 0', color: '#6b5b47' }}>
+                      <strong>Phone:</strong> {customer.phone}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <h3 style={{ color: '#8B4513', marginBottom: '8px', fontSize: '16px' }}>Purchase History</h3>
-                  <p style={{ margin: '4px 0', color: '#6b5b47' }}><strong>Total Orders:</strong> {customer.purchaseCount}</p>
-                  <p style={{ margin: '4px 0', color: '#6b5b47' }}><strong>Total Spent:</strong> {customer.totalSpent}</p>
+                  <h3 style={{ color: '#8B4513', marginBottom: '8px', fontSize: '16px' }}>Support Statistics</h3>
+                  <p style={{ margin: '4px 0', color: '#6b5b47' }}>
+                    <strong>Total Tickets:</strong> {tickets.length}
+                  </p>
+                  <p style={{ margin: '4px 0', color: '#6b5b47' }}>
+                    <strong>Open Tickets:</strong> {tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length}
+                  </p>
                 </div>
-              </div>            </div>
+              </div>
+            </div>
           )}
 
           {/* Need Help Section */}
-          <NeedHelp 
-            variant="customer"
-            title="Need Assistance?"
-            description="Having trouble with your order or need technical support? Our team is here to help!"
-            contacts={[
-              { icon: "📱", label: "Phone", value: "+62 812-3456-7890" },
-              { icon: "✉️", label: "Email", value: "support@mebelpremium.com" },
-              { icon: "💬", label: "WhatsApp", value: "+62 812-3456-7890" }
-            ]}
-            style={{ marginBottom: '24px' }}
-          />
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            marginBottom: '24px'
+          }}>
+            <h3 style={{ color: '#8B4513', marginBottom: '12px', fontSize: '18px' }}>
+              🆘 Need Immediate Help?
+            </h3>
+            <p style={{ color: '#6b5b47', marginBottom: '16px' }}>
+              Having trouble with your order or need technical support? Our team is here to help!
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>📱</span>
+                <div>
+                  <div style={{ fontWeight: '600' }}>Phone</div>
+                  <div style={{ color: '#6b5b47' }}>+62 812-3456-7890</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>✉️</span>
+                <div>
+                  <div style={{ fontWeight: '600' }}>Email</div>
+                  <div style={{ color: '#6b5b47' }}>help@beefurniture.com</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>💬</span>
+                <div>
+                  <div style={{ fontWeight: '600' }}>WhatsApp</div>
+                  <div style={{ color: '#6b5b47' }}>+62 812-3456-7890</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Action Bar */}
           <div style={{
@@ -388,7 +438,7 @@ const CustomerTickets: React.FC = () => {
             gap: '16px'
           }}>
             <h2 style={{ color: '#8B4513', margin: 0, fontSize: '20px' }}>
-              My Support Tickets ({filteredTickets.length})
+              🎫 My Support Tickets ({filteredTickets.length})
             </h2>
             <button
               onClick={() => setShowCreateForm(true)}
@@ -440,10 +490,9 @@ const CustomerTickets: React.FC = () => {
                   }}
                 >
                   <option value="all">All Statuses</option>
-                  <option value="open">Open</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
-                  <option value="closed">Closed</option>
+                  {Object.entries(TICKET_STATUSES).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -463,10 +512,9 @@ const CustomerTickets: React.FC = () => {
                   }}
                 >
                   <option value="all">All Priorities</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
+                  {Object.entries(TICKET_PRIORITIES).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -484,14 +532,12 @@ const CustomerTickets: React.FC = () => {
                     fontSize: '14px',
                     outline: 'none'
                   }}
-                >                  <option value="all">All Categories</option                    >
-                      <option value="General">General Inquiry</option>
-                      <option value="Product Quality">Product Complaint</option>
-                      <option value="Delivery">Delivery Issue</option>
-                      <option value="Payment">Payment Issue</option>
-                      <option value="Exchange">Exchange Request</option>
-                      <option value="Refund">Refund Request</option>
-                    </select>
+                >
+                  <option value="all">All Categories</option>
+                  {Object.entries(TICKET_CATEGORIES).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -547,51 +593,40 @@ const CustomerTickets: React.FC = () => {
                     gap: '12px'
                   }}>
                     <div style={{ flex: 1 }}>
-                      <h3 style={{
-                        color: '#8B4513',
-                        marginBottom: '8px',
-                        fontSize: '18px'
+                      <h3 style={{ 
+                        fontSize: '18px', 
+                        fontWeight: '600', 
+                        color: '#1f2937', 
+                        margin: '0 0 8px 0' 
                       }}>
-                        {ticket.subject}
+                        #{ticket.id} - {ticket.subject}
                       </h3>
-                      <p style={{
-                        color: '#6b5b47',
-                        lineHeight: '1.5',
-                        marginBottom: '12px'
+                      <p style={{ 
+                        color: '#6b7280', 
+                        margin: '0 0 8px 0',
+                        lineHeight: '1.5'
                       }}>
-                        {ticket.description}
+                        {ticket.message.length > 150 
+                          ? `${ticket.message.substring(0, 150)}...` 
+                          : ticket.message}
                       </p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        backgroundColor: getStatusColor(ticket.status) + '20',
-                        color: getStatusColor(ticket.status)
-                      }}>
-                        {ticket.status.replace('_', ' ').toUpperCase()}
+                      <span style={getStatusBadgeStyle(ticket.status)}>
+                        {TICKET_STATUSES[ticket.status]}
+                      </span>
+                      <span style={getPriorityBadgeStyle(ticket.priority)}>
+                        {TICKET_PRIORITIES[ticket.priority]}
                       </span>
                       <span style={{
+                        backgroundColor: '#f3f4f6',
+                        color: '#374151',
                         padding: '4px 12px',
-                        borderRadius: '16px',
+                        borderRadius: '12px',
                         fontSize: '12px',
-                        fontWeight: '600',
-                        backgroundColor: getPriorityColor(ticket.priority) + '20',
-                        color: getPriorityColor(ticket.priority)
+                        fontWeight: '600'
                       }}>
-                        {ticket.priority.toUpperCase()}
-                      </span>
-                      <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        backgroundColor: '#8B451320',
-                        color: '#8B4513'
-                      }}>
-                        {ticket.category.replace('_', ' ').toUpperCase()}
+                        {TICKET_CATEGORIES[ticket.category]}
                       </span>
                     </div>
                   </div>
@@ -605,27 +640,22 @@ const CustomerTickets: React.FC = () => {
                     fontSize: '14px'
                   }}>
                     <div>
-                      <span style={{ color: '#8B4513', fontWeight: '600' }}>Created:</span>
-                      <span style={{ color: '#6b5b47', marginLeft: '8px' }}>
-                        {new Date(ticket.createdAt).toLocaleDateString()}
-                      </span>
+                      <strong style={{ color: '#8B4513' }}>Created:</strong>
+                      <br />
+                      {formatDate(ticket.createdAt)}
                     </div>
                     <div>
-                      <span style={{ color: '#8B4513', fontWeight: '600' }}>Updated:</span>
-                      <span style={{ color: '#6b5b47', marginLeft: '8px' }}>
-                        {new Date(ticket.updatedAt).toLocaleDateString()}
-                      </span>
-                    </div>                    {ticket.purchase && (
+                      <strong style={{ color: '#8B4513' }}>Last Activity:</strong>
+                      <br />
+                      {formatDate(ticket.lastActivityAt)}
+                    </div>
+                    {ticket.purchase && (
                       <div>
-                        <span style={{ color: '#8B4513', fontWeight: '600' }}>Related Transaction:</span>
-                        <span style={{ color: '#6b5b47', marginLeft: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
-                          {formatTransactionId(ticket.purchase.id)}
-                        </span>
-                        <span style={{ color: '#8B4513', fontWeight: '600', marginLeft: '12px' }}>Product:</span>
-                        <span style={{ color: '#6b5b47', marginLeft: '8px' }}>
-                          {ticket.purchase.product.name}
-                        </span>
-                      </div>                    )}
+                        <strong style={{ color: '#8B4513' }}>Related Purchase:</strong>
+                        <br />
+                        {ticket.purchase.product.name} (#{ticket.purchase.id})
+                      </div>
+                    )}
                   </div>
                   
                   {/* Chat Button */}
@@ -647,65 +677,46 @@ const CustomerTickets: React.FC = () => {
                         fontWeight: '600',
                         fontSize: '14px',
                         cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
                         transition: 'background-color 0.3s'
                       }}
                       onMouseEnter={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#6b3410'}
                       onMouseLeave={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#8B4513'}
                     >
-                      💬 View Chat
+                      💬 View Messages
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              ))}            </div>
           )}
+
+          {/* Need Help Section */}
+          <NeedHelp 
+            variant="customer"
+            title="Need Help?"
+            description="Contact our customer support team for assistance with your account or products."
+            contacts={[
+              { icon: "📱", label: "Phone", value: "+62 812-3456-7890", type: "phone" },
+              { icon: "✉️", label: "Email", value: "help@beefurniture.com", type: "email" },
+              { icon: "💬", label: "WhatsApp", value: "+62 812-3456-7890", type: "whatsapp" }
+            ]}
+            style={{ marginTop: '32px', marginBottom: '32px' }}
+          />
         </div>
 
         {/* Create Ticket Modal */}
-        {showCreateForm && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}>
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '600px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflow: 'auto'
-            }}>
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ color: '#8B4513', marginBottom: '8px', fontSize: '24px' }}>
-                  Create New Support Ticket
-                </h3>
-                <p style={{ color: '#6b5b47', margin: 0 }}>
-                  Describe your issue or inquiry and we'll help you resolve it.
-                </p>
-              </div>
-
-              <form onSubmit={handleCreateTicket} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <Modal
+          isOpen={showCreateForm}
+          onClose={() => setShowCreateForm(false)}
+          title="Create New Support Ticket"
+          size="lg"
+        >
+          <p style={{ color: '#6b5b47', margin: '0 0 24px 0' }}>
+            Describe your issue or inquiry and we'll help you resolve it.
+          </p>
+          
+          <form onSubmit={handleCreateTicket} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#8B4513',
-                    marginBottom: '8px'
-                  }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#8B4513' }}>
                     Subject *
                   </label>
                   <input
@@ -729,15 +740,10 @@ const CustomerTickets: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#8B4513',
-                    marginBottom: '8px'
-                  }}>
-                    Description *
-                  </label>                  <textarea
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#8B4513' }}>
+                    Message *
+                  </label>
+                  <textarea
                     required
                     rows={4}
                     value={newTicket.message}
@@ -760,341 +766,94 @@ const CustomerTickets: React.FC = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#8B4513',
-                      marginBottom: '8px'
-                    }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#8B4513' }}>
                       Priority
                     </label>
                     <select
                       value={newTicket.priority}
-                      onChange={(e) => setNewTicket(prev => ({ ...prev, priority: e.target.value as any }))}
+                      onChange={(e) => setNewTicket(prev => ({ 
+                        ...prev, 
+                        priority: e.target.value as 'low' | 'medium' | 'high' | 'urgent'
+                      }))}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
                         border: '2px solid #e5e7eb',
                         borderRadius: '8px',
                         fontSize: '16px',
-                        outline: 'none'
-                      }}                    >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Urgent">Urgent</option>
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      {Object.entries(TICKET_PRIORITIES).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
                     </select>
                   </div>
 
                   <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#8B4513',
-                      marginBottom: '8px'
-                    }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#8B4513' }}>
                       Category
-                    </label>                    <select
+                    </label>
+                    <select
                       value={newTicket.category}
-                      onChange={(e) => setNewTicket(prev => ({ ...prev, category: e.target.value as any }))}
+                      onChange={(e) => setNewTicket(prev => ({ 
+                        ...prev, 
+                        category: e.target.value as 'delivery' | 'product_quality' | 'payment' | 'general' | 'refund' | 'exchange'
+                      }))}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
                         border: '2px solid #e5e7eb',
                         borderRadius: '8px',
                         fontSize: '16px',
-                        outline: 'none'
+                        outline: 'none',
+                        boxSizing: 'border-box'
                       }}
                     >
-                      <option value="General">General</option>
-                      <option value="Product Quality">Product Quality</option>
-                      <option value="Delivery">Delivery</option>
-                      <option value="Payment">Payment</option>
-                      <option value="Refund">Refund</option>
-                      <option value="Exchange">Exchange</option>
+                      {Object.entries(TICKET_CATEGORIES).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
                     </select>
                   </div>
-                </div>                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#8B4513',
-                    marginBottom: '8px'
-                  }}>
-                    Related Product (Optional)
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#8B4513' }}>
+                    Related Purchase (Optional)
                   </label>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#6b5b47',
-                    marginBottom: '16px',
-                    lineHeight: '1.4'
-                  }}>
-                    Select a product if your issue is related to a specific purchase, or choose "General Issue" for non-product specific inquiries
-                  </p>
-                  
-                  <div style={{ display: 'grid', gap: '12px' }}>
-                    {/* General Issue Option */}
-                    <div
-                      onClick={() => setNewTicket(prev => ({ ...prev, purchaseId: undefined }))}
-                      style={{
-                        padding: '16px',
-                        border: `2px solid ${!newTicket.purchaseId ? '#8B4513' : '#e5e7eb'}`,
-                        borderRadius: '12px',
-                        cursor: 'pointer',
-                        backgroundColor: !newTicket.purchaseId ? '#8B451308' : 'white',
-                        transition: 'all 0.3s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!newTicket.purchaseId) return;
-                        (e.currentTarget as HTMLElement).style.borderColor = '#D2691E';
-                        (e.currentTarget as HTMLElement).style.backgroundColor = '#8B451305';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!newTicket.purchaseId) return;
-                        (e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb';
-                        (e.currentTarget as HTMLElement).style.backgroundColor = 'white';
-                      }}
-                    >
-                      <div style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        border: `2px solid ${!newTicket.purchaseId ? '#8B4513' : '#e5e7eb'}`,
-                        backgroundColor: !newTicket.purchaseId ? '#8B4513' : 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}>
-                        {!newTicket.purchaseId && (
-                          <div style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            backgroundColor: 'white'
-                          }} />
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          marginBottom: '4px'
-                        }}>
-                          <span style={{ fontSize: '20px' }}>💬</span>
-                          <h4 style={{
-                            margin: 0,
-                            color: '#8B4513',
-                            fontSize: '16px',
-                            fontWeight: '600'
-                          }}>
-                            General Issue
-                          </h4>
-                        </div>
-                        <p style={{
-                          margin: 0,
-                          color: '#6b5b47',
-                          fontSize: '14px',
-                          lineHeight: '1.4'
-                        }}>
-                          For questions, inquiries, or issues not related to a specific product
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Product Options */}
-                    {purchases.length > 0 && (
-                      <>
-                        <div style={{
-                          margin: '8px 0 4px 0',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          color: '#8B4513'
-                        }}>
-                          Your Purchases:
-                        </div>
-                        {purchases.map((purchase) => (
-                          <div
-                            key={purchase.id}
-                            onClick={() => setNewTicket(prev => ({ ...prev, purchaseId: purchase.id }))}
-                            style={{
-                              padding: '16px',
-                              border: `2px solid ${newTicket.purchaseId === purchase.id ? '#8B4513' : '#e5e7eb'}`,
-                              borderRadius: '12px',
-                              cursor: 'pointer',
-                              backgroundColor: newTicket.purchaseId === purchase.id ? '#8B451308' : 'white',
-                              transition: 'all 0.3s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              if (newTicket.purchaseId === purchase.id) return;
-                              (e.currentTarget as HTMLElement).style.borderColor = '#D2691E';
-                              (e.currentTarget as HTMLElement).style.backgroundColor = '#8B451305';
-                            }}
-                            onMouseLeave={(e) => {
-                              if (newTicket.purchaseId === purchase.id) return;
-                              (e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb';
-                              (e.currentTarget as HTMLElement).style.backgroundColor = 'white';
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <div style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                border: `2px solid ${newTicket.purchaseId === purchase.id ? '#8B4513' : '#e5e7eb'}`,
-                                backgroundColor: newTicket.purchaseId === purchase.id ? '#8B4513' : 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0
-                              }}>
-                                {newTicket.purchaseId === purchase.id && (
-                                  <div style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    borderRadius: '50%',
-                                    backgroundColor: 'white'
-                                  }} />
-                                )}
-                              </div>
-                              <div style={{ flex: 1 }}>
-                                <div style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  marginBottom: '8px'
-                                }}>
-                                  <h4 style={{
-                                    margin: 0,
-                                    color: '#8B4513',
-                                    fontSize: '16px',
-                                    fontWeight: '600'
-                                  }}>
-                                    {purchase.product.name}
-                                  </h4>                                  <span style={{
-                                    padding: '4px 8px',
-                                    backgroundColor: '#8B451315',
-                                    color: '#8B4513',
-                                    borderRadius: '6px',
-                                    fontSize: '12px',
-                                    fontWeight: '600'
-                                  }}>
-                                    {purchase.product.dimensions || 'Product'}
-                                  </span>
-                                </div>
-                                <div style={{
-                                  display: 'grid',
-                                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                                  gap: '12px',
-                                  marginBottom: '8px'
-                                }}>
-                                  <div>
-                                    <span style={{
-                                      fontSize: '12px',
-                                      color: '#8B4513',
-                                      fontWeight: '600'
-                                    }}>
-                                      Quantity:
-                                    </span>
-                                    <span style={{
-                                      marginLeft: '4px',
-                                      fontSize: '14px',
-                                      color: '#6b5b47'
-                                    }}>
-                                      {purchase.quantity}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span style={{
-                                      fontSize: '12px',
-                                      color: '#8B4513',
-                                      fontWeight: '600'
-                                    }}>
-                                      Price:
-                                    </span>
-                                    <span style={{
-                                      marginLeft: '4px',
-                                      fontSize: '14px',
-                                      color: '#6b5b47',
-                                      fontWeight: '600'
-                                    }}>
-                                      {purchase.price}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span style={{
-                                      fontSize: '12px',
-                                      color: '#8B4513',
-                                      fontWeight: '600'
-                                    }}>
-                                      Date:
-                                    </span>
-                                    <span style={{
-                                      marginLeft: '4px',
-                                      fontSize: '14px',
-                                      color: '#6b5b47'
-                                    }}>
-                                      {new Date(purchase.purchaseDate).toLocaleDateString('id-ID', {
-                                        year: 'numeric',
-                                        month: 'short',
-                                        day: 'numeric'
-                                      })}
-                                    </span>
-                                  </div>                                </div>
-                                {purchase.product.dimensions && (
-                                  <p style={{
-                                    margin: 0,
-                                    color: '#6b5b47',
-                                    fontSize: '12px',
-                                    lineHeight: '1.4',
-                                    opacity: 0.8
-                                  }}>
-                                    Dimensions: {purchase.product.dimensions}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    )}
-
-                    {purchases.length === 0 && (
-                      <div style={{
-                        padding: '24px',
-                        backgroundColor: '#f9fafb',
-                        borderRadius: '12px',
-                        textAlign: 'center',
-                        border: '1px dashed #d1d5db'
-                      }}>
-                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>📦</div>
-                        <p style={{
-                          margin: 0,
-                          color: '#6b5b47',
-                          fontSize: '14px'
-                        }}>
-                          No purchases found. You can still create a general inquiry ticket.
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  <select
+                    value={newTicket.purchaseId || ''}
+                    onChange={(e) => setNewTicket(prev => ({ 
+                      ...prev, 
+                      purchaseId: e.target.value ? Number(e.target.value) : undefined
+                    }))}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="">No related purchase</option>
+                    {purchases.map((purchase) => (
+                      <option key={purchase.id} value={purchase.id}>
+                        {purchase.product.name} - #{purchase.id} ({formatDate(purchase.purchaseDate)})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {error && (
                   <div style={{
+                    padding: '12px',
                     backgroundColor: '#fef2f2',
                     border: '1px solid #fecaca',
-                    color: '#dc2626',
-                    padding: '12px',
                     borderRadius: '8px',
-                    fontSize: '14px'
+                    color: '#dc2626'
                   }}>
                     {error}
                   </div>
@@ -1107,17 +866,15 @@ const CustomerTickets: React.FC = () => {
                     style={{
                       padding: '12px 24px',
                       backgroundColor: 'transparent',
-                      color: '#6b5b73',
+                      color: '#6b7280',
                       border: '2px solid #e5e7eb',
                       borderRadius: '8px',
                       fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s'
+                      cursor: 'pointer'
                     }}
                   >
                     Cancel
-                  </button>
-                  <button
+                  </button>                  <button
                     type="submit"
                     disabled={createLoading}
                     style={{
@@ -1127,186 +884,109 @@ const CustomerTickets: React.FC = () => {
                       border: 'none',
                       borderRadius: '8px',
                       fontWeight: '600',
-                      cursor: createLoading ? 'not-allowed' : 'pointer',
-                      transition: 'background-color 0.3s'
-                    }}
-                  >
+                      cursor: createLoading ? 'not-allowed' : 'pointer'
+                    }}                  >
                     {createLoading ? 'Creating...' : 'Create Ticket'}
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
+        </Modal>
 
         {/* Chat Modal */}
-        {showChatModal && selectedTicket && (
+        <Modal
+          isOpen={showChatModal}
+          onClose={closeChatModal}
+          title={`Chat - Ticket #${selectedTicket?.id}: ${selectedTicket?.subject}`}
+          size="lg"
+        >
+          {/* Messages List */}
           <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
+            maxHeight: '400px',
+            overflowY: 'auto',
+            marginBottom: '16px',
+            paddingRight: '8px'
           }}>
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '600px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflow: 'auto',
-              position: 'relative'
-            }}>
-              <div style={{
-                marginBottom: '24px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <h3 style={{ color: '#8B4513', margin: 0, fontSize: '20px' }}>
-                  Ticket #{selectedTicket.id} - {selectedTicket.subject}
-                </h3>
-                <button
-                  onClick={closeChatModal}
-                  style={{
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '8px',
-                    borderRadius: '50%',
-                    transition: 'background-color 0.3s'
-                  }}
-                  onMouseEnter={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#f3f4f6'}
-                  onMouseLeave={(e) => (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ color: '#8B4513', width: '24px', height: '24px' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Messages List */}
-              <div style={{
-                maxHeight: '400px',
-                overflowY: 'auto',
-                marginBottom: '16px',
-                paddingRight: '8px'
-              }}>
-                {messagesLoading && (
-                  <div style={{ textAlign: 'center', padding: '16px' }}>
-                    <span style={{ fontSize: '16px', color: '#6b5b47' }}>Loading messages...</span>
-                  </div>
-                )}
-                {!messagesLoading && messages.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '16px' }}>
-                    <span style={{ fontSize: '16px', color: '#6b5b47' }}>No messages found. Be the first to send a message!</span>
-                  </div>
-                )}
-                {messages.map((message) => (
-                  <div key={message.id} style={{
-                    marginBottom: '12px',
-                    display: 'flex',
-                    flexDirection: message.sender === 'customer' ? 'row-reverse' : 'row',
-                    alignItems: 'flex-start',
-                    gap: '12px'
+              {messagesLoading && (
+                <div style={{ textAlign: 'center', padding: '16px' }}>
+                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏳</div>
+                  Loading messages...
+                </div>
+              )}
+              {!messagesLoading && messages.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '16px', color: '#6b7280' }}>
+                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>💬</div>
+                  No messages yet. Start the conversation!
+                </div>              )}
+              
+              {messages.map((message) => (
+                <div key={message.id} style={{
+                  marginBottom: '12px',
+                  display: 'flex',
+                  flexDirection: message.senderType === 'customer' ? 'row-reverse' : 'row',
+                  alignItems: 'flex-start',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    backgroundColor: message.senderType === 'customer' ? '#8B4513' : '#f3f4f6',
+                    color: message.senderType === 'customer' ? 'white' : '#1f2937',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    maxWidth: '70%',
+                    wordWrap: 'break-word'
                   }}>
+                    <div style={{ fontSize: '14px', marginBottom: '4px' }}>
+                      {message.message}
+                    </div>
                     <div style={{
-                      padding: '10px 14px',
-                      borderRadius: '16px',
-                      maxWidth: '80%',
-                      backgroundColor: message.sender === 'customer' ? '#8B4513' : '#f1f1f1',
-                      color: message.sender === 'customer' ? 'white' : '#333',
-                      position: 'relative',
-                      overflow: 'hidden'
+                      fontSize: '12px',
+                      opacity: 0.7,
+                      textAlign: message.senderType === 'customer' ? 'right' : 'left'
                     }}>
-                      {message.sender !== 'customer' && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '-8px',
-                          transform: 'translateY(-50%)',
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          backgroundColor: '#8B4513',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '16px',
-                          color: 'white',
-                          fontWeight: '600'
-                        }}>
-                          {message.sender.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div style={{
-                        whiteSpace: 'pre-wrap',
-                        wordWrap: 'break-word',
-                        fontSize: '14px',
-                        lineHeight: '1.4'
-                      }}>
-                        {message.message}
-                      </div>
-                      <div style={{
-                        marginTop: '8px',
-                        fontSize: '12px',
-                        color: '#6b5b47',
-                        textAlign: 'right'
-                      }}>
-                        {formatMessageTime(message.createdAt)}
-                      </div>
+                      {message.senderType === 'admin' 
+                        ? (message.adminSender?.username || 'Support')
+                        : 'You'
+                      } • {formatMessageTime(message.createdAt)}
                     </div>
                   </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* New Message Form */}
-              <form onSubmit={sendMessage} style={{ display: 'flex', gap: '12px' }}>
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#D2691E'}
-                  onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#e5e7eb'}
-                />
-                <button
-                  type="submit"
-                  disabled={sendingMessage}
-                  style={{
-                    padding: '12px 16px',
-                    backgroundColor: sendingMessage ? '#9ca3af' : '#8B4513',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    cursor: sendingMessage ? 'not-allowed' : 'pointer',
-                    transition: 'background-color 0.3s'
-                  }}
-                >
-                  {sendingMessage ? 'Sending...' : 'Send'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>            {/* New Message Form */}
+            <form onSubmit={sendMessage} style={{ display: 'flex', gap: '12px' }}>
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#D2691E'}
+                    onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = '#e5e7eb'}
+                  />                  <button
+                    type="submit"
+                    disabled={sendingMessage}
+                    style={{
+                      padding: '12px 16px',
+                      backgroundColor: sendingMessage ? '#9ca3af' : '#8B4513',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: sendingMessage ? 'not-allowed' : 'pointer',
+                      transition: 'background-color 0.3s'
+                    }}
+                  >
+                    {sendingMessage ? 'Sending...' : 'Send'}
+                  </button>
+                </form>
+        </Modal>
       </div>
     </div>
   );

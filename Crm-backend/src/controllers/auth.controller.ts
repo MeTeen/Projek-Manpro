@@ -96,17 +96,24 @@ export const login = async (req: Request, res: Response) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required',
+        message: 'Email/Username and password are required',
       });
     }
 
-    // Find admin by email
-    const admin = await Admin.findOne({ where: { email } });
+    // Find admin by email OR username
+    const admin = await Admin.findOne({ 
+      where: { 
+        [Op.or]: [
+          { email },
+          { username: email } // Using 'email' field to also check username
+        ]
+      } 
+    });
 
     if (!admin) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'Invalid email/username or password',
       });
     }
 
@@ -116,7 +123,7 @@ export const login = async (req: Request, res: Response) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'Invalid email/username or password',
       });
     }
 

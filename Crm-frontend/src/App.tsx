@@ -4,6 +4,7 @@ import { logApiConfig } from './config/api';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminSignUp from './pages/admin/AdminSignUp';
 import ProtectedRoute from './components/ProtectedRoute';
+import CustomerProtectedRoute from './components/CustomerProtectedRoute';
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import CustomersPage from './pages/admin/CustomersPage';
 import TransactionPage from './pages/admin/TransactionPage';
@@ -38,10 +39,16 @@ function App() {
           <Route path="/companyprofile" element={<CompanyProfile />} />
             {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/signup" element={<AdminSignUp />} />
-            {/* Customer Routes */}
+          <Route path="/admin/signup" element={<AdminSignUp />} />            {/* Customer Routes */}
           <Route path="/customer/login" element={<CustomerLogin />} />
-          <Route path="/customer/tickets" element={<CustomerTickets />} />
+          <Route 
+            path="/customer/tickets" 
+            element={
+              <CustomerProtectedRoute>
+                <CustomerTickets />
+              </CustomerProtectedRoute>
+            } 
+          />
           <Route
             path="/admin/dashboard"
             element={

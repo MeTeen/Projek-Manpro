@@ -1,76 +1,34 @@
 import axios from 'axios';
+import { 
+  Ticket, 
+  Purchase, 
+  CreateTicketRequest, 
+  TicketFilters, 
+  ApiResponse
+} from '../types/ticket';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
-export interface CustomerTicket {
-  id: number;
-  subject: string;
-  description: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: 'Delivery' | 'Product Quality' | 'Payment' | 'General' | 'Refund' | 'Exchange';
-  createdAt: string;
-  updatedAt: string;
-  customer: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };  purchase?: {
-    id: number;
-    purchaseDate: string;
-    quantity: number;
-    price: string;
-    product: {
-      id: number;
-      name: string;
-      dimensions?: string;
-    };
-  };
-  admin?: {
-    id: number;
-    firstName: string;
-    lastName: string;
-  };
-}
-
-export interface CreateTicketRequest {
-  subject: string;
-  message: string;
-  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
-  category: 'Delivery' | 'Product Quality' | 'Payment' | 'General' | 'Refund' | 'Exchange';
-  purchaseId?: number;
-}
-
-export interface CustomerPurchase {
-  id: number;
-  quantity: number;
-  price: string;
-  purchaseDate: string;
-  product: {
-    id: number;
-    name: string;
-    dimensions?: string;
-  };
-}
-
-export interface TicketFilters {
-  status?: string;
-  priority?: string;
-  category?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-}
-
 class CustomerTicketService {
   private getAuthHeader() {
-    const token = localStorage.getItem('customerToken');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }  async createTicket(ticketData: CreateTicketRequest) {
+    const customerToken = localStorage.getItem('customerToken');
+    const adminToken = localStorage.getItem('token'); // Regular admin token
+    
+    console.log('🔍 CustomerTicketService - Token check:');
+    console.log('- customerToken:', customerToken ? `${customerToken.substring(0, 20)}...` : 'NOT FOUND');
+    console.log('- adminToken:', adminToken ? `${adminToken.substring(0, 20)}...` : 'NOT FOUND');
+    
+    if (!customerToken) {
+      console.warn('⚠️ No customerToken found! User might not be logged in as customer.');
+      console.log('📍 Available localStorage keys:', Object.keys(localStorage));
+    }
+    
+    return customerToken ? { Authorization: `Bearer ${customerToken}` } : {};
+  }
+
+  async createTicket(ticketData: CreateTicketRequest): Promise<ApiResponse<Ticket>> {
     try {
       console.log('🎫 Creating ticket with data:', ticketData);
-      console.log('🔑 Auth header:', this.getAuthHeader());
       
       const response = await axios.post(`${API_URL}/customer/tickets`, ticketData, {
         headers: {
@@ -102,14 +60,16 @@ class CustomerTicketService {
     }
   }
 
-  async getMyTickets(filters: TicketFilters = {}) {
+  async getMyTickets(filters: TicketFilters = {}): Promise<ApiResponse<{ tickets: Ticket[] }>> {
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
           params.append(key, value.toString());
         }
-      });      const response = await axios.get(`${API_URL}/customer?${params.toString()}`, {
+      });
+
+      const response = await axios.get(`${API_URL}/customer/tickets?${params.toString()}`, {
         headers: this.getAuthHeader(),
       });
       return response.data;
@@ -121,7 +81,7 @@ class CustomerTicketService {
     }
   }
 
-  async getTicketById(id: number) {
+  async getTicketById(id: number): Promise<ApiResponse<Ticket>> {
     try {
       const response = await axios.get(`${API_URL}/customer/tickets/${id}`, {
         headers: this.getAuthHeader(),
@@ -135,7 +95,7 @@ class CustomerTicketService {
     }
   }
 
-  async getMyPurchases() {
+  async getMyPurchases(): Promise<ApiResponse<Purchase[]>> {
     try {
       const response = await axios.get(`${API_URL}/customer/purchases`, {
         headers: this.getAuthHeader(),

@@ -10,12 +10,15 @@ export interface TicketAttributes {
   purchaseId?: number | null; // Link ke CustomerProduct untuk komplain transaksi spesifik
   subject: string;
   message: string;
-  status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
-  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
-  category: 'Delivery' | 'Product Quality' | 'Payment' | 'General' | 'Refund' | 'Exchange';
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  category: 'delivery' | 'product_quality' | 'payment' | 'general' | 'refund' | 'exchange';
   assignedTo?: number | null; // Admin ID yang handle ticket
   resolution?: string | null; // Solusi yang diberikan admin
   attachmentUrls?: string[] | null; // Array URL gambar/file pendukung
+  firstResponseAt?: Date | null; // When admin first responded
+  lastActivityAt?: Date; // Track last activity for sorting
+  escalatedAt?: Date | null; // When ticket was escalated
   createdAt?: Date;
   updatedAt?: Date;
   resolvedAt?: Date | null;
@@ -26,8 +29,8 @@ export interface TicketInput {
   purchaseId?: number | null;
   subject: string;
   message: string;
-  priority?: 'Low' | 'Medium' | 'High' | 'Urgent';
-  category: 'Delivery' | 'Product Quality' | 'Payment' | 'General' | 'Refund' | 'Exchange';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  category: 'delivery' | 'product_quality' | 'payment' | 'general' | 'refund' | 'exchange';
   attachmentUrls?: string[] | null;
 }
 
@@ -37,13 +40,15 @@ class Ticket extends Model {
   declare customerId: number;
   declare purchaseId: number | null;
   declare subject: string;
-  declare message: string;
-  declare status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
-  declare priority: 'Low' | 'Medium' | 'High' | 'Urgent';
-  declare category: 'Delivery' | 'Product Quality' | 'Payment' | 'General' | 'Refund' | 'Exchange';
+  declare message: string;  declare status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  declare priority: 'low' | 'medium' | 'high' | 'urgent';
+  declare category: 'delivery' | 'product_quality' | 'payment' | 'general' | 'refund' | 'exchange';
   declare assignedTo: number | null;
   declare resolution: string | null;
   declare attachmentUrls: string[] | null;
+  declare firstResponseAt: Date | null;
+  declare lastActivityAt: Date;
+  declare escalatedAt: Date | null;
   declare readonly createdAt: CreationOptional<Date>;
   declare readonly updatedAt: CreationOptional<Date>;
   declare resolvedAt: Date | null;
@@ -88,19 +93,18 @@ class Ticket extends Model {
         message: {
           type: DataTypes.TEXT,
           allowNull: false,
-        },
-        status: {
-          type: DataTypes.ENUM('Open', 'In Progress', 'Resolved', 'Closed'),
+        },        status: {
+          type: DataTypes.ENUM('open', 'in_progress', 'resolved', 'closed'),
           allowNull: false,
-          defaultValue: 'Open',
+          defaultValue: 'open',
         },
         priority: {
-          type: DataTypes.ENUM('Low', 'Medium', 'High', 'Urgent'),
+          type: DataTypes.ENUM('low', 'medium', 'high', 'urgent'),
           allowNull: false,
-          defaultValue: 'Medium',
+          defaultValue: 'medium',
         },
         category: {
-          type: DataTypes.ENUM('Delivery', 'Product Quality', 'Payment', 'General', 'Refund', 'Exchange'),
+          type: DataTypes.ENUM('delivery', 'product_quality', 'payment', 'general', 'refund', 'exchange'),
           allowNull: false,
         },
         assignedTo: {
@@ -120,8 +124,20 @@ class Ticket extends Model {
         attachmentUrls: {
           type: DataTypes.JSON,
           allowNull: true,
+        },        resolvedAt: {
+          type: DataTypes.DATE,
+          allowNull: true,
         },
-        resolvedAt: {
+        firstResponseAt: {
+          type: DataTypes.DATE,
+          allowNull: true,
+        },
+        lastActivityAt: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: DataTypes.NOW,
+        },
+        escalatedAt: {
           type: DataTypes.DATE,
           allowNull: true,
         },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -14,22 +14,31 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const SignUp: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'admin' | 'super_admin'>('admin');
+  const [password, setPassword] = useState('');  const [role, setRole] = useState<'admin' | 'super_admin'>('admin');
   const [error, setError] = useState('');
-  const { signup } = useAuth();
+  const { signup, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  // Redirect if admin is already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log('Admin already logged in, redirecting to dashboard');
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await signup(username, email, password, role);
-      navigate('/admin/dashboard');
+      toast.success('Account created successfully! Please login with your credentials.');
+      navigate('/admin/login');
     } catch (error) {
       setError('Failed to create account');
+      toast.error('Failed to create account. Please try again.');
     }
   };
 
@@ -91,8 +100,7 @@ const SignUp: React.FC = () => {
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-            />
-            <FormControl fullWidth margin="normal">
+            />            <FormControl fullWidth margin="normal">
               <InputLabel id="role-label">Role</InputLabel>
               <Select
                 labelId="role-label"
@@ -103,7 +111,6 @@ const SignUp: React.FC = () => {
               >
                 <MenuItem value="admin">Admin</MenuItem>
                 <MenuItem value="super_admin">Super Admin</MenuItem>
-                <MenuItem value="customer">Customer</MenuItem>
               </Select>
             </FormControl>
             {error && (

@@ -4,6 +4,7 @@ export interface ContactInfo {
   label: string;
   value: string;
   icon: string;
+  type?: 'phone' | 'email' | 'whatsapp' | 'default';
 }
 
 export interface NeedHelpProps {
@@ -21,20 +22,22 @@ export interface NeedHelpProps {
   style?: React.CSSProperties;
   /** Custom container styling */
   containerStyle?: React.CSSProperties;
+  /** Callback when a contact is clicked */
+  onContactClick?: (contact: ContactInfo) => void;
 }
 
 /**
  * NeedHelp Component - A reusable help section with contact information
- * 
- * @example
+ *  * @example
  * // Customer portal usage
  * <NeedHelp 
  *   variant="customer"
  *   title="Need Help?"
  *   description="Contact our customer support team for assistance with your account or products."
  *   contacts={[
- *     { icon: "📱", label: "Phone", value: "+62 812-3456-7890" },
- *     { icon: "✉️", label: "Email", value: "support@mebelpremium.com" }
+ *     { icon: "📱", label: "Phone", value: "+62 812-3456-7890", type: "phone" },
+ *     { icon: "✉️", label: "Email", value: "help@beefurniture.com", type: "email" },
+ *     { icon: "💬", label: "WhatsApp", value: "+62 812-3456-7890", type: "whatsapp" }
  *   ]}
  * />
  * 
@@ -57,78 +60,56 @@ const NeedHelp: React.FC<NeedHelpProps> = ({
   description,
   contacts = [],
   buttons,
-  variant = 'default',
-  style = {},
-  containerStyle = {}
+  style = {},  containerStyle = {},
+  onContactClick
 }) => {
-  // Define variant-specific styles
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'customer':
-        return {
-          backgroundColor: '#FFF8DC',
-          borderColor: '#D2691E',
-          titleColor: '#8B4513',
-          textColor: '#6b5b47',
-          contactColor: '#8B4513'
-        };
-      case 'admin':
-        return {
-          backgroundColor: '#f3f4f6',
-          borderColor: '#e5e7eb',
-          titleColor: '#111827',
-          textColor: '#4b5563',
-          contactColor: '#374151'
-        };
-      default:
-        return {
-          backgroundColor: '#f9fafb',
-          borderColor: '#e5e7eb',
-          titleColor: '#374151',
-          textColor: '#6b7280',
-          contactColor: '#374151'
-        };
+
+  // Handle contact click with default behavior if no custom handler provided
+  const handleContactClick = (contact: ContactInfo) => {
+    if (onContactClick) {
+      onContactClick(contact);
+    } else {
+      // Default behavior based on contact type
+      if (contact.type === 'email' || contact.label.toLowerCase().includes('email')) {
+        window.open(`mailto:${contact.value}`, '_blank');
+      } else if (contact.type === 'whatsapp' || contact.label.toLowerCase().includes('whatsapp')) {
+        // Extract phone number and format for WhatsApp
+        const phoneNumber = contact.value.replace(/[^\d]/g, ''); // Remove all non-digits (spaces, dashes, etc.)
+        const formattedPhone = phoneNumber.startsWith('62') ? phoneNumber : `62${phoneNumber.replace(/^0/, '')}`;
+        window.open(`https://wa.me/${formattedPhone}`, '_blank');
+      } else if (contact.type === 'phone' || contact.label.toLowerCase().includes('phone')) {
+        window.open(`tel:${contact.value}`, '_blank');
+      }
     }
   };
-
-  const variantStyles = getVariantStyles();
-
   const defaultContainerStyle: React.CSSProperties = {
-    padding: '20px',
-    backgroundColor: variantStyles.backgroundColor,
-    borderRadius: '12px',
-    border: `1px solid ${variantStyles.borderColor}`,
-    textAlign: 'center',
+    textAlign: 'center', 
+    backgroundColor: '#FFF8DC', 
+    padding: '40px', 
+    borderRadius: '16px',
+    border: '2px solid #D2691E',
     ...containerStyle
   };
 
   const titleStyle: React.CSSProperties = {
-    color: variantStyles.titleColor,
-    fontWeight: '600',
-    marginBottom: '8px',
-    fontSize: '16px',
-    margin: '0 0 8px 0'
+    fontSize: '28px', 
+    fontWeight: 'bold', 
+    color: '#8B4513', 
+    marginBottom: '16px',
+    margin: '0 0 16px 0'
   };
 
   const descriptionStyle: React.CSSProperties = {
-    color: variantStyles.textColor,
-    fontSize: '14px',
-    lineHeight: '1.5',
-    marginBottom: contacts.length > 0 || buttons ? '16px' : '0',
-    margin: '0'
+    color: '#654321', 
+    fontSize: '16px', 
+    marginBottom: contacts.length > 0 || buttons ? '20px' : '0',
+    margin: '0 0 20px 0'
   };
-
   const contactsContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '16px',
-    fontSize: '14px',
+    display: 'flex', 
+    justifyContent: 'center', 
+    gap: '40px', 
     flexWrap: 'wrap'
-  };
-
-  const contactStyle: React.CSSProperties = {
-    color: variantStyles.contactColor,
-    fontWeight: '600'
   };
 
   return (
@@ -141,14 +122,41 @@ const NeedHelp: React.FC<NeedHelpProps> = ({
         <p style={descriptionStyle}>
           {description}
         </p>
-      )}
-      
-      {contacts.length > 0 && (
+      )}      {contacts.length > 0 && (
         <div style={contactsContainerStyle}>
           {contacts.map((contact, index) => (
-            <span key={index} style={contactStyle}>
-              {contact.icon} {contact.value}
-            </span>
+            <div key={index}>
+              <strong 
+                style={{ color: '#8B4513', cursor: 'pointer' }}
+                onClick={() => handleContactClick(contact)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F5DEB3';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+                title={`Click to ${contact.type === 'email' || contact.label.toLowerCase().includes('email') ? 'send email' : 
+                       contact.type === 'whatsapp' || contact.label.toLowerCase().includes('whatsapp') ? 'open WhatsApp' : 
+                       'contact'} ${contact.value}`}
+              >
+                {contact.icon} {contact.label}:
+              </strong><br />
+              <span 
+                style={{ color: '#654321', cursor: 'pointer' }}
+                onClick={() => handleContactClick(contact)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F5DEB3';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+                title={`Click to ${contact.type === 'email' || contact.label.toLowerCase().includes('email') ? 'send email' : 
+                       contact.type === 'whatsapp' || contact.label.toLowerCase().includes('whatsapp') ? 'open WhatsApp' : 
+                       'contact'} ${contact.value}`}
+              >
+                {contact.value}
+              </span>
+            </div>
           ))}
         </div>
       )}

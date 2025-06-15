@@ -55,7 +55,7 @@ const ApiDebugger: React.FC<ApiDebuggerProps> = ({ isVisible = false }) => {
     <div style={{
       position: 'fixed',
       bottom: '10px',
-      right: '10px',
+      left: '10px',
       padding: '10px',
       background: apiStatus === 'error' ? '#ffebee' : apiStatus === 'ok' ? '#e8f5e9' : '#e3f2fd',
       border: `1px solid ${apiStatus === 'error' ? '#ef5350' : apiStatus === 'ok' ? '#66bb6a' : '#90caf9'}`,

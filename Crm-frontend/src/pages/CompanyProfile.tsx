@@ -139,7 +139,7 @@ const CompanyProfile: React.FC = () => {
             color: '#8B4513',
             margin: 0 
           }}>
-            🪑 Mebel Premium
+            🐝 Bee Furniture
           </h1>
           <div style={{ display: 'flex', gap: '12px' }}>
             <a 

@@ -6,12 +6,12 @@ import {
   MdShoppingBag, 
   MdBarChart, 
   MdChecklist, 
-  MdSettings,
   MdChevronLeft,
   MdChevronRight,
   MdPointOfSale,
   MdLocalOffer,
-  MdInfo
+  MdInfo,
+  MdConfirmationNumber
 } from 'react-icons/md';
 
 interface SidebarProps {
@@ -26,12 +26,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
     { path: '/admin/dashboard', icon: <MdDashboard size={20} />, label: 'Dashboard' },
     { path: '/admin/customers', icon: <MdPerson size={20} />, label: 'Customers' },
     { path: '/admin/products', icon: <MdShoppingBag size={20} />, label: 'Products' },
-    { path: '/admin/transactions', icon: <MdPointOfSale size={20} />, label: 'Transactions' },
-    { path: '/admin/promo', icon: <MdLocalOffer size={20} />, label: 'Promo' },
+    { path: '/admin/transactions', icon: <MdPointOfSale size={20} />, label: 'Transactions' },    { path: '/admin/promo', icon: <MdLocalOffer size={20} />, label: 'Promo' },
     { path: '/admin/analytics', icon: <MdBarChart size={20} />, label: 'Analytics' },
     { path: '/admin/tasksection', icon: <MdChecklist size={20} />, label: 'Task To Do' },
-    { path: '/admin/tickets', icon: <MdSettings size={20} />, label: 'Tickets' },
-    { path: '/admin/about', icon: <MdInfo size={20} />, label: 'About' }, 
+    { path: '/admin/tickets', icon: <MdConfirmationNumber size={20} />, label: 'Tickets' },
+    { path: '/admin/about', icon: <MdInfo size={20} />, label: 'About' },
     { path: '/companyprofile', icon: <MdPerson size={20} />, label: 'Our Company' }  // Keep public
   ];
   const isActiveRoute = (path: string) => {
@@ -77,9 +76,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
           {collapsed ? <MdChevronRight size={16} /> : <MdChevronLeft size={16} />}
         </button>
       )}
-      
-      <div style={{ 
-        padding: '20px', 
+        <div style={{ 
+        padding: collapsed ? '20px 14px' : '20px', 
         display: 'flex', 
         alignItems: 'center',
         justifyContent: collapsed ? 'center' : 'flex-start',
@@ -88,13 +86,16 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
         <div style={{ 
           width: '32px', 
           height: '32px', 
+          minWidth: '32px', 
+          minHeight: '32px',
           borderRadius: '50%', 
           backgroundColor: '#3E37F7', 
           display: 'flex', 
           alignItems: 'center', 
-          justifyContent: 'center' 
+          justifyContent: 'center',
+          flexShrink: 0
         }}>
-          <span style={{ color: 'white', fontWeight: 'bold' }}>C</span>
+          <span style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>🐝</span>
         </div>
         {!collapsed && (
           <span style={{ 
@@ -104,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
             opacity: collapsed ? 0 : 1,
             transition: 'opacity 0.3s ease'
           }}>
-            CRM App
+            Bee Furniture Admin
           </span>
         )}
       </div>

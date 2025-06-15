@@ -136,14 +136,34 @@ const CustomersPage: React.FC = () => {
     setIsFormValid(false);
     setError(null);
     setIsAddModalOpen(true);
-  };
-
-  // Handle form input changes
+  };  // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    // Format phone number for Indonesian format (normalize to 0 prefix)
+    let formattedValue = value;
+    if (name === 'phone') {
+      // Remove all non-digits
+      const cleaned = value.replace(/\D/g, '');
+      
+      if (cleaned.startsWith('62')) {
+        // Convert +62XXXXXXXXX to 0XXXXXXXXX
+        formattedValue = '0' + cleaned.slice(2);
+      } else if (cleaned.startsWith('0')) {
+        // Already in correct format
+        formattedValue = cleaned;
+      } else if (cleaned.length > 0) {
+        // Add 0 prefix if missing
+        formattedValue = '0' + cleaned;
+      }
+      
+      // Limit to 13 digits maximum (0 + 12 digits)
+      formattedValue = formattedValue.slice(0, 13);
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: formattedValue
     }));
   };
 
@@ -180,9 +200,10 @@ const CustomersPage: React.FC = () => {
         if (!value.trim()) return 'Email is required';
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(value)) return 'Please enter a valid email address';
-        return '';
-      case 'phone':
-        if (value && !/^\+?[\d\s\-\(\)]+$/.test(value)) return 'Please enter a valid phone number';
+        return '';      case 'phone':
+        if (value && !/^0\d{9,12}$/.test(value.replace(/\s/g, ''))) {
+          return 'Please enter a valid Indonesian phone number starting with 0 (e.g., 08123456789)';
+        }
         return '';
       case 'zipCode':
         if (value && !/^\d{5}(-\d{4})?$/.test(value)) return 'Please enter a valid ZIP code (e.g., 12345 or 12345-6789)';
@@ -231,21 +252,25 @@ const CustomersPage: React.FC = () => {
 
   // Handle new customer form input changes with validation
   const handleNewInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    // Format phone number as user types
+    const { name, value } = e.target;    // Format phone number as user types (Indonesian format - normalize to 0 prefix)
     let formattedValue = value;
     if (name === 'phone') {
       // Remove all non-digits
-      const digits = value.replace(/\D/g, '');
-      // Format as (XXX) XXX-XXXX
-      if (digits.length >= 6) {
-        formattedValue = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-      } else if (digits.length >= 3) {
-        formattedValue = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-      } else {
-        formattedValue = digits;
+      const cleaned = value.replace(/\D/g, '');
+      
+      if (cleaned.startsWith('62')) {
+        // Convert +62XXXXXXXXX to 0XXXXXXXXX
+        formattedValue = '0' + cleaned.slice(2);
+      } else if (cleaned.startsWith('0')) {
+        // Already in correct format
+        formattedValue = cleaned;
+      } else if (cleaned.length > 0) {
+        // Add 0 prefix if missing
+        formattedValue = '0' + cleaned;
       }
+      
+      // Limit to 13 digits maximum (0 + 12 digits)
+      formattedValue = formattedValue.slice(0, 13);
     }
 
     // Format ZIP code
@@ -995,15 +1020,13 @@ const CustomersPage: React.FC = () => {
           required
           placeholder="Enter email address"
           error={validationErrors.email}
-        />
-        
-        <FormInput
+        />        <FormInput
           label="Phone Number"
           type="tel"
           name="phone"
           value={newCustomerData.phone || ''}
           onChange={handleNewInputChange}
-          placeholder="(123) 456-7890"
+          placeholder="08123456789"
           error={validationErrors.phone}
         />
         

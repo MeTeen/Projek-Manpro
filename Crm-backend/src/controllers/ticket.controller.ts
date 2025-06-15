@@ -19,14 +19,18 @@ export const getAllTickets = async (req: Request, res: Response) => {
     const priority = req.query.priority as string;
     const category = req.query.category as string;
     const assignedTo = req.query.assignedTo as string;
-    const search = req.query.search as string;
-
-    // Build where clause for filtering
+    const search = req.query.search as string;    // Build where clause for filtering
     const whereClause: any = {};
     if (status) whereClause.status = status;
     if (priority) whereClause.priority = priority;
     if (category) whereClause.category = category;
-    if (assignedTo) whereClause.assignedTo = parseInt(assignedTo);
+    if (assignedTo) {
+      if (assignedTo === 'unassigned') {
+        whereClause.assignedTo = null;
+      } else {
+        whereClause.assignedTo = parseInt(assignedTo);
+      }
+    }
     if (search) {
       whereClause[Op.or] = [
         { subject: { [Op.iLike]: `%${search}%` } },
@@ -165,11 +169,17 @@ export const updateTicket = async (req: Request, res: Response) => {
     if (status) updateData.status = status;
     if (priority) updateData.priority = priority;
     if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
-    if (resolution) updateData.resolution = resolution;
-
-    // If status is being changed to Resolved or Closed, set resolvedAt
-    if (status && (status === 'Resolved' || status === 'Closed')) {
+    if (resolution) updateData.resolution = resolution;    // If status is being changed to resolved or closed, set resolvedAt
+    if (status && (status === 'resolved' || status === 'closed')) {
       updateData.resolvedAt = new Date();
+    }
+
+    // Update lastActivityAt on any change
+    updateData.lastActivityAt = new Date();
+
+    // If admin is responding for the first time, set firstResponseAt
+    if (!ticket.firstResponseAt && currentUser.role === 'admin') {
+      updateData.firstResponseAt = new Date();
     }
 
     await ticket.update(updateData);
@@ -210,18 +220,17 @@ export const updateTicket = async (req: Request, res: Response) => {
  * @route GET /api/admin/tickets/stats
  */
 export const getTicketStats = async (req: Request, res: Response) => {
-  try {
-    const [totalTickets, openTickets, inProgressTickets, resolvedTickets, closedTickets] = await Promise.all([
+  try {    const [totalTickets, openTickets, inProgressTickets, resolvedTickets, closedTickets] = await Promise.all([
       Ticket.count(),
-      Ticket.count({ where: { status: 'Open' } }),
-      Ticket.count({ where: { status: 'In Progress' } }),
-      Ticket.count({ where: { status: 'Resolved' } }),
-      Ticket.count({ where: { status: 'Closed' } })
+      Ticket.count({ where: { status: 'open' } }),
+      Ticket.count({ where: { status: 'in_progress' } }),
+      Ticket.count({ where: { status: 'resolved' } }),
+      Ticket.count({ where: { status: 'closed' } })
     ]);
 
     const [urgentTickets, highPriorityTickets] = await Promise.all([
-      Ticket.count({ where: { priority: 'Urgent', status: { [Op.not]: 'Closed' } } }),
-      Ticket.count({ where: { priority: 'High', status: { [Op.not]: 'Closed' } } })
+      Ticket.count({ where: { priority: 'urgent', status: { [Op.not]: 'closed' } } }),
+      Ticket.count({ where: { priority: 'high', status: { [Op.not]: 'closed' } } })
     ]);
 
     // Category breakdown
@@ -359,6 +368,193 @@ export const createTicket = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error creating ticket',
+      error: (error as Error).message,
+    });
+  }
+};
+
+/**
+ * Claim a ticket for the current admin
+ * @route POST /api/admin/tickets/:id/claim
+ */
+export const claimTicket = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const currentUser = (req as any).user; // From auth middleware
+    const { allowReclaim = false } = req.body; // Optional: allow reclaiming from other admins
+
+    console.log('🎫 claimTicket called for ticket:', id, 'by admin:', currentUser.id);
+
+    const ticket = await Ticket.findByPk(id);
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: `Ticket with ID ${id} not found`,
+      });
+    }
+
+    // Check if ticket is already assigned to someone else
+    if (ticket.assignedTo && ticket.assignedTo !== currentUser.id && !allowReclaim) {
+      const assignedAdmin = await Admin.findByPk(ticket.assignedTo);
+      return res.status(409).json({
+        success: false,
+        message: `Ticket is already claimed by ${assignedAdmin?.username || 'another admin'}`,
+        data: { assignedTo: ticket.assignedTo, assignedAdmin }
+      });
+    }
+
+    // Check if already claimed by current admin
+    if (ticket.assignedTo === currentUser.id) {
+      return res.status(200).json({
+        success: true,
+        message: 'Ticket is already claimed by you',
+        data: ticket
+      });
+    }
+
+    // Claim the ticket
+    const updateData: any = {
+      assignedTo: currentUser.id,
+      lastActivityAt: new Date()
+    };
+
+    // If this is the first time an admin is taking action, set firstResponseAt
+    if (!ticket.firstResponseAt) {
+      updateData.firstResponseAt = new Date();
+    }
+
+    // Update status to in_progress if it's currently open
+    if (ticket.status === 'open') {
+      updateData.status = 'in_progress';
+    }
+
+    await ticket.update(updateData);
+
+    // Fetch updated ticket with includes
+    const updatedTicket = await Ticket.findByPk(id, {
+      include: [
+        {
+          model: Customer,
+          as: 'customer',
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        },
+        {
+          model: Purchase,
+          as: 'purchase',
+          attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
+          include: [
+            {
+              model: Product,
+              as: 'product',
+              attributes: ['id', 'name']
+            }
+          ],
+          required: false
+        },
+        {
+          model: Admin,
+          as: 'assignedAdmin',
+          attributes: ['id', 'username', 'email'],
+          required: false
+        }
+      ]
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Ticket claimed successfully',
+      data: updatedTicket
+    });
+  } catch (error) {
+    console.error('Error claiming ticket:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error claiming ticket',
+      error: (error as Error).message,
+    });
+  }
+};
+
+/**
+ * Release/unclaim a ticket
+ * @route POST /api/admin/tickets/:id/release
+ */
+export const releaseTicket = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const currentUser = (req as any).user; // From auth middleware
+
+    console.log('🎫 releaseTicket called for ticket:', id, 'by admin:', currentUser.id);
+
+    const ticket = await Ticket.findByPk(id);
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: `Ticket with ID ${id} not found`,
+      });
+    }
+
+    // Check if ticket is assigned to current admin
+    if (ticket.assignedTo !== currentUser.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only release tickets assigned to you',
+      });
+    }
+
+    // Release the ticket
+    const updateData: any = {
+      assignedTo: null,
+      lastActivityAt: new Date()
+    };
+
+    // Update status back to open if it's in_progress
+    if (ticket.status === 'in_progress') {
+      updateData.status = 'open';
+    }
+
+    await ticket.update(updateData);
+
+    // Fetch updated ticket with includes
+    const updatedTicket = await Ticket.findByPk(id, {
+      include: [
+        {
+          model: Customer,
+          as: 'customer',
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        },
+        {
+          model: Purchase,
+          as: 'purchase',
+          attributes: ['id', 'quantity', 'unitPrice', 'purchaseDate'],
+          include: [
+            {
+              model: Product,
+              as: 'product',
+              attributes: ['id', 'name']
+            }
+          ],
+          required: false
+        },
+        {
+          model: Admin,
+          as: 'assignedAdmin',
+          attributes: ['id', 'username', 'email'],
+          required: false
+        }
+      ]
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Ticket released successfully',
+      data: updatedTicket
+    });
+  } catch (error) {
+    console.error('Error releasing ticket:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error releasing ticket',
       error: (error as Error).message,
     });
   }

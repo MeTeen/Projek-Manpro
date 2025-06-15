@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import authService from '../services/authService';
 import { AuthResponse, UserData } from '../types/auth';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 export type AuthContextType = {
   user: UserData | null;
@@ -108,32 +109,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
   };
-
   const signup = async (username: string, email: string, password: string, role?: 'admin' | 'super_admin') => {
     try {
       console.log('Attempting signup for:', { username, email, role });
       const response = await authService.signup({ username, email, password, role });
       console.log('Signup successful:', response);
       
-      setUser(response.user);
-      setToken(response.token);
-      setIsAuthenticated(true);
-      
-      console.log('Auth state updated after signup:', { 
-        user: response.user, 
-        hasToken: !!response.token,
-        isAuthenticated: true 
-      });
+      // Don't auto-login after signup - user should login manually for security
+      console.log('Signup completed successfully. User must login manually.');
     } catch (error) {
       console.error('Signup failed:', error);
-      setIsAuthenticated(false);
       throw error;
     }
   };
-
   const logout = () => {
     try {
       console.log('Logging out user:', user);
+      
+      // Show logout success toast
+      toast.success('You have been logged out successfully', {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      
       authService.logout(); // This already removes from localStorage
       setUser(null);
       setToken(null);
@@ -141,6 +143,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Auth state cleared after logout');
     } catch (error) {
       console.error('Logout failed:', error);
+      toast.error('Error occurred during logout', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     }
   };
 

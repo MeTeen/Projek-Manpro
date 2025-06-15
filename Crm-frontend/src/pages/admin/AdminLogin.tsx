@@ -24,8 +24,7 @@ interface LoginError {
   code?: string;
 }
 
-const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
+const Login: React.FC = () => {  const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,18 +46,17 @@ const Login: React.FC = () => {
     // Check on mount and when auth state changes
     checkAuthAndRedirect();
   }, [isAuthenticated, navigate, location.state]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError('Please enter both email and password.');
+    if (!emailOrUsername || !password) {
+      setError('Please enter both email/username and password.');
       return;
     }
     
     setError('');
     setIsLoading(true);    try {
       debugLog('Login', 'Attempting login...');
-      await login(email, password);      // Success toast with information about redirect
+      await login(emailOrUsername, password);// Success toast with information about redirect
       const from = (location.state as any)?.from?.pathname;
       if (from && from !== '/admin/dashboard') {
         const routeNames: { [key: string]: string } = {
@@ -133,19 +131,19 @@ const Login: React.FC = () => {
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>            <TextField
               margin="normal"
               required
               fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
+              id="emailOrUsername"
+              label="Email or Username"
+              name="emailOrUsername"
               autoComplete="email"
               autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={emailOrUsername}
+              onChange={(e) => setEmailOrUsername(e.target.value)}
               disabled={isLoading}
+              placeholder="Enter your email or username"
             />
             <TextField
               margin="normal"

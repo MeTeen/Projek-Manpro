@@ -56,7 +56,7 @@ export default function AboutPage() {
                                     fontWeight: 'bold', 
                                     marginBottom: '16px' 
                                 }}>
-                                    Made with ❤️ for Project Management
+                                    Made for Project Management
                                 </h2>
                                 <p style={{ 
                                     fontSize: '18px', 

@@ -13,17 +13,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 module.exports = {
     up(queryInterface) {
         return __awaiter(this, void 0, void 0, function* () {
-            // Add indexes for frequently queried columns to improve performance
             // Index on customers table
-            yield queryInterface.addIndex('customers', ['created_at'], {
-                name: 'idx_customers_created_at'
-            });
-            yield queryInterface.addIndex('customers', ['first_name', 'last_name'], {
-                name: 'idx_customers_names'
-            });
-            yield queryInterface.addIndex('customers', ['email'], {
-                name: 'idx_customers_email'
-            });
+            try {
+                yield queryInterface.addIndex('customers', ['created_at'], {
+                    name: 'idx_customers_created_at'
+                });
+            }
+            catch (e) {
+                console.log('Index idx_customers_created_at already exists');
+            }
+            try {
+                yield queryInterface.addIndex('customers', ['first_name', 'last_name'], {
+                    name: 'idx_customers_names'
+                });
+            }
+            catch (e) {
+                console.log('Index idx_customers_names already exists');
+            }
+            try {
+                yield queryInterface.addIndex('customers', ['email'], {
+                    name: 'idx_customers_email'
+                });
+            }
+            catch (e) {
+                console.log('Index idx_customers_email already exists');
+            }
             // Index on customer_products table (transactions) - some already exist, add conditionally
             try {
                 yield queryInterface.addIndex('customer_products', ['created_at'], {
