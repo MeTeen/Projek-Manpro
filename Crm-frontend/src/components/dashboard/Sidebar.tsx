@@ -31,7 +31,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggle }) => {
     { path: '/admin/tasksection', icon: <MdChecklist size={20} />, label: 'Task To Do' },
     { path: '/admin/tickets', icon: <MdConfirmationNumber size={20} />, label: 'Tickets' },
     { path: '/admin/about', icon: <MdInfo size={20} />, label: 'About' },
-    { path: '/companyprofile', icon: <MdPerson size={20} />, label: 'Our Company' }  // Keep public
   ];
   const isActiveRoute = (path: string) => {
     if (path === '/admin/dashboard') {
