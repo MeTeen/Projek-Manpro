@@ -1,0 +1,79 @@
+{
+  "categories": [
+    { "id": "all", "name": "Semua Produk" },
+    { "id": "living-room", "name": "Ruang Tamu" },
+    { "id": "dining-room", "name": "Ruang Makan" },
+    { "id": "bedroom", "name": "Kamar Tidur" },
+    { "id": "bathroom", "name": "Kamar Mandi" },
+    { "id": "office", "name": "Kantor" },
+    { "id": "storage", "name": "Penyimpanan" },
+    { "id": "outdoor", "name": "Luar Ruangan" },
+    { "id": "home-theater", "name": "Teater Rumah" },
+    { "id": "kitchen", "name": "Dapur" },
+    { "id": "foyer", "name": "Foyer" }
+  ],
+  "features": [
+    {
+      "id": 1,
+      "title": "Desain Elegan & Modern",
+      "description": "Tiap produk dirancang dengan estetika tinggi yang menyatu dengan berbagai tema interior rumah atau kantor.",
+      "icon": "🎨"
+    },
+    {
+      "id": 2,
+      "title": "Material Berkualitas",
+      "description": "Kami menggunakan kayu solid, kulit sintetis premium, dan bahan ramah lingkungan dalam setiap produk.",
+      "icon": "🌿"
+    },
+    {
+      "id": 3,
+      "title": "Kustomisasi Produk",
+      "description": "Anda bisa menyesuaikan warna, ukuran, atau material produk sesuai kebutuhan dan konsep ruangan Anda.",
+      "icon": "🔧"
+    },
+    {
+      "id": 4,
+      "title": "Pengiriman Aman & Cepat",
+      "description": "Didukung oleh tim logistik terpercaya, produk dikirim dengan packaging aman dan tepat waktu.",
+      "icon": "🚚"
+    },
+    {
+      "id": 5,
+      "title": "Harga Terjangkau",
+      "description": "Kualitas tinggi tidak selalu mahal—kami menawarkan harga kompetitif tanpa kompromi kualitas.",
+      "icon": "💰"
+    },
+    {
+      "id": 6,
+      "title": "Layanan Pelanggan Ramah",
+      "description": "Tim support kami siap membantu via chat, WhatsApp, atau telepon.",
+      "icon": "🤝"
+    }
+  ],
+  "testimonials": [
+    {
+      "id": 1,
+      "name": "Dilan",
+      "location": "Bandung",
+      "review": "Mebel Premium benar-benar beda! Sofanya empuk dan mewah, cocok banget buat ruang tamu minimalis saya. Pelayanannya juga cepat dan ramah."
+    },
+    {
+      "id": 2,
+      "name": "Ezra",
+      "location": "Surabaya",
+      "review": "Sudah dua kali beli di sini. Meja makan kayu jatinya kokoh dan tampilannya classy. Saya sangat puas!"
+    },
+    {
+      "id": 3,
+      "name": "Sarah",
+      "location": "Jakarta",
+      "review": "Furniturenya berkualitas tinggi dengan harga yang reasonable. Tim customer servicenya sangat membantu dalam proses pemilihan produk."
+    }
+  ],
+  "contactInfo": {
+    "email": "furniture@beefurniture.com",
+    "whatsapp": "+62 812-3456-7890",
+    "showroom": "Jl. Mebel Raya No. 123, Jakarta",
+    "companyName": "Bee Furniture"
+  }
+}

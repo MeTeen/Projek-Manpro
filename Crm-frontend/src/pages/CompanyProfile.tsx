@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import furnitureProducts from '../data/furnitureProducts.json';
+import companyData from '../data/companyData.json';
+import { FurnitureProduct, Category } from '../types/furniture';
 
 const CompanyProfile: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [showProductDetail, setShowProductDetail] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedProduct, setSelectedProduct] = useState<FurnitureProduct | null>(null);
+  const [showProductDetail, setShowProductDetail] = useState<boolean>(false);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -15,273 +18,16 @@ const CompanyProfile: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleProductDetail = (product: any) => {
+  const handleProductDetail = (product: FurnitureProduct) => {
     setSelectedProduct(product);
     setShowProductDetail(true);
   };
-
   const handleBackToProducts = () => {
     setShowProductDetail(false);
     setSelectedProduct(null);
   };
 
-  const furnitureProducts = [
-    {
-      id: 1,
-      name: 'Sofa Modern Minimalis',
-      category: 'living-room',
-      price: 'Rp 8.500.000',
-      description: 'Sofa 3 dudukan dengan desain modern minimalis, bahan kulit sintetis berkualitas tinggi.',
-      image: 'https://www.pojahome.co.id/wp-content/uploads/2024/08/Sofa-Kulit-Minimalis-2-Seater-untuk-Ruang-Tamu.jpg'
-    },
-    {
-      id: 2,
-      name: 'Sofa Sectional Corner',
-      category: 'living-room',
-      price: 'Rp 15.000.000',
-      description: 'Sofa sectional corner untuk ruang tamu besar, bahan fabric premium dengan bantal ekstra.',
-      image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSc7nvQK_Kh_jsDjfn9GubkLeKWzqdEb-J-Mw&s'
-    },
-    {
-      id: 3,
-      name: 'Meja Tamu Minimalis',
-      category: 'living-room',
-      price: 'Rp 200.609',
-      description: 'Meja tamu berbahan kayu dengan desain modern minimalis. Dilengkapi rak bawah untuk penyimpanan buku atau dekorasi. Cocok untuk ruang tamu bergaya simpel dan elegan.',
-      image: 'https://www.orangejkt.com/media/catalog/product/cache/407fef2ff3bc56fe9177307fde992276/image/4976411d/orange-meja-kopi-meja-tamu-meja-minimalis-meja.jpg'
-    },
-    {
-      id: 4,
-      name: 'Lemari Pakaian 4 Pintu',
-      category: 'bedroom',
-      price: 'Rp 6.500.000',
-      description: 'Lemari pakaian 4 pintu dengan cermin, dilengkapi laci dan gantungan baju.',
-      image: 'https://d2xjmi1k71iy2m.cloudfront.net/dairyfarm/id/images/988/0898845_PE782660_S4.webp'
-    },
-    {
-       id: 5,
-      name: 'Tempat Tidur Queen Size',
-      category: 'bedroom',
-      price: 'Rp 9.500.000',
-      description: 'Tempat tidur queen size dengan headboard berlapis, termasuk kasur spring bed.',
-      image: 'https://d2xjmi1k71iy2m.cloudfront.net/dairyfarm/id/images/510/1151050_PE884752_S4.webp'
-    },
-    {
-      id: 6,
-      name: 'Meja Rias Kamar Tidur',
-      category: 'bedroom',
-      price: 'Rp 4.000.000',
-      description: 'Set meja rias lengkap dengan laci dan cermin besar. Finishing elegan dan mewah, ideal untuk mempercantik kamar tidur sekaligus menyimpan kosmetik dan perhiasan.',
-      image: 'https://www.jeparaheritage.id/wp-content/uploads/2019/01/Meja-Rias-Kamar-Tidur-510x540.jpg.webp'
-    },
-    {
-      id: 7,
-      name: 'Rak Buku Minimalis',
-      category: 'storage',
-      price: 'Rp 3.200.000',
-      description: 'Rak buku 5 tingkat dengan desain minimalis, cocok untuk ruang kerja atau perpustakaan.',
-      image: 'https://uwitan.id/wp-content/uploads/2020/10/1.-Furniture-Rak-Book-Case-4-Tingkat.jpeg'
-    },
-    {
-     id: 8,
-      name: 'Rak Sepatu Susun Klasik Modern Kayu Jati',
-      category: 'storage',
-      price: 'Rp 1.750.000',
-      description: 'Rak sepatu serbaguna dengan material kayu jati dan dudukan empuk. Desain klasik modern, cocok untuk foyer atau area masuk rumah.',
-      image: 'https://down-id.img.susercontent.com/file/ba817949b151c71850a4c9613d9a62d1'
-    },
-    {
-      id: 9,
-      name: 'Lemari Bawah Tangga',
-      category: 'storage',
-      price: 'Rp 1.999.000',
-      description: 'Solusi cerdas untuk ruang terbatas. Lemari custom untuk area bawah tangga dengan kombinasi rak anggur, penyimpanan tertutup, dan pencahayaan elegan.',
-      image: 'https://events.rumah123.com/wp-content/uploads/sites/38/2022/11/15123351/lemari-bawah-tangga-1-1024x696.jpg'
-    },
-    {
-      id: 10,
-      name: 'Meja Kerja L-Shape',
-      category: 'office',
-      price: 'Rp 4.500.000',
-      description: 'Meja kerja bentuk L dengan laci dan space untuk CPU, ideal untuk home office.',
-      image: 'https://images.tokopedia.net/img/cache/700/VqbcmM/2023/11/9/4572d6b8-77cd-451c-96d1-30cd7d84b58c.png'
-    },
-    {
-      id: 11,
-      name: 'Kursi Kantor Ergonomis',
-      category: 'office',
-      price: 'Rp 2.800.000',
-      description: 'Kursi kantor dengan desain ergonomis, dilengkapi penyangga lumbar dan armrest adjustable.',
-      image: 'https://images.steelcase.com/image/upload/c_fill,q_auto,f_auto,h_656,w_1166/v1726162162/23-0213314_16x9.jpg'
-    },
-    {
-      id: 12, 
-      name: 'Meja Komputer (1 set)',
-      category: 'office',
-      price: 'Rp 7.098.000',
-      description: 'Paket lengkap meja komputer dengan desain ergonomis dan luas. Cocok untuk kerja remote atau setup gaming. Dilengkapi rak dan ruang kabel tersembunyi.',
-      image: 'https://d2xjmi1k71iy2m.cloudfront.net/dairyfarm/id/images/282/1128212_PE876481_S5.jpg'
-    },
-    {
-      id: 13,
-      name: 'Cabinet Makan (Credenza)',
-      category: 'dining-room',
-      price: 'Rp 15.000.000',
-      description: 'Cabinet minimalis multifungsi untuk ruang makan atau dapur. Dilengkapi ruang penyimpanan tertutup dan rak terbuka, cocok untuk menyimpan alat makan.',
-      image: 'https://images.tokopedia.net/img/cache/500-square/aphluv/1997/1/1/aec8f944becc4873a359d32f8e0f9c63~.jpeg'
-    },
-    {
-      id: 14,
-      name: 'Meja Makan Kayu Jati',
-      category: 'dining-room',
-      price: 'Rp 12.000.000',
-      description: 'Meja makan kayu jati solid untuk 6 orang, finishing natural dengan proteksi anti rayap.',
-      image: 'https://sfd-craft.com/wp-content/uploads/2018/10/black-forest-table-from-forest'
-    },
-    {
-      id: 15,
-      name: 'Mini Bar',
-      category: 'dining-room',
-      price: 'Rp 58.135.000',
-      description: 'Mini bar premium dengan lemari pendingin dan rak gelas gantung. Terbuat dari kayu solid dengan sentuhan klasik. Cocok untuk lounge pribadi ataupun ruang makan.',
-      image: 'https://www.sierralivingconcepts.com/images/thumbs/0423504_nahant-traditional-home-bar-hutch-with-mini-fridge-space.jpeg'
-    },
-    {
-      id: 16,
-      name: 'Wastafel Kabinet Kamar Mandi Kayu Jati',
-      category: 'bathroom',
-      price: 'Rp 989.000',
-      description: 'Wastafel elegan dengan kabinet kayu jati. Tahan lembap dan tahan lama, memberikan sentuhan alami di kamar mandi Anda.',
-      image: 'https://down-id.img.susercontent.com/file/id-11134207-7r98o-ll27ke4vgyd44a'
-    },
-    {
-      id: 17,
-      name: 'Rak Handuk Kamar Mandi Stainless',
-      category: 'bathroom',
-      price: 'Rp 379.000',
-      description: 'Rak multifungsi berbahan stainless anti karat, cocok untuk handuk, sabun, dan perlengkapan mandi. Hemat ruang dan stylish.',
-      image: 'https://images.renos.id/assets/portal-assets/1185/product/images/aDoOqLgzFn.jpeg'
-    },
-    {
-      id: 18,
-      name: 'Kursi Mandi (untuk lansia)',
-      category: 'bathroom',
-      price: 'Rp 395.000',
-      description: 'Kursi mandi anti-slip yang aman dan nyaman untuk lansia. Material kuat dan tahan air, dilengkapi lubang drainase dan pegangan kokoh di kedua sisi. Cocok digunakan untuk lansia.',
-      image: 'https://filebroker-cdn.lazada.co.id/kf/S7aebf5805692444a845cce0767434004b.jpg'
-    },
-    {
-      id: 19,
-      name: 'Kursi Tamu Outdoor Besi Kayu (1 set)',
-      category: 'outdoor',
-      price: 'Rp 6.800.000',
-      description: 'Satu set kursi outdoor dengan rangka besi dan permukaan kayu. Tahan cuaca dan nyaman untuk bersantai di taman atau teras.',
-      image: 'https://sudutkursi.com/wp-content/uploads/2021/07/210-Kursi-Tamu-Outdoor-R42-Besi-Kayu.jpg'
-    },
-    {
-      id: 20,
-      name: 'Kursi Balkon Rotan (1 set)',
-      category: 'outdoor',
-      price: 'Rp 16.500.000',
-      description: 'Satu set kursi outdoor dengan rangka besi dan permukaan kayu. Tahan cuaca dan nyaman untuk bersantai di taman atau teras.',
-      image: 'https://img.lazcdn.com/g/p/ed9241c9d6b9e24c0be077ad72e11a32.jpg_720x720q80.jpg'
-    },
-    {
-      id: 21,
-      name: 'Kursi Ayunan Gantung Rotan Sintetis',
-      category: 'outdoor',
-      price: 'Rp 5.455.395',
-      description: 'Kursi gantung dari rotan sintetis, ideal untuk relaksasi di taman atau ruang terbuka. Dilengkapi bantal duduk yang empuk.',
-      image: 'https://down-id.img.susercontent.com/file/id-11134207-7qul8-li9k42fwmowp3f'
-    },
-    {
-      id: 22,
-      name: 'Meja TV Minimalis',
-      category: 'home-theater',
-      price: 'Rp 954.000',
-      description: 'Meja TV dengan desain modern minimalis. Dilengkapi rak terbuka dan laci penyimpanan untuk media, buku, dan dekorasi.',
-      image: 'https://homedoki.id/cdn/shop/products/5_700x700.jpg?v=1658109318'
-    },
-    {
-      id: 23,
-      name: 'Kursi Duduk Teater',
-      category: 'home-theater',
-      price: 'Rp 77.495.854',
-      description: 'Kursi bioskop rumahan dengan fitur reclining, cup holder, dan sandaran empuk. Memberi kenyamanan premium untuk pengalaman menonton terbaik.',
-      image: 'https://images-cdn.ubuy.co.in/66925df69178b362b71431c2-sofa-recliner-home-theater-seating.jpg'
-    },
-    {
-      id: 24, 
-      name: 'Sofa Teater Diamante',
-      category: 'home-theater',
-      price: 'Rp 41.985.000',
-      description: 'Sofa mewah untuk ruang teater rumah dengan desain elegan dan bantalan tebal. Terdiri dari beberapa seat dan sandaran nyaman.',
-      image: 'https://d2sibwvd4p8ypi.cloudfront.net/catalog/product/cache/2/image/9df78eab33525d08d6e5fb8d27136e95/s/e/seatcraft-diamante-sofa-sectional-gallery-05-800x800_6.jpg'
-    },
-    {
-      id: 25,
-      name: 'Island Table Top Marmer Carrara Italy',
-      category: 'kitchen',
-      price: 'Rp 6.771.070',
-      description: 'Meja island dapur dengan top marmer Carrara asli dari Italia, memberikan kesan mewah dan elegan untuk dapur modern Anda.',
-      image: 'https://down-id.img.susercontent.com/file/id-11134211-7rasj-m1raxte4oit731'
-    },
-    {
-      id: 26,
-      name: 'Rak Bumbu Serbaguna Stainless',
-      category: 'kitchen',
-      price: 'Rp 97.000',
-      description: 'Rak serbaguna dari stainless steel yang kokoh dan tahan lama, cocok untuk menyimpan bumbu dan perlengkapan dapur dengan rapi.',
-      image: 'https://down-id.img.susercontent.com/file/sg-11134201-23010-q58krlqcsymvde'
-    },
-    {
-      id: 27,
-      name: 'Troli Dapur 4 Tingkat-Hitam',
-      category: 'kitchen',
-      price: 'Rp 1.439.550',
-      description: 'Troli dapur praktis dengan empat tingkat penyimpanan dan roda yang memudahkan mobilitas. Tersedia laci dan kabinet untuk peralatan dapur.',
-      image: 'https://cdn.ruparupa.io/fit-in/400x400/filters:format(webp)/filters:quality(90)/ruparupa-com/image/upload/Products/10140624_4.jpg'
-    },
-    {
-      id: 28,
-      name: 'Meja Konsol Minimalis Marmer',
-      category: 'foyer',
-      price: 'Rp 6.500.000',
-      description: 'Meja konsol elegan dengan desain minimalis dan top marmer, cocok untuk mempercantik foyer, ruang tamu, atau lorong rumah.',
-      image: 'https://www.homarindo.com/wp-content/uploads/2024/11/Meja-Konsol-Minimalis-Marmer-Mewah-1.jpg'
-    },
-    {
-      id: 29,
-      name: 'Bangku Foyer (1 set)',
-      category: 'foyer',
-      price: 'Rp 3.799.000',
-      description: 'Satu set bangku empuk dengan desain kontemporer, ideal untuk area foyer atau ruang tunggu tamu agar tampil hangat dan profesional.',
-      image: 'https://www.emporioarchitect.com/upload/portofolio/1280/desain-rumah-klasik-4-lantai-3251023-4763564251023075722-7.jpg'
-    },
-    {
-      id: 30,
-      name: 'Lampu Gantung Kaca 4 Cincin',
-      category: 'foyer',
-      price: 'Rp 9.889.000',
-      description: 'Lampu gantung kristal mewah dengan 4 cincin kaca berlapis, memberikan kesan dramatis dan elegan untuk ruang foyer atau ruang utama.',
-      image: 'https://cdnus.globalso.com/showsunlighting/SSC19229.jpg'
-    }
-  ];
-
-
-  const categories = [
-    { id: 'all', name: 'Semua Produk' },
-    { id: 'living-room', name: 'Ruang Tamu' },
-    { id: 'dining-room', name: 'Ruang Makan' },
-    { id: 'bedroom', name: 'Kamar Tidur' },
-    { id: 'bathroom', name: 'Kamar Mandi'},
-    { id: 'office', name: 'Kantor' },
-    { id: 'storage', name: 'Penyimpanan' },
-    { id: 'outdoor', name: 'Luar Ruangan' },
-    { id: 'home-theater', name: 'Teater Rumah' },
-    { id: 'kitchen', name: 'Dapur'},
-    { id: 'foyer', name: 'Foyer'}
-  ];
+  const categories: Category[] = companyData.categories;
 
   const filteredProducts = selectedCategory === 'all'
     ? furnitureProducts
@@ -289,110 +35,233 @@ const CompanyProfile: React.FC = () => {
 
   if (isAuthenticated) return null;
 
-  return (
-  <div style={{
+  return (  <div style={{
     minHeight: '100vh',
-    backgroundColor: '#f9fafb',
-    background: 'linear-gradient(to right, #8B4513, #D2691E)'
+    background: 'linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #CD853F 100%)',
+    position: 'relative'
   }}>
-    {/* Navbar */}
+    {/* Background Pattern Overlay */}
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                       radial-gradient(circle at 75% 75%, rgba(255,255,255,0.08) 0%, transparent 50%)`,
+      pointerEvents: 'none'
+    }}></div>    {/* Enhanced Navbar */}
     <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '20px',
-        padding: '22px 36px 0 36px',
-        borderBottom: '1px solid #e5e7eb',
-        background: 'rgba(255,255,255,0.97)',
+        padding: '20px 40px',
+        background: 'rgba(255, 248, 220, 0.95)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(139, 69, 19, 0.2)',
+        boxShadow: '0 8px 32px rgba(139, 69, 19, 0.15)',
         position: 'sticky',
         top: 0,
-        zIndex: 10,
+        zIndex: 1000,
+        borderRadius: '0 0 24px 24px'
       }}>
-        <h1 style={{
-          fontSize: '24px',
-          fontWeight: 'bold',
-          color: '#8B4513',
-          margin: 0
+        {/* Logo Section */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>          <div style={{
+            background: 'linear-gradient(135deg, #8B4513, #D2691E)',
+            borderRadius: '16px',
+            padding: '12px 16px',
+            fontSize: '24px',
+            boxShadow: '0 8px 24px rgba(139, 69, 19, 0.4)',
+            border: '3px solid rgba(255, 248, 220, 0.5)',
+            transform: 'rotate(-2deg)'
+          }}>
+            🐝
+          </div>
+          <div>            <h1 style={{
+              fontSize: '32px',
+              fontWeight: '900',
+              color: '#8B4513',
+              margin: 0,
+              fontFamily: '"Segoe UI", system-ui, sans-serif',
+              letterSpacing: '-1px',
+              textShadow: '2px 2px 4px rgba(139, 69, 19, 0.1)'
+            }}>
+              {companyData.contactInfo.companyName}
+            </h1>
+            <p style={{
+              fontSize: '13px',
+              color: '#A0522D',
+              margin: 0,
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              background: 'linear-gradient(90deg, #8B4513, #D2691E)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              ✨ Premium Furniture Collection ✨
+            </p>
+          </div>
+        </div>        {/* Navigation Menu */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          alignItems: 'center',
+          background: 'rgba(139, 69, 19, 0.1)',
+          borderRadius: '16px',
+          padding: '8px',
+          border: '2px solid rgba(139, 69, 19, 0.2)',
+          boxShadow: 'inset 0 2px 8px rgba(139, 69, 19, 0.1)'
         }}>
-          🐝 Bee Furniture
-        </h1>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <button
             style={{
-              padding: '8px 16px',
-              backgroundColor: 'transparent',
-              color: '#8B4513',
-              border: '2px solid #8B4513',
-              borderRadius: '6px',
-              textDecoration: 'none',
+              padding: '10px 20px',
+              backgroundColor: showProductDetail ? 'transparent' : '#8B4513',
+              color: showProductDetail ? '#8B4513' : 'white',
+              border: 'none',
+              borderRadius: '8px',
               fontWeight: '600',
               fontSize: '14px',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              cursor: 'pointer',
+              boxShadow: showProductDetail ? 'none' : '0 2px 8px rgba(139, 69, 19, 0.3)'
             }}
             onClick={() => {
-              const el = document.getElementById('home');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
+              if (showProductDetail) {
+                handleBackToProducts();
+              } else {
+                const el = document.getElementById('home');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }
             }}
-          >Home</button>
-          <button
-           style={{
-              padding: '8px 16px',
-              backgroundColor: 'transparent',
-              color: '#8B4513',
-              border: '2px solid #8B4513',
-              borderRadius: '6px',
-              textDecoration: 'none',
-              fontWeight: '600',
-              fontSize: '14px',
-              transition: 'all 0.3s ease'
+            onMouseEnter={(e) => {
+              if (showProductDetail) {
+                e.currentTarget.style.backgroundColor = 'rgba(139, 69, 19, 0.1)';
+              } else {
+                e.currentTarget.style.backgroundColor = '#654321';
+              }
             }}
-            onClick={() => {
-              const el = document.getElementById('about');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            onMouseLeave={(e) => {
+              if (showProductDetail) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              } else {
+                e.currentTarget.style.backgroundColor = '#8B4513';
+              }
             }}
-          >About</button>
+          >
+            🏠 Home
+          </button>
+          
+          {!showProductDetail && (
+            <button
+              style={{
+                padding: '10px 20px',
+                backgroundColor: 'transparent',
+                color: '#8B4513',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: '600',
+                fontSize: '14px',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
+              }}
+              onClick={() => {
+                const el = document.getElementById('about');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(139, 69, 19, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              ℹ️ Tentang Kami
+            </button>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          alignItems: 'center' 
+        }}>
           <a
             href="/admin/login"
             style={{
-              padding: '8px 16px',
-              backgroundColor: '#8B4513',
+              padding: '10px 18px',
+              background: 'linear-gradient(135deg, #8B4513, #A0522D)',
               color: 'white',
-              border: '2px solid #8B4513',
-              borderRadius: '6px',
+              border: 'none',
+              borderRadius: '8px',
               textDecoration: 'none',
               fontWeight: '600',
-              fontSize: '14px',
-              transition: 'all 0.3s ease'
+              fontSize: '13px',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 2px 12px rgba(139, 69, 19, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(139, 69, 19, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 12px rgba(139, 69, 19, 0.3)';
             }}
           >
-            Admin Login
+            🔐 Admin
           </a>
           <a
             href="/customer/login"
             style={{
-              padding: '8px 16px',
-              backgroundColor: '#8B4513',
+              padding: '10px 18px',
+              background: 'linear-gradient(135deg, #D2691E, #CD853F)',
               color: 'white',
-              border: '2px solid #8B4513',
-              borderRadius: '6px',
+              border: 'none',
+              borderRadius: '8px',
               textDecoration: 'none',
               fontWeight: '600',
-              fontSize: '14px',
-              transition: 'all 0.3s ease'
+              fontSize: '13px',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 2px 12px rgba(210, 105, 30, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(210, 105, 30, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 12px rgba(210, 105, 30, 0.3)';
             }}
           >
-            Customer Portal
+            👤 Customer Portal
           </a>
         </div>
-      </div>
-
-
-    {/* Produk Section */}
+      </div>    {/* Produk Section */}
     <div style={{
-        padding: '20px 30px',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(6px)',
-        minHeight: '100vh'
+        padding: '60px 40px 40px 40px',
+        background: 'linear-gradient(to bottom, rgba(255, 248, 220, 0.98), rgba(250, 235, 215, 0.95))',
+        backdropFilter: 'blur(20px)',
+        minHeight: '100vh',
+        borderRadius: '30px 30px 0 0',
+        marginTop: '-30px',
+        position: 'relative',
+        zIndex: 1,
+        boxShadow: '0 -8px 32px rgba(139, 69, 19, 0.15)',
+        border: '2px solid rgba(139, 69, 19, 0.1)'
+      }}>
+        boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.1)'
       }}>
         {showProductDetail && selectedProduct ? (
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -468,123 +337,268 @@ const CompanyProfile: React.FC = () => {
                   </h2>
                   <p style={{ color: '#654321', fontSize: '16px', marginBottom: '20px' }}>
                     Hubungi tim sales kami untuk informasi lebih lanjut dan penawaran terbaik
-                  </p>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
+                  </p>                  <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
                     <div>
                       <strong style={{ color: '#8B4513' }}>📱 WhatsApp:</strong><br />
-                      <span style={{ color: '#654321' }}>+62 812-3456-7890</span>
+                      <span style={{ color: '#654321' }}>{companyData.contactInfo.whatsapp}</span>
                     </div>
                     <div>
                       <strong style={{ color: '#8B4513' }}>📧 Email:</strong><br />
-                      <span style={{ color: '#654321' }}>furniture@mebelkita.com</span>
+                      <span style={{ color: '#654321' }}>{companyData.contactInfo.email}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        ) : (
-          <div id="home" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-              <h1 style={{ fontSize: '42px', fontWeight: 'bold', color: '#8B4513', marginBottom: '16px' }}>
-                🪑 Koleksi Mebel Premium
-              </h1>
-              <p style={{ fontSize: '20px', color: '#654321', marginBottom: '32px', maxWidth: '800px', margin: '0 auto' }}>
-                Temukan furniture berkualitas tinggi untuk rumah dan kantor Anda.
-                Desain modern dengan material terbaik dan harga terjangkau.
-              </p>
-            </div>
-            {/* Category Filter */}
+        ) : (          <div id="home" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            {/* Enhanced Hero Section */}
+            <div style={{ 
+              textAlign: 'center', 
+              marginBottom: '60px',
+              padding: '60px 20px',
+              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))',
+              borderRadius: '24px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Background decoration */}
+              <div style={{
+                position: 'absolute',
+                top: '-50px',
+                right: '-50px',
+                width: '200px',
+                height: '200px',
+                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2))',
+                borderRadius: '50%',
+                filter: 'blur(40px)',
+                zIndex: 0
+              }}></div>
+              <div style={{
+                position: 'absolute',
+                bottom: '-30px',
+                left: '-30px',
+                width: '150px',
+                height: '150px',
+                background: 'linear-gradient(135deg, rgba(118, 75, 162, 0.2), rgba(102, 126, 234, 0.2))',
+                borderRadius: '50%',
+                filter: 'blur(30px)',
+                zIndex: 0
+              }}></div>
+              
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <h1 style={{ 
+                  fontSize: '48px', 
+                  fontWeight: '800', 
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  marginBottom: '20px',
+                  letterSpacing: '-1px'
+                }}>
+                  🪑 Koleksi Mebel Premium
+                </h1>
+                <p style={{ 
+                  fontSize: '22px', 
+                  color: '#64748b', 
+                  marginBottom: '32px', 
+                  maxWidth: '800px', 
+                  margin: '0 auto 32px auto',
+                  lineHeight: '1.6',
+                  fontWeight: '400'
+                }}>
+                  Temukan furniture berkualitas tinggi untuk rumah dan kantor Anda.
+                  Desain modern dengan material terbaik dan harga terjangkau.
+                </p>
+                <div style={{
+                  display: 'inline-flex',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center'
+                }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    padding: '12px 24px',
+                    borderRadius: '50px',
+                    fontSize: '14px',
+                    color: '#667eea',
+                    fontWeight: '600',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)'
+                  }}>
+                    ✨ 30+ Produk Premium
+                  </div>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    padding: '12px 24px',
+                    borderRadius: '50px',
+                    fontSize: '14px',
+                    color: '#764ba2',
+                    fontWeight: '600',
+                    boxShadow: '0 4px 12px rgba(118, 75, 162, 0.2)'
+                  }}>
+                    🚚 Pengiriman Gratis
+                  </div>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    padding: '12px 24px',
+                    borderRadius: '50px',
+                    fontSize: '14px',
+                    color: '#667eea',
+                    fontWeight: '600',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)'
+                  }}>
+                    💎 Garansi Kualitas
+                  </div>
+                </div>
+              </div>
+            </div>            {/* Enhanced Category Filter */}
             <div style={{
               display: 'flex',
               justifyContent: 'center',
               flexWrap: 'wrap',
-              gap: '12px',
-              marginBottom: '40px'
+              gap: '16px',
+              marginBottom: '50px',
+              padding: '0 20px'
             }}>
               {categories.map(category => (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
                   style={{
-                    padding: '12px 24px',
-                    backgroundColor: selectedCategory === category.id ? '#8B4513' : 'transparent',
-                    color: selectedCategory === category.id ? 'white' : '#8B4513',
-                    border: '2px solid #8B4513',
-                    borderRadius: '25px',
+                    padding: '14px 28px',
+                    background: selectedCategory === category.id 
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                      : 'rgba(255, 255, 255, 0.9)',
+                    color: selectedCategory === category.id ? 'white' : '#64748b',
+                    border: selectedCategory === category.id 
+                      ? 'none' 
+                      : '2px solid rgba(102, 126, 234, 0.2)',
+                    borderRadius: '50px',
                     cursor: 'pointer',
                     fontWeight: '600',
                     fontSize: '14px',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: selectedCategory === category.id 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 12px rgba(0, 0, 0, 0.05)',
+                    transform: selectedCategory === category.id ? 'translateY(-2px)' : 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedCategory !== category.id) {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.2)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedCategory !== category.id) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+                    }
                   }}
                 >
                   {category.name}
                 </button>
               ))}
-            </div>
-            {/* Products Grid */}
+            </div>            {/* Enhanced Products Grid */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '24px',
-              marginBottom: '64px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '30px',
+              marginBottom: '80px',
+              padding: '0 20px'
             }}>
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
                   style={{
                     backgroundColor: 'white',
-                    borderRadius: '16px',
+                    borderRadius: '20px',
                     overflow: 'hidden',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                    cursor: 'pointer'
+                    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.08)',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    cursor: 'pointer',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    position: 'relative'
                   }}
                   onClick={() => handleProductDetail(product)}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(102, 126, 234, 0.15)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.08)';
                   }}
                 >
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    style={{
-                      width: '100%',
-                      height: '200px',
-                      objectFit: 'cover'
-                    }}
-                  />
-                  <div style={{ padding: '24px' }}>
+                  {/* Product Image */}
+                  <div style={{ position: 'relative', overflow: 'hidden' }}>
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      style={{
+                        width: '100%',
+                        height: '220px',
+                        objectFit: 'cover',
+                        transition: 'transform 0.4s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    />
+                    {/* Gradient overlay */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: '50px',
+                      background: 'linear-gradient(transparent, rgba(0, 0, 0, 0.1))'
+                    }}></div>
+                  </div>
+                  
+                  {/* Product Info */}
+                  <div style={{ padding: '28px' }}>
                     <h3 style={{
-                      color: '#2d1810',
-                      fontWeight: '600',
-                      marginBottom: '8px',
-                      fontSize: '18px'
+                      color: '#1e293b',
+                      fontWeight: '700',
+                      marginBottom: '12px',
+                      fontSize: '20px',
+                      lineHeight: '1.3'
                     }}>
                       {product.name}
                     </h3>
                     <p style={{
-                      color: '#6b5b47',
+                      color: '#64748b',
                       fontSize: '14px',
-                      marginBottom: '16px',
-                      lineHeight: '1.4'
+                      marginBottom: '20px',
+                      lineHeight: '1.5',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
                     }}>
-                      {product.description.substring(0, 80)}...
+                      {product.description}
                     </p>
+                    
+                    {/* Footer */}
                     <div style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      marginTop: 'auto'
                     }}>
                       <span style={{
-                        fontSize: '20px',
-                        fontWeight: '700',
-                        color: '#8B4513'
+                        fontSize: '22px',
+                        fontWeight: '800',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
                       }}>
                         {product.price}
                       </span>
@@ -594,14 +608,24 @@ const CompanyProfile: React.FC = () => {
                           handleProductDetail(product);
                         }}
                         style={{
-                          backgroundColor: '#D2691E',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                           color: 'white',
                           border: 'none',
-                          padding: '10px 20px',
-                          borderRadius: '8px',
+                          padding: '12px 24px',
+                          borderRadius: '50px',
                           cursor: 'pointer',
                           fontWeight: '600',
-                          fontSize: '14px'
+                          fontSize: '14px',
+                          transition: 'all 0.3s ease',
+                          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
                         }}
                       >
                         Lihat Detail
@@ -637,7 +661,7 @@ const CompanyProfile: React.FC = () => {
           fontSize: 20,
           lineHeight: "1.6"
         }}>
-          Mebel Premium adalah brand furnitur modern yang berkomitmen menghadirkan produk berkualitas tinggi dengan harga terjangkau. Kami menggabungkan keindahan desain, kekuatan material, dan kenyamanan dalam setiap produk yang kami hadirkan. Didirikan oleh tim desainer interior dan pengrajin berpengalaman, kami telah dipercaya oleh ratusan pelanggan di seluruh Indonesia.
+          {companyData.contactInfo.companyName} adalah brand furnitur modern yang berkomitmen menghadirkan produk berkualitas tinggi dengan harga terjangkau. Kami menggabungkan keindahan desain, kekuatan material, dan kenyamanan dalam setiap produk yang kami hadirkan. Didirikan oleh tim desainer interior dan pengrajin berpengalaman, kami telah dipercaya oleh ratusan pelanggan di seluruh Indonesia.
         </div>
       </div>
 
@@ -652,8 +676,7 @@ const CompanyProfile: React.FC = () => {
           marginBottom: 34,
           color: "#212529",
           textAlign: "center"
-        }}>Fitur Unggulan</h2>
-        <div style={{
+        }}>Fitur Unggulan</h2>        <div style={{
           display: "flex",
           flexWrap: "wrap",
           justifyContent: "center",
@@ -661,42 +684,32 @@ const CompanyProfile: React.FC = () => {
           maxWidth: 1200,
           margin: "0 auto"
         }}>
-          <div style={{
-            background: "#fff", borderRadius: 18, padding: "32px 28px", minWidth: 300, maxWidth: 400, flex: 1, margin: 10, boxShadow: "0 3px 12px rgba(160, 150, 120, 0.08)"
-          }}>
-            <div style={{ fontWeight: "bold", color: "#A0522D", fontSize: 22, marginBottom: 10 }}>Desain Elegan & Modern</div>
-            <div>Tiap produk dirancang dengan estetika tinggi yang menyatu dengan berbagai tema interior rumah atau kantor.</div>
-          </div>
-          <div style={{
-            background: "#fff", borderRadius: 18, padding: "32px 28px", minWidth: 300, maxWidth: 400, flex: 1, margin: 10, boxShadow: "0 3px 12px rgba(160, 150, 120, 0.08)"
-          }}>
-            <div style={{ fontWeight: "bold", color: "#A0522D", fontSize: 22, marginBottom: 10 }}>Material Berkualitas</div>
-            <div>Kami menggunakan kayu solid, kulit sintetis premium, dan bahan ramah lingkungan dalam setiap produk.</div>
-          </div>
-          <div style={{
-            background: "#fff", borderRadius: 18, padding: "32px 28px", minWidth: 300, maxWidth: 400, flex: 1, margin: 10, boxShadow: "0 3px 12px rgba(160, 150, 120, 0.08)"
-          }}>
-            <div style={{ fontWeight: "bold", color: "#A0522D", fontSize: 22, marginBottom: 10 }}>Kustomisasi Produk</div>
-            <div>Anda bisa menyesuaikan warna, ukuran, atau material produk sesuai kebutuhan dan konsep ruangan Anda.</div>
-          </div>
-          <div style={{
-            background: "#fff", borderRadius: 18, padding: "32px 28px", minWidth: 300, maxWidth: 400, flex: 1, margin: 10, boxShadow: "0 3px 12px rgba(160, 150, 120, 0.08)"
-          }}>
-            <div style={{ fontWeight: "bold", color: "#A0522D", fontSize: 22, marginBottom: 10 }}>Pengiriman Aman & Cepat</div>
-            <div>Didukung oleh tim logistik terpercaya, produk dikirim dengan packaging aman dan tepat waktu.</div>
-          </div>
-          <div style={{
-            background: "#fff", borderRadius: 18, padding: "32px 28px", minWidth: 300, maxWidth: 400, flex: 1, margin: 10, boxShadow: "0 3px 12px rgba(160, 150, 120, 0.08)"
-          }}>
-            <div style={{ fontWeight: "bold", color: "#A0522D", fontSize: 22, marginBottom: 10 }}>Harga Terjangkau</div>
-            <div>Kualitas tinggi tidak selalu mahal—kami menawarkan harga kompetitif tanpa kompromi kualitas.</div>
-          </div>
-          <div style={{
-            background: "#fff", borderRadius: 18, padding: "32px 28px", minWidth: 300, maxWidth: 400, flex: 1, margin: 10, boxShadow: "0 3px 12px rgba(160, 150, 120, 0.08)"
-          }}>
-            <div style={{ fontWeight: "bold", color: "#A0522D", fontSize: 22, marginBottom: 10 }}>Layanan Pelanggan Ramah</div>
-            <div>Tim support kami siap membantu via chat, WhatsApp, atau telepon.</div>
-          </div>
+          {companyData.features.map((feature) => (
+            <div key={feature.id} style={{
+              background: "#fff", 
+              borderRadius: 18, 
+              padding: "32px 28px", 
+              minWidth: 300, 
+              maxWidth: 400, 
+              flex: 1, 
+              margin: 10, 
+              boxShadow: "0 3px 12px rgba(160, 150, 120, 0.08)"
+            }}>
+              <div style={{ 
+                fontWeight: "bold", 
+                color: "#A0522D", 
+                fontSize: 22, 
+                marginBottom: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}>
+                <span>{feature.icon}</span>
+                {feature.title}
+              </div>
+              <div>{feature.description}</div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -712,8 +725,7 @@ const CompanyProfile: React.FC = () => {
           marginBottom: 38,
           color: "#232832",
           textAlign: "center"
-        }}>Apa Kata Mereka</h2>
-        <div style={{
+        }}>Apa Kata Mereka</h2>        <div style={{
           display: "flex",
           gap: 28,
           maxWidth: 1200,
@@ -721,34 +733,24 @@ const CompanyProfile: React.FC = () => {
           flexWrap: "wrap",
           justifyContent: "center"
         }}>
-          <div style={{
-            background: "#fff",
-            borderRadius: 18,
-            padding: "38px 32px",
-            minWidth: 380,
-            maxWidth: 500,
-            margin: 10,
-            boxShadow: "0 3px 16px rgba(200, 185, 110, 0.08)",
-            fontSize: 18,
-            color: "#232832"
-          }}>
-            "Mebel Premium benar-benar beda! Sofanya empuk dan mewah, cocok banget buat ruang tamu minimalis saya. Pelayanannya juga cepat dan ramah."
-            <div style={{ fontWeight: 600, marginTop: 18 }}>— Dilan, Bandung</div>
-          </div>
-          <div style={{
-            background: "#fff",
-            borderRadius: 18,
-            padding: "38px 32px",
-            minWidth: 380,
-            maxWidth: 500,
-            margin: 10,
-            boxShadow: "0 3px 16px rgba(200, 185, 110, 0.08)",
-            fontSize: 18,
-            color: "#232832"
-          }}>
-            "Sudah dua kali beli di sini. Meja makan kayu jatinya kokoh dan tampilannya classy. Saya sangat puas!"
-            <div style={{ fontWeight: 600, marginTop: 18 }}>— Ezra, Surabaya</div>
-          </div>
+          {companyData.testimonials.map((testimonial) => (
+            <div key={testimonial.id} style={{
+              background: "#fff",
+              borderRadius: 18,
+              padding: "38px 32px",
+              minWidth: 380,
+              maxWidth: 500,
+              margin: 10,
+              boxShadow: "0 3px 16px rgba(200, 185, 110, 0.08)",
+              fontSize: 18,
+              color: "#232832"
+            }}>
+              "{testimonial.review}"
+              <div style={{ fontWeight: 600, marginTop: 18 }}>
+                — {testimonial.name}, {testimonial.location}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
         {/* Hubungi Kami */}
@@ -758,25 +760,24 @@ const CompanyProfile: React.FC = () => {
   padding: '40px',
   borderRadius: '16px',
   border: '2px solid #D2691E'
-}}>
-  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#8B4513', marginBottom: '16px' }}>
+}}>  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#8B4513', marginBottom: '16px' }}>
     📞 Hubungi Kami untuk Konsultasi
   </h2>
   <p style={{ color: '#654321', fontSize: '16px', marginBottom: '20px' }}>
-    Dapatkan konsultasi gratis dan penawaran terbaik dari Bee Furniture untuk menciptakan ruangan impian yang penuh kenyamanan dan modern yang sesuai kebutuhan Anda
+    Dapatkan konsultasi gratis dan penawaran terbaik dari {companyData.contactInfo.companyName} untuk menciptakan ruangan impian yang penuh kenyamanan dan modern yang sesuai kebutuhan Anda
   </p>
   <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
     <div>
       <strong style={{ color: '#8B4513' }}>📧 Email:</strong><br />
-      <span style={{ color: '#654321' }}>furniture@mebelkita.com</span>
+      <span style={{ color: '#654321' }}>{companyData.contactInfo.email}</span>
     </div>
     <div>
       <strong style={{ color: '#8B4513' }}>📱 WhatsApp:</strong><br />
-      <span style={{ color: '#654321' }}>+62 812-3456-7890</span>
+      <span style={{ color: '#654321' }}>{companyData.contactInfo.whatsapp}</span>
     </div>
     <div>
       <strong style={{ color: '#8B4513' }}>🏪 Showroom:</strong><br />
-      <span style={{ color: '#654321' }}>Jl. Mebel Raya No. 123, Jakarta</span>
+      <span style={{ color: '#654321' }}>{companyData.contactInfo.showroom}</span>
     </div>
   </div>
 </div>
