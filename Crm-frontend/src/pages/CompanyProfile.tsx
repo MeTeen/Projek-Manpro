@@ -256,12 +256,10 @@ const CompanyProfile: React.FC = () => {
         minHeight: '100vh',
         borderRadius: '30px 30px 0 0',
         marginTop: '-30px',
-        position: 'relative',
+        position: 'relative',        
         zIndex: 1,
         boxShadow: '0 -8px 32px rgba(139, 69, 19, 0.15)',
         border: '2px solid rgba(139, 69, 19, 0.1)'
-      }}>
-        boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.1)'
       }}>
         {showProductDetail && selectedProduct ? (
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -357,7 +355,7 @@ const CompanyProfile: React.FC = () => {
               textAlign: 'center', 
               marginBottom: '60px',
               padding: '60px 20px',
-              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))',
+              background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.1), rgba(210, 105, 30, 0.1))',
               borderRadius: '24px',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               position: 'relative',
@@ -370,7 +368,7 @@ const CompanyProfile: React.FC = () => {
                 right: '-50px',
                 width: '200px',
                 height: '200px',
-                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2))',
+                background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.2), rgba(210, 105, 30, 0.2))',
                 borderRadius: '50%',
                 filter: 'blur(40px)',
                 zIndex: 0
@@ -381,72 +379,73 @@ const CompanyProfile: React.FC = () => {
                 left: '-30px',
                 width: '150px',
                 height: '150px',
-                background: 'linear-gradient(135deg, rgba(118, 75, 162, 0.2), rgba(102, 126, 234, 0.2))',
+                background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.2), rgba(210, 105, 30, 0.2))',
                 borderRadius: '50%',
                 filter: 'blur(30px)',
                 zIndex: 0
               }}></div>
               
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <h1 style={{ 
-                  fontSize: '48px', 
-                  fontWeight: '800', 
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              <div style={{ position: 'relative', zIndex: 1 }}>                <h1 style={{ 
+                  fontSize: '56px', 
+                  fontWeight: '900', 
+                  background: 'linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #CD853F 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  marginBottom: '20px',
-                  letterSpacing: '-1px'
+                  marginBottom: '24px',
+                  letterSpacing: '-2px',
+                  textShadow: '0 4px 20px rgba(139, 69, 19, 0.3)'
                 }}>
                   🪑 Koleksi Mebel Premium
-                </h1>
-                <p style={{ 
-                  fontSize: '22px', 
-                  color: '#64748b', 
-                  marginBottom: '32px', 
-                  maxWidth: '800px', 
-                  margin: '0 auto 32px auto',
-                  lineHeight: '1.6',
-                  fontWeight: '400'
-                }}>
-                  Temukan furniture berkualitas tinggi untuk rumah dan kantor Anda.
-                  Desain modern dengan material terbaik dan harga terjangkau.
+                </h1>                <p style={{ 
+                  fontSize: '24px', 
+                  color: '#654321', 
+                  marginBottom: '48px', 
+                  maxWidth: '900px', 
+                  margin: '0 auto 48px auto',
+                  lineHeight: '1.7',
+                  fontWeight: '400',
+                  textShadow: '0 2px 4px rgba(139, 69, 19, 0.1)'
+                }}>                  ✨ Temukan furniture berkualitas tinggi untuk rumah dan kantor Anda. 
+                  Desain modern dengan material terbaik dan harga terjangkau. ✨
                 </p>
                 <div style={{
                   display: 'inline-flex',
                   gap: '12px',
                   flexWrap: 'wrap',
                   justifyContent: 'center'
-                }}>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.9)',
+                }}>                  <div style={{
+                    background: 'rgba(255, 248, 220, 0.9)',
                     padding: '12px 24px',
                     borderRadius: '50px',
                     fontSize: '14px',
-                    color: '#667eea',
+                    color: '#8B4513',
                     fontWeight: '600',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)'
+                    boxShadow: '0 4px 12px rgba(139, 69, 19, 0.2)',
+                    border: '2px solid rgba(139, 69, 19, 0.1)'
                   }}>
-                    ✨ 30+ Produk Premium
+                    ✨ Produk Premium
                   </div>
                   <div style={{
-                    background: 'rgba(255, 255, 255, 0.9)',
+                    background: 'rgba(255, 248, 220, 0.9)',
                     padding: '12px 24px',
                     borderRadius: '50px',
                     fontSize: '14px',
-                    color: '#764ba2',
+                    color: '#D2691E',
                     fontWeight: '600',
-                    boxShadow: '0 4px 12px rgba(118, 75, 162, 0.2)'
+                    boxShadow: '0 4px 12px rgba(210, 105, 30, 0.2)',
+                    border: '2px solid rgba(210, 105, 30, 0.1)'
                   }}>
                     🚚 Pengiriman Gratis
                   </div>
                   <div style={{
-                    background: 'rgba(255, 255, 255, 0.9)',
+                    background: 'rgba(255, 248, 220, 0.9)',
                     padding: '12px 24px',
                     borderRadius: '50px',
                     fontSize: '14px',
-                    color: '#667eea',
+                    color: '#CD853F',
                     fontWeight: '600',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)'
+                    boxShadow: '0 4px 12px rgba(205, 133, 63, 0.2)',
+                    border: '2px solid rgba(205, 133, 63, 0.1)'
                   }}>
                     💎 Garansi Kualitas
                   </div>
@@ -464,38 +463,39 @@ const CompanyProfile: React.FC = () => {
               {categories.map(category => (
                 <button
                   key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  style={{
-                    padding: '14px 28px',
+                  onClick={() => setSelectedCategory(category.id)}                  style={{
+                    padding: '16px 32px',
                     background: selectedCategory === category.id 
-                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                      : 'rgba(255, 255, 255, 0.9)',
-                    color: selectedCategory === category.id ? 'white' : '#64748b',
+                      ? 'linear-gradient(135deg, #8B4513 0%, #D2691E 100%)' 
+                      : 'rgba(255, 248, 220, 0.9)',
+                    color: selectedCategory === category.id ? 'white' : '#8B4513',
                     border: selectedCategory === category.id 
-                      ? 'none' 
-                      : '2px solid rgba(102, 126, 234, 0.2)',
+                      ? '2px solid #8B4513' 
+                      : '2px solid rgba(139, 69, 19, 0.3)',
                     borderRadius: '50px',
                     cursor: 'pointer',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: selectedCategory === category.id 
-                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
-                      : '0 4px 12px rgba(0, 0, 0, 0.05)',
+                    fontWeight: '700',
+                    fontSize: '15px',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',                    boxShadow: selectedCategory === category.id 
+                      ? '0 8px 20px rgba(139, 69, 19, 0.4)' 
+                      : '0 4px 12px rgba(139, 69, 19, 0.1)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
                     transform: selectedCategory === category.id ? 'translateY(-2px)' : 'none'
-                  }}
-                  onMouseEnter={(e) => {
+                  }}                  onMouseEnter={(e) => {
                     if (selectedCategory !== category.id) {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))';
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 69, 19, 0.1), rgba(210, 105, 30, 0.1))';
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.2)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(139, 69, 19, 0.3)';
+                      e.currentTarget.style.color = '#654321';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (selectedCategory !== category.id) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.currentTarget.style.background = 'rgba(255, 248, 220, 0.9)';
                       e.currentTarget.style.transform = 'none';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.1)';
+                      e.currentTarget.style.color = '#8B4513';
                     }
                   }}
                 >
@@ -526,7 +526,7 @@ const CompanyProfile: React.FC = () => {
                   onClick={() => handleProductDetail(product)}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(102, 126, 234, 0.15)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(139, 69, 19, 0.15)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
@@ -572,9 +572,8 @@ const CompanyProfile: React.FC = () => {
                       lineHeight: '1.3'
                     }}>
                       {product.name}
-                    </h3>
-                    <p style={{
-                      color: '#64748b',
+                    </h3>                    <p style={{
+                      color: '#6b5b47',
                       fontSize: '14px',
                       marginBottom: '20px',
                       lineHeight: '1.5',
@@ -592,11 +591,10 @@ const CompanyProfile: React.FC = () => {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       marginTop: 'auto'
-                    }}>
-                      <span style={{
+                    }}>                      <span style={{
                         fontSize: '22px',
                         fontWeight: '800',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        background: 'linear-gradient(135deg, #8B4513 0%, #D2691E 100%)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent'
                       }}>
@@ -606,9 +604,8 @@ const CompanyProfile: React.FC = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           handleProductDetail(product);
-                        }}
-                        style={{
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        }}                        style={{
+                          background: 'linear-gradient(135deg, #8B4513 0%, #D2691E 100%)',
                           color: 'white',
                           border: 'none',
                           padding: '12px 24px',
@@ -617,15 +614,15 @@ const CompanyProfile: React.FC = () => {
                           fontWeight: '600',
                           fontSize: '14px',
                           transition: 'all 0.3s ease',
-                          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                          boxShadow: '0 4px 15px rgba(139, 69, 19, 0.4)'
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'scale(1.05)';
-                          e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+                          e.currentTarget.style.boxShadow = '0 6px 20px rgba(139, 69, 19, 0.6)';
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'scale(1)';
-                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(139, 69, 19, 0.4)';
                         }}
                       >
                         Lihat Detail

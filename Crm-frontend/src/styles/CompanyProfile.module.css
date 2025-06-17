@@ -1,0 +1,373 @@
+.companyProfile {
+  min-height: 100vh;
+  background: linear-gradient(to right, #8B4513, #D2691E);
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 22px 36px 0 36px;
+  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.97);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #8B4513;
+  margin: 0;
+}
+
+.navButtons {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.navButton {
+  padding: 8px 16px;
+  background-color: transparent;
+  color: #8B4513;
+  border: 2px solid #8B4513;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.navButton:hover {
+  background-color: #8B4513;
+  color: white;
+}
+
+.primaryButton {
+  background-color: #8B4513;
+  color: white !important;
+}
+
+.primaryButton:hover {
+  background-color: #654321;
+}
+
+.contentWrapper {
+  padding: 20px 30px;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  min-height: 100vh;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background-color: #8B4513;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 24px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.backButton:hover {
+  background-color: #654321;
+}
+
+.productDetail {
+  background-color: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.productImage {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+}
+
+.productInfo {
+  padding: 32px;
+}
+
+.productTitle {
+  font-size: 32px;
+  font-weight: bold;
+  color: #8B4513;
+  margin-bottom: 16px;
+}
+
+.productDescription {
+  font-size: 18px;
+  color: #654321;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.productPrice {
+  font-size: 28px;
+  font-weight: bold;
+  color: #8B4513;
+  margin-bottom: 32px;
+}
+
+.heroSection {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.heroTitle {
+  font-size: 42px;
+  font-weight: bold;
+  color: #8B4513;
+  margin-bottom: 16px;
+}
+
+.heroDescription {
+  font-size: 20px;
+  color: #654321;
+  margin-bottom: 32px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.categoryFilter {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.categoryButton {
+  padding: 12px 24px;
+  border: 2px solid #8B4513;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background-color: transparent;
+  color: #8B4513;
+}
+
+.categoryButton.active {
+  background-color: #8B4513;
+  color: white;
+}
+
+.categoryButton:hover {
+  background-color: #8B4513;
+  color: white;
+}
+
+.productsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 64px;
+}
+
+.productCard {
+  background-color: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.productCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.productCardImage {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.productCardContent {
+  padding: 24px;
+}
+
+.productCardTitle {
+  color: #2d1810;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+.productCardDescription {
+  color: #6b5b47;
+  font-size: 14px;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.productCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.productCardPrice {
+  font-size: 20px;
+  font-weight: 700;
+  color: #8B4513;
+}
+
+.detailButton {
+  background-color: #D2691E;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.detailButton:hover {
+  background-color: #B8860B;
+}
+
+.section {
+  padding: 60px 15px 20px 15px;
+  background: #fff;
+  text-align: center;
+}
+
+.sectionTitle {
+  font-weight: bold;
+  font-size: 30px;
+  margin-bottom: 18px;
+  color: #212529;
+}
+
+.aboutDescription {
+  max-width: 800px;
+  margin: 0 auto;
+  color: #222;
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+.featuresSection {
+  background: #f7fafd;
+  padding: 40px 0 60px 0;
+}
+
+.featuresGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.featureCard {
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px 28px;
+  min-width: 300px;
+  max-width: 400px;
+  flex: 1;
+  margin: 10px;
+  box-shadow: 0 3px 12px rgba(160, 150, 120, 0.08);
+}
+
+.featureTitle {
+  font-weight: bold;
+  color: #A0522D;
+  font-size: 22px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.testimonialsSection {
+  background: #fdf6db;
+  padding: 60px 0;
+}
+
+.testimonialsGrid {
+  display: flex;
+  gap: 28px;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.testimonialCard {
+  background: #fff;
+  border-radius: 18px;
+  padding: 38px 32px;
+  min-width: 380px;
+  max-width: 500px;
+  margin: 10px;
+  box-shadow: 0 3px 16px rgba(200, 185, 110, 0.08);
+  font-size: 18px;
+  color: #232832;
+}
+
+.testimonialAuthor {
+  font-weight: 600;
+  margin-top: 18px;
+}
+
+.contactSection {
+  text-align: center;
+  background-color: #FFF8DC;
+  padding: 40px;
+  border-radius: 16px;
+  border: 2px solid #D2691E;
+}
+
+.contactTitle {
+  font-size: 28px;
+  font-weight: bold;
+  color: #8B4513;
+  margin-bottom: 16px;
+}
+
+.contactDescription {
+  color: #654321;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.contactInfo {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.contactItem {
+  text-align: center;
+}
+
+.contactLabel {
+  color: #8B4513;
+  font-weight: bold;
+}
+
+.contactValue {
+  color: #654321;
+}
